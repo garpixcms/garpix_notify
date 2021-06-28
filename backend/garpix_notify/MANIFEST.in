@@ -1,0 +1,2 @@
+recursive-include garpix_notify *
+recursive-include garpix_notify/templates *
