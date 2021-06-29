@@ -1,4 +1,6 @@
 import re
+from typing import Optional
+
 import requests
 import json
 from os.path import basename
@@ -66,6 +68,9 @@ class Notify(UserNotifyMixin):
     send_at = models.DateTimeField(blank=True, null=True, verbose_name='Время начала отправки')
     sent_at = models.DateTimeField(blank=True, null=True, verbose_name='Дата отправки')
 
+    def __str__(self):
+        return self.subject
+
     def get_sender(self):
         pass
 
@@ -80,7 +85,8 @@ class Notify(UserNotifyMixin):
             self.phone = re.sub("[^0-9]", "", self.phone)
 
         if self.type == TYPE.EMAIL:
-            self.send_email()
+            # self.send_email()         # [NOTE] should be deprecated for next versions (current version='3.0.1')
+            self.send_email_by_django()
         if self.type == TYPE.SMS:
             self.send_sms()
         if self.type == TYPE.PUSH:
@@ -92,20 +98,29 @@ class Notify(UserNotifyMixin):
 
         self.save()
 
-    def send_email(self):
-        config = NotifyConfig.get_solo()
+    def send_email_by_django(self):
+        account = self._get_valid_smtp_account()
 
-        if not config.is_email_enabled:
-            self.state = STATE.DISABLED
-            return
-
-        category = self.category
-        account = SMTPAccount.get_free_smtp()
-        self.sender_email = account.sender
-        if account is None or not account.is_active:
-            return None
         try:
-            body = self._render_body(account.sender, category.template)
+            from django.core.mail import EmailMultiAlternatives
+            content = self.html or self.text
+            msg = EmailMultiAlternatives(self.subject, content, account.sender, [self.email or self.user.email])
+            msg.attach_alternative(content, "text/html")
+            if msg.send():
+                self.state = STATE.DELIVERED
+                self.sent_at = now()
+            else:
+                self.state = STATE.REJECTED
+        except Exception as e:  # noqa
+            self.state = STATE.REJECTED
+            self.to_log(str(e))
+
+    # [NOTE] should be deprecated for next versions (current version='3.0.1')
+    def send_email(self):
+        account = self._get_valid_smtp_account()
+
+        try:
+            body = self._render_body(account.sender, self.category.template)
             server = SMTP_SSL(account.host, account.port) if account.is_use_ssl else SMTP(account.host, account.port)
             server.ehlo()
             if account.is_use_tls:
@@ -388,9 +403,6 @@ class Notify(UserNotifyMixin):
 
     get_format_state.short_description = 'Статус'
 
-    def __str__(self):
-        return self.subject
-
     def to_log(self, error_text):
         log = NotifyErrorLog(notify=self, error=error_text)
         log.save()
@@ -429,6 +441,19 @@ class Notify(UserNotifyMixin):
         except Exception as e:  # noqa
             self.state = STATE.REJECTED
             self.to_log(str(e))
+
+    def _get_valid_smtp_account(self) -> Optional[SMTPAccount]:
+        config = NotifyConfig.get_solo()
+        if not config.is_email_enabled:
+            self.state = STATE.DISABLED
+            return
+
+        account = SMTPAccount.get_free_smtp()
+        self.sender_email = account.sender
+        if account is None or not account.is_active:
+            return
+
+        return account
 
     class Meta:
         verbose_name = 'Уведомление'
