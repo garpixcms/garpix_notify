@@ -25,6 +25,9 @@ class SMTPAccount(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
 
+    def __str__(self):
+        return '{} ({}:{})'.format(self.username, self.host, self.port)
+
     @classmethod
     def get_free_smtp(cls):
         """
@@ -75,9 +78,6 @@ class SMTPAccount(models.Model):
             return format_html('<span style="color:green;">Включен</span>')
 
     is_worked_now.short_description = 'Состояние'
-
-    def __str__(self):
-        return '{} ({}:{})'.format(self.username, self.host, self.port)
 
     def clear(self):
         self.email_hour_used_times = 0

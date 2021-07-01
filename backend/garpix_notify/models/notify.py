@@ -1,34 +1,24 @@
+import json
 import re
-from typing import Optional
 
 import requests
-import json
-from os.path import basename
-from smtplib import SMTP, SMTP_SSL
-from django.db import models
-from django.template import Template, Context
 from django.conf import settings
+from django.core.mail import EmailMultiAlternatives
+from django.db import models
 from django.utils.html import format_html
 from django.utils.module_loading import import_string
-
-from email.mime.multipart import MIMEMultipart
-from email.mime.application import MIMEApplication
-from email.mime.text import MIMEText
-
+from django.utils.timezone import now
 from viberbot import Api, BotConfiguration
 from viberbot.api.messages import TextMessage
 
-from .fcm import NotifyDevice
-
-from .choices import TYPE, STATE
 from .category import NotifyCategory
+from .choices import TYPE, STATE
 from .config import NotifyConfig
-from .template import NotifyTemplate
+from .fcm import NotifyDevice
 from .file import NotifyFile
 from .log import NotifyErrorLog
 from .smtp import SMTPAccount
-from django.utils.timezone import now
-from django.utils.safestring import mark_safe
+from .template import NotifyTemplate
 from ..mixins import UserNotifyMixin
 
 
@@ -39,11 +29,10 @@ def chunks(s, n):
 
 
 class Notify(UserNotifyMixin):
-    """
-    Уведомление
-    """
+    class Meta:
+        verbose_name = 'Уведомление'
+        verbose_name_plural = 'Уведомления'
 
-    # title = models.CharField(max_length=255, verbose_name='Название для админа')
     subject = models.CharField(max_length=255, default='', blank=True, verbose_name='Тема')
     text = models.TextField(verbose_name='Текст')
     html = models.TextField(verbose_name='HTML', blank=True, default='')
@@ -85,8 +74,7 @@ class Notify(UserNotifyMixin):
             self.phone = re.sub("[^0-9]", "", self.phone)
 
         if self.type == TYPE.EMAIL:
-            # self.send_email()         # [NOTE] should be deprecated for next versions (current version='3.0.1')
-            self.send_email_by_django()
+            self.send_email()
         if self.type == TYPE.SMS:
             self.send_sms()
         if self.type == TYPE.PUSH:
@@ -98,38 +86,27 @@ class Notify(UserNotifyMixin):
 
         self.save()
 
-    def send_email_by_django(self):
-        account = self._get_valid_smtp_account()
+    def send_email(self):
+        config = NotifyConfig.get_solo()
+        if not config.is_email_enabled:
+            self.state = STATE.DISABLED
+            return
+
+        account = SMTPAccount.get_free_smtp()
+        self.sender_email = account.sender
+        if account is None or not account.is_active:
+            return
 
         try:
-            from django.core.mail import EmailMultiAlternatives
             content = self.html or self.text
             msg = EmailMultiAlternatives(self.subject, content, account.sender, [self.email or self.user.email])
             msg.attach_alternative(content, "text/html")
+
             if msg.send():
                 self.state = STATE.DELIVERED
                 self.sent_at = now()
             else:
                 self.state = STATE.REJECTED
-        except Exception as e:  # noqa
-            self.state = STATE.REJECTED
-            self.to_log(str(e))
-
-    # [NOTE] should be deprecated for next versions (current version='3.0.1')
-    def send_email(self):
-        account = self._get_valid_smtp_account()
-
-        try:
-            body = self._render_body(account.sender, self.category.template)
-            server = SMTP_SSL(account.host, account.port) if account.is_use_ssl else SMTP(account.host, account.port)
-            server.ehlo()
-            if account.is_use_tls:
-                server.starttls()
-            server.login(account.username, account.password)
-            server.sendmail(account.sender, [self.email], body.as_string())
-            server.close()
-            self.state = STATE.DELIVERED
-            self.sent_at = now()
         except Exception as e:  # noqa
             self.state = STATE.REJECTED
             self.to_log(str(e))
@@ -361,35 +338,6 @@ class Notify(UserNotifyMixin):
 
         return notification_count
 
-    def _render_body(self, mail_from, layout):
-        msg = MIMEMultipart('alternative')
-
-        msg['Subject'] = self.subject
-        msg['From'] = mail_from
-        msg['To'] = self.email
-
-        text = MIMEText(self.text, 'plain')
-        msg.attach(text)
-
-        if self.html:
-            template = Template(layout)
-            context = Context({'text': mark_safe(self.html)})
-            html = MIMEText(mark_safe(template.render(context)), 'html')
-            msg.attach(html)
-
-        for fl in self.files.all():
-            with fl.file.open(mode='rb') as f:
-                part = MIMEApplication(
-                    f.read(),
-                    Name=fl.file.name.split('/')[-1]
-                )
-
-            part['Content-Disposition'] = 'attachment; filename="%s"' % fl.file.name.split('/')[-1]
-
-            msg.attach(part)
-
-        return msg
-
     def get_format_state(self):
         if self.state == STATE.WAIT:
             return format_html('<span style="color:orange;">В ожидании</span>')
@@ -442,19 +390,4 @@ class Notify(UserNotifyMixin):
             self.state = STATE.REJECTED
             self.to_log(str(e))
 
-    def _get_valid_smtp_account(self) -> Optional[SMTPAccount]:
-        config = NotifyConfig.get_solo()
-        if not config.is_email_enabled:
-            self.state = STATE.DISABLED
-            return
 
-        account = SMTPAccount.get_free_smtp()
-        self.sender_email = account.sender
-        if account is None or not account.is_active:
-            return
-
-        return account
-
-    class Meta:
-        verbose_name = 'Уведомление'
-        verbose_name_plural = 'Уведомления'

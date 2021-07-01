@@ -1,6 +1,7 @@
 from django.core.mail.backends.smtp import EmailBackend as DjangoEmailBackend
 from garpix_notify.models.smtp import SMTPAccount
 
+
 try:
     smtp = SMTPAccount.get_free_smtp()
 except Exception as e:
