@@ -182,7 +182,10 @@ CHOICES_NOTIFY_EVENT = [(k, v['title']) for k, v in NOTIFY_EVENTS.items()]
 NOTIFY_SMS_URL = "http://sms.ru/sms/send"
 NOTIFY_SMS_API_ID = "1234567890"
 FCM_DJANGO_SETTINGS = {
-    "FCM_SERVER_KEY": "1234567890"
+    "FCM_SERVER_KEY": "1234567890",
+    "APP_VERBOSE_NAME": "Firebase Cloud Messaging",
+    "ONE_DEVICE_PER_USER": False,
+    "DELETE_INACTIVE_DEVICES": False,
 }
 
 CKEDITOR_UPLOAD_PATH = ''
@@ -198,7 +201,6 @@ CKEDITOR_CONFIGS = {
 
 REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
 
-# Celery
 CELERY_BROKER_URL = 'redis://{}:6379/1'.format(REDIS_HOST)
 CELERY_RESULT_BACKEND = 'redis://{}:6379/2'.format(REDIS_HOST)
 # CELERY_RESULT_BACKEND = 'django-db'
@@ -209,3 +211,6 @@ CELERY_RESULT_SERIALIZER = 'json'
 # CELERY_TASK_ALWAYS_EAGER = TEST
 CELERY_ENABLE_UTC = False
 DJANGO_CELERY_BEAT_TZ_AWARE = False
+
+
+EMAIL_BACKEND = 'garpix_notify.smtp.EmailBackend'
