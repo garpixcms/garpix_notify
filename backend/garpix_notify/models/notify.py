@@ -3,8 +3,6 @@ from typing import Optional
 
 import requests
 import json
-from os.path import basename
-from smtplib import SMTP, SMTP_SSL
 from django.db import models
 from django.template import Template, Context
 from django.conf import settings
@@ -85,8 +83,7 @@ class Notify(UserNotifyMixin):
             self.phone = re.sub("[^0-9]", "", self.phone)
 
         if self.type == TYPE.EMAIL:
-            # self.send_email()         # [NOTE] should be deprecated for next versions (current version='3.0.1')
-            self.send_email_by_django()
+            self.send_email()
         if self.type == TYPE.SMS:
             self.send_sms()
         if self.type == TYPE.PUSH:
@@ -98,7 +95,7 @@ class Notify(UserNotifyMixin):
 
         self.save()
 
-    def send_email_by_django(self):
+    def send_email(self):
         account = self._get_valid_smtp_account()
 
         try:
@@ -111,25 +108,6 @@ class Notify(UserNotifyMixin):
                 self.sent_at = now()
             else:
                 self.state = STATE.REJECTED
-        except Exception as e:  # noqa
-            self.state = STATE.REJECTED
-            self.to_log(str(e))
-
-    # [NOTE] should be deprecated for next versions (current version='3.0.1')
-    def send_email(self):
-        account = self._get_valid_smtp_account()
-
-        try:
-            body = self._render_body(account.sender, self.category.template)
-            server = SMTP_SSL(account.host, account.port) if account.is_use_ssl else SMTP(account.host, account.port)
-            server.ehlo()
-            if account.is_use_tls:
-                server.starttls()
-            server.login(account.username, account.password)
-            server.sendmail(account.sender, [self.email], body.as_string())
-            server.close()
-            self.state = STATE.DELIVERED
-            self.sent_at = now()
         except Exception as e:  # noqa
             self.state = STATE.REJECTED
             self.to_log(str(e))

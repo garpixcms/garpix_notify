@@ -1,11 +1,9 @@
-from celery import Celery
 from django.utils.timezone import timedelta
 from .models.config import NotifyConfig
 from .models.notify import Notify
 from .models.choices import STATE
 from celery.task import periodic_task
 from django.utils import timezone
-# import datetime
 
 
 def periodic_decorator():
