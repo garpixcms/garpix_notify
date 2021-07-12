@@ -8,7 +8,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='garpix_notify',
-    version='3.0.2',
+    version='3.0.3',
     description='',
     long_description=long_description,
     url='https://github.com/garpixcms/garpix_notify',
@@ -33,7 +33,7 @@ setup(
     install_requires=[
         'Django >= 1.11',
         'django-solo >= 1.1.3',
-        'fcm-django >= 0.2.19',
+        'fcm-django == 0.3.11',
         'requests >= 2.18.4',
         'django-ckeditor >= 5.6.1',
         'python-telegram-bot >= 12.6.1',
