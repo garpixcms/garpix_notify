@@ -1,17 +1,11 @@
-from django.utils.timezone import timedelta
+from django.utils import timezone
+from app.celery import app as celery_app
+from .models.choices import STATE
 from .models.config import NotifyConfig
 from .models.notify import Notify
-from .models.choices import STATE
-from celery.task import periodic_task
-from django.utils import timezone
 
 
-def periodic_decorator():
-    config = NotifyConfig.get_solo()
-    return periodic_task(run_every=timedelta(seconds=config.periodic))
-
-
-@periodic_decorator()
+@celery_app.task
 def send_notifications():
     notifies = Notify.objects.filter(state__in=[STATE.WAIT])
 
@@ -23,3 +17,14 @@ def send_notifications():
                 if timezone.now() > notify.send_at:
                     notify._send()
     return
+
+
+celery_app.conf.beat_schedule = {
+    'periodic_task': {
+        'task': 'garpix_notify.tasks.send_notifications',
+        'schedule': NotifyConfig.get_solo().periodic,
+    },
+}
+celery_app.conf.timezone = 'UTC'
+
+# celery_app.add_periodic_task(NotifyConfig.get_solo().periodic, send_notifications.s(), name='periodic_task') #2 способ
