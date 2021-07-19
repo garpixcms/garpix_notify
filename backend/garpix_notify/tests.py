@@ -6,6 +6,8 @@ from .models import NotifyUserList
 from .models import NotifyUserListParticipant
 from .models.choices import TYPE
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
+
 
 User = get_user_model()
 
@@ -86,6 +88,9 @@ class PreBuildTestCase(TestCase):
         self.assertEqual(category.template, self.data_category['template'])
         # Создание списка
         user_list = NotifyUserList.objects.create(title='Админы')
+        group = Group.objects.create(name="Админы клиенты")
+        user_list.user_groups.add(group)
+
         user_list_participant1 = NotifyUserListParticipant.objects.create(  # noqa
             user_list=user_list,
             email='test2@garpix.com',
@@ -97,10 +102,12 @@ class PreBuildTestCase(TestCase):
             user_list=user_list,
             email='test3@garpix.com',
         )
+
         # Создание шаблона
         template_email = NotifyTemplate.objects.create(category=category, **self.data_template_email)
         template_email.user_lists.add(user_list)
         template_email = NotifyTemplate.objects.get(pk=template_email.pk)
+
         self.assertEqual(template_email.title, self.data_template_email['title'])
         self.assertEqual(template_email.subject, self.data_template_email['subject'])
         self.assertEqual(template_email.text, self.data_template_email['text'])
@@ -108,12 +115,15 @@ class PreBuildTestCase(TestCase):
         self.assertEqual(template_email.type, self.data_template_email['type'])
         self.assertEqual(template_email.event, self.data_template_email['event'])
         self.assertEqual(template_email.category.id, category.id)
+
         # Создание пробного письма
         Notify.send(self.PASS_TEST_EVENT, {
             'sometext': self.sometext,
             'user': user,
         }, user=user)
-        self.assertEqual(Notify.objects.all().count(), 3)  # пустой не должен был отправиться "user_list_participant2"
+
+        self.assertEqual(Notify.objects.all().count(), 3)
+
         # notify 1
         notify = Notify.objects.get(user=user)
         self.assertEqual(notify.subject, self.data_compiled_email['subject'])

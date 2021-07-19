@@ -1,32 +1,29 @@
+import json
 import re
+from email.mime.application import MIMEApplication
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from typing import Optional
 
 import requests
-import json
+from django.conf import settings
 from django.db import models
 from django.template import Template, Context
-from django.conf import settings
 from django.utils.html import format_html
 from django.utils.module_loading import import_string
-
-from email.mime.multipart import MIMEMultipart
-from email.mime.application import MIMEApplication
-from email.mime.text import MIMEText
-
+from django.utils.safestring import mark_safe
+from django.utils.timezone import now
 from viberbot import Api, BotConfiguration
 from viberbot.api.messages import TextMessage
 
-from .fcm import NotifyDevice
-
-from .choices import TYPE, STATE
 from .category import NotifyCategory
+from .choices import TYPE, STATE
 from .config import NotifyConfig
-from .template import NotifyTemplate
+from .fcm import NotifyDevice
 from .file import NotifyFile
 from .log import NotifyErrorLog
 from .smtp import SMTPAccount
-from django.utils.timezone import now
-from django.utils.safestring import mark_safe
+from .template import NotifyTemplate
 from ..mixins import UserNotifyMixin
 
 
@@ -78,6 +75,8 @@ class Notify(UserNotifyMixin):
             self.phone = self.user.phone
             self.telegram_chat_id = self.user.telegram_chat_id
             self.viber_chat_id = self.user.viber_chat_id
+        elif self.email:
+            self.email = self.email
 
         if self.phone is not None:
             self.phone = re.sub("[^0-9]", "", self.phone)
@@ -194,9 +193,15 @@ class Notify(UserNotifyMixin):
     @staticmethod
     def send(event, context, user=None, email=None, phone=None, files=None, data_json=None, notify_templates=None,
              viber_chat_id=None):
-
         from user.models import User
-
+        if user:
+            email = user.email if not email else email
+            phone = user.phone if not phone else phone
+            viber_chat_id = viber_chat_id if not viber_chat_id else viber_chat_id
+        elif email:
+            user = email
+            phone = user.phone if not phone else phone
+            viber_chat_id = viber_chat_id if not viber_chat_id else viber_chat_id
         user_want_message_check = None
         if hasattr(settings, 'NOTIFY_USER_WANT_MESSAGE_CHECK') and settings.NOTIFY_USER_WANT_MESSAGE_CHECK is not None:
             user_want_message_check = import_string(settings.NOTIFY_USER_WANT_MESSAGE_CHECK)
@@ -218,7 +223,6 @@ class Notify(UserNotifyMixin):
             file_instances.append(instance)
 
         notification_count = 0
-
         for template in templates:
             # Формируем список основных и дополнительных получателей письма
             # Первого получателя заполняем из шаблона, его данные могут быть пустыми - чтобы можно было через
@@ -250,7 +254,13 @@ class Notify(UserNotifyMixin):
                             'phone': participant.phone,
                             'viber_chat_id': participant.viber_chat_id,
                         })
-
+                    elif participant.email is not None:
+                        recievers.append({
+                            'user': participant.user,
+                            'email': participant.email,
+                            'phone': participant.phone,
+                            'viber_chat_id': participant.viber_chat_id,
+                        })
                 # Если в списке отмечены группы
                 if user_list.user_groups and not user_list.mail_to_all:
                     group_users = User.objects.filter(groups__in=list(user_list.user_groups.all()))
@@ -279,7 +289,6 @@ class Notify(UserNotifyMixin):
                                 'viber_chat_id': user.viber_chat_id,
                             }
                         )
-
             for reciever in recievers:
                 template_user = reciever['user']
                 template_email = reciever['email']
@@ -299,7 +308,7 @@ class Notify(UserNotifyMixin):
                         template_viber_chat_id = user.viber_chat_id
                 # Проверка, хочет ли получить сообщение
                 if user_want_message_check is not None and not \
-                    user_want_message_check(event, template.type, template_user): # noqa
+                        user_want_message_check(event, template.type, template_user):  # noqa
                     continue
 
                 local_context = context.copy()
@@ -322,15 +331,14 @@ class Notify(UserNotifyMixin):
                     html=template.render_html(local_context),
                     user=template_user,
                     email=template_email,
-                    phone=template_phone,
-                    viber_chat_id=template_viber_chat_id,
+                    phone=template_phone if template_phone is not None else "",
+                    viber_chat_id=template_viber_chat_id if template_viber_chat_id is not None else "",
                     type=template.type,
                     event=template.event,
                     category=template.category,
                     data_json=data_json,
                     send_at=template.send_at,
                 )
-
                 file_instance = instance.files
                 for f in file_instances:
                     file_instance.add(f)

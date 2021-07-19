@@ -13,7 +13,7 @@ class NotifyUserListParticipant(UserNotifyMixin):
                               help_text='Используется только в случае отсутствия указанного пользователя')
 
     def __str__(self):
-        return 'Участник рассылки'
+        return f'Участник рассылки {self.pk}'
 
     class Meta:
         verbose_name = 'Участник списка пользователей'
