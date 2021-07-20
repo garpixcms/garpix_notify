@@ -1,3 +1,7 @@
+### (19.07.2021)
+
+- Added the ability to send notifications with only email
+
 ### (14.07.2021)
 
 - Upgraded to 5 version of `celery`.
