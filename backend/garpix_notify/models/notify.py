@@ -4,7 +4,7 @@ from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Optional
-
+from smtplib import SMTP, SMTP_SSL
 import requests
 from django.conf import settings
 from django.db import models
@@ -15,7 +15,6 @@ from django.utils.safestring import mark_safe
 from django.utils.timezone import now
 from viberbot import Api, BotConfiguration
 from viberbot.api.messages import TextMessage
-
 from .category import NotifyCategory
 from .choices import TYPE, STATE
 from .config import NotifyConfig
@@ -98,15 +97,16 @@ class Notify(UserNotifyMixin):
         account = self._get_valid_smtp_account()
 
         try:
-            from django.core.mail import EmailMultiAlternatives
-            content = self.html or self.text
-            msg = EmailMultiAlternatives(self.subject, content, account.sender, [self.email or self.user.email])
-            msg.attach_alternative(content, "text/html")
-            if msg.send():
-                self.state = STATE.DELIVERED
-                self.sent_at = now()
-            else:
-                self.state = STATE.REJECTED
+            body = self._render_body(account.sender, self.category.template)
+            server = SMTP_SSL(account.host, account.port) if account.is_use_ssl else SMTP(account.host, account.port)
+            server.ehlo()
+            if account.is_use_tls:
+                server.starttls()
+            server.login(account.username, account.password)
+            server.sendmail(account.sender, [self.email], body.as_string())
+            server.close()
+            self.state = STATE.DELIVERED
+            self.sent_at = now()
         except Exception as e:  # noqa
             self.state = STATE.REJECTED
             self.to_log(str(e))
@@ -194,6 +194,7 @@ class Notify(UserNotifyMixin):
     def send(event, context, user=None, email=None, phone=None, files=None, data_json=None, notify_templates=None,
              viber_chat_id=None):
         from user.models import User
+
         if user:
             email = user.email if not email else email
             phone = user.phone if not phone else phone
@@ -202,6 +203,7 @@ class Notify(UserNotifyMixin):
             user = email
             phone = user.phone if not phone else phone
             viber_chat_id = viber_chat_id if not viber_chat_id else viber_chat_id
+
         user_want_message_check = None
         if hasattr(settings, 'NOTIFY_USER_WANT_MESSAGE_CHECK') and settings.NOTIFY_USER_WANT_MESSAGE_CHECK is not None:
             user_want_message_check = import_string(settings.NOTIFY_USER_WANT_MESSAGE_CHECK)
@@ -261,6 +263,7 @@ class Notify(UserNotifyMixin):
                             'phone': participant.phone,
                             'viber_chat_id': participant.viber_chat_id,
                         })
+
                 # Если в списке отмечены группы
                 if user_list.user_groups and not user_list.mail_to_all:
                     group_users = User.objects.filter(groups__in=list(user_list.user_groups.all()))
