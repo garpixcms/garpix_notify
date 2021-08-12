@@ -40,7 +40,7 @@ setup(
         'viberbot >= 1.0.11',
         'django-uuslug >= 1.2.0',
         'Pillow >= 8.2.0',
-        'celery==4.4.2',
+        'celery>=4.4.2',
         'redis >= 3.5.3',
     ],
 )

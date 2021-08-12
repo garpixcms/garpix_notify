@@ -40,7 +40,8 @@ class NotifyTemplateAdmin(admin.ModelAdmin):
 
     def response_change(self, request, obj):
         from ..models.notify import Notify
-        if obj.user and "_send_now" in request.POST:
+        if (obj.user and "_send_now" in request.POST) or (obj.email and "_send_now" in request.POST):
+
             context = obj.get_test_data()
             template = obj
             instance = Notify.objects.create(
@@ -48,6 +49,7 @@ class NotifyTemplateAdmin(admin.ModelAdmin):
                 text=template.render_text(context),
                 html=template.render_html(context),
                 user=template.user,
+                email=template.email,
                 type=template.type,
                 category=template.category
             )
