@@ -198,11 +198,6 @@ class Notify(UserNotifyMixin):
         if user:
             email = user.email if not email else email
             phone = user.phone if not phone else phone
-            viber_chat_id = viber_chat_id if not viber_chat_id else viber_chat_id
-        elif email:
-            user = email
-            phone = user.phone if not phone else phone
-            viber_chat_id = viber_chat_id if not viber_chat_id else viber_chat_id
 
         user_want_message_check = None
         if hasattr(settings, 'NOTIFY_USER_WANT_MESSAGE_CHECK') and settings.NOTIFY_USER_WANT_MESSAGE_CHECK is not None:
