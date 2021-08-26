@@ -1,3 +1,7 @@
+### 4.0.1 (27.08.2021)
+
+- Fixed bug sending messages
+
 ### 4.0.0 (12.08.2021)
 
 - Added the ability to send notifications with only email
