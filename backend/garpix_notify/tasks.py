@@ -19,12 +19,12 @@ def send_notifications():
     return
 
 
-celery_app.conf.beat_schedule = {
+celery_app.conf.beat_schedule.update({
     'periodic_task': {
         'task': 'garpix_notify.tasks.send_notifications',
         'schedule': NotifyConfig.get_solo().periodic,
     },
-}
+})
 celery_app.conf.timezone = 'UTC'
 
 # celery_app.add_periodic_task(NotifyConfig.get_solo().periodic, send_notifications.s(), name='periodic_task') #2 способ
