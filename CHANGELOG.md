@@ -1,3 +1,7 @@
+### 4.0.2 (27.08.2021)
+
+- Fixed beat_schedule.
+
 ### 4.0.1 (27.08.2021)
 
 - Fixed bug sending messages
