@@ -16,6 +16,23 @@ class NotifyConfig(SingletonModel):
 
     telegram_api_key = models.CharField(default='000000000:AAAAAAAAAA-AAAAAAAA-_AAAAAAAAAAAAAA', blank=True,
                                         max_length=255, verbose_name='Telegram API Key')
+    telegram_bot_name = models.CharField(default='', blank=True, help_text='Например, MySuperBot',
+                                        max_length=255, verbose_name='Telegram Имя бота')
+    telegram_welcome_text = models.TextField(blank=True,
+                                             default='Добрый день! Здесь вы можете получать уведомления от нашего сайта',
+                                             verbose_name='Telegram - Приветственный текст бота')
+    telegram_help_text = models.TextField(blank=True,
+                                          default='Используйте команду /set <уникальный код> для того, чтобы получать сообщения от бота. Уникальный код вы можете получить на нашем сайте',
+                                          verbose_name='Telegram - Текст помощи бота')
+    telegram_bad_command_text = models.TextField(blank=True,
+                                             default='Неправильный формат команды',
+                                             verbose_name='Telegram - Текст неправильной команды бота')
+    telegram_success_added_text = models.TextField(blank=True,
+                                                   default='Ваша учетная запись успешно привязана к боту. Вы будете получать уведомления!',
+                                                   verbose_name='Telegram - Текст успешно добавлен код')
+    telegram_failed_added_text = models.TextField(blank=True,
+                                                  default='Ошибка при привязке учетной записи. Пожалуйста, свяжитесь с техподдержкой',
+                                                  verbose_name='Telegram - Текст провал, не добавлен код')
     viber_api_key = models.CharField(default='000000000:AAAAAAAAAA-AAAAAAAA-_AAAAAAAAAAAAAA', blank=True,
                                      max_length=255, verbose_name='Viber API Key')
     viber_bot_name = models.CharField(blank=True, max_length=255, verbose_name='Название viber бота',

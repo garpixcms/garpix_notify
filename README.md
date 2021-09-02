@@ -149,6 +149,38 @@ Do not forget run celery:
 celery -A app worker --loglevel=info -B
 ```
 
+# Telegram Notify
+
+Register you bot [https://t.me/BotFather](https://t.me/BotFather)
+
+Go to [http://localhost:8000/admin/garpix_notify/notifyconfig/](https://t.me/BotFather) and fill "Telegram" section (`API key` and `Bot name`).
+
+Run daemon:
+
+```bash
+python3 backend/manage.py garpix_notify_telegram
+```
+
+Go to your bot and send `/start` command.
+
+Also, see `user/admin.py` file (see instructions):
+
+```python
+from django.contrib import admin
+from .models import User
+from django.contrib.auth.admin import UserAdmin
+
+
+@admin.register(User)
+class UserAdmin(UserAdmin):
+    fieldsets = (
+        ('Telegram', {
+            'fields': ('telegram_chat_id', 'telegram_secret', 'get_telegram_connect_user_help'),
+        })
+    ) + UserAdmin.fieldsets
+    readonly_fields = ['telegram_secret', 'get_telegram_connect_user_help'] + list(UserAdmin.readonly_fields)
+```
+
 # Changelog
 
 See [CHANGELOG.md](CHANGELOG.md).

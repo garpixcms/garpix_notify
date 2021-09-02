@@ -1,4 +1,8 @@
-### 4.0.2 (27.08.2021)
+### 4.1.0 (02.08.2021)
+
+- Telegram models, daemon.
+
+### 4.0.2 (02.08.2021)
 
 - Fixed beat_schedule.
 
