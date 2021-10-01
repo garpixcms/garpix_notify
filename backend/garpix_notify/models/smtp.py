@@ -3,6 +3,7 @@ from django.utils.timezone import now, timedelta
 from django.utils.html import format_html
 from .category import NotifyCategory
 from .config import NotifyConfig
+from ..utils import NoValidSMTPServerError
 
 
 class SMTPAccount(models.Model):
@@ -44,7 +45,7 @@ class SMTPAccount(models.Model):
             .first()
 
         if account is None:
-            return None
+            raise NoValidSMTPServerError('Подходящий почтовый сервер не найден, проверьте настройки')
 
         account.email_hour_used_times += 1
         account.email_day_used_times += 1

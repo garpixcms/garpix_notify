@@ -10,3 +10,7 @@ def get_file_path(instance, filename):
     today = datetime.date.today()
     filename = f'{uuslug.slugify(".".join(filename.split(".")[:-1]))}.{ext}'
     return f'uploads/{today.year}/{today.month}/{filename}'
+
+
+class NoValidSMTPServerError(Exception):
+    pass
