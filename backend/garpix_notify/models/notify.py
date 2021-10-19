@@ -71,7 +71,7 @@ class Notify(UserNotifyMixin):
     def _send(self):
         if self.user:
             self.email = self.user.email
-            self.phone = self.user.phone
+            self.phone = str(self.user.phone)
             self.telegram_chat_id = self.user.telegram_chat_id
             self.viber_chat_id = self.user.viber_chat_id
         elif self.email:
