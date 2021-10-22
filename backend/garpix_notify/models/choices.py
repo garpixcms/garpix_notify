@@ -4,6 +4,7 @@ class TYPE:
     PUSH = 2
     TELEGRAM = 3
     VIBER = 4
+    SYSTEM = 5
 
     CHOICES = (
         (EMAIL, 'E-mail'),
@@ -11,6 +12,7 @@ class TYPE:
         (PUSH, 'Push'),
         (TELEGRAM, 'Telegram'),
         (VIBER, 'Viber'),
+        (SYSTEM, 'System'),
     )
 
 

@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'garpix_notify',
     'app',
     'garpix_qa',
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -214,3 +215,13 @@ DJANGO_CELERY_BEAT_TZ_AWARE = False
 
 
 EMAIL_BACKEND = 'garpix_notify.smtp.EmailBackend'
+
+ASGI_APPLICATION = 'app.asgi.application'
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
