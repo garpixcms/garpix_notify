@@ -6,7 +6,7 @@ from channels.generic.websocket import WebsocketConsumer
 class NotifyConsumer(WebsocketConsumer):
     def connect(self):
         self.user_id = self.scope['url_route']['kwargs']['user_id']
-        self.room_group_name = 'room_%s' % self.user_id
+        self.room_group_name = f'room_{self.user_id}'
         async_to_sync(self.channel_layer.group_add)(
             self.room_group_name,
             self.channel_name

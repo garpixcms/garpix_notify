@@ -201,6 +201,7 @@ CKEDITOR_CONFIGS = {
 # Celery
 
 REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
+REDIS_PORT = os.getenv('REDIS_PORT', 6379)
 
 CELERY_BROKER_URL = 'redis://{}:6379/1'.format(REDIS_HOST)
 CELERY_RESULT_BACKEND = 'redis://{}:6379/2'.format(REDIS_HOST)
@@ -221,7 +222,7 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
+            "hosts": [(REDIS_HOST, REDIS_PORT)],
         },
     },
 }

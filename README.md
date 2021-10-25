@@ -181,6 +181,64 @@ class UserAdmin(UserAdmin):
     readonly_fields = ['telegram_secret', 'get_telegram_connect_user_help'] + list(UserAdmin.readonly_fields)
 ```
 
+# System ws Notify
+
+Add the `channels` to your `INSTALLED_APPS`:
+
+```python
+# settings.py
+
+INSTALLED_APPS = [
+    # ...
+    'channels',
+]
+```
+
+Add the `REDIS_HOST` and `REDIS_PORT` variables and `asgi` and `channels` configurations:
+
+```python
+# settings.py
+
+REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
+REDIS_PORT = os.getenv('REDIS_PORT', 6379)
+
+...
+
+ASGI_APPLICATION = 'app.asgi.application'
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [(REDIS_HOST, REDIS_PORT)],
+        },
+    },
+}
+```
+
+Edit your `asgi.py` file
+
+```python
+import os
+from channels.auth import AuthMiddlewareStack
+from channels.routing import ProtocolTypeRouter, URLRouter
+from django.core.asgi import get_asgi_application
+from garpix_notify import routing
+
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'app.settings')
+
+application = ProtocolTypeRouter({
+  "http": get_asgi_application(),
+  "websocket": AuthMiddlewareStack(
+        URLRouter(
+            routing.websocket_urlpatterns
+        )
+    ),
+})
+```
+
+System messages will be sent in `'room_{id}'` where `'id'` is user id
+
 # Changelog
 
 See [CHANGELOG.md](CHANGELOG.md).
