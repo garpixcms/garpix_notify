@@ -1,3 +1,7 @@
+### 5.0.0 (29.10.2021)
+
+- Added system notify (websockets).
+
 ### 4.1.0 (02.08.2021)
 
 - Telegram models, daemon.

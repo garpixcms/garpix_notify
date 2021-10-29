@@ -200,11 +200,11 @@ CKEDITOR_CONFIGS = {
 
 # Celery
 
-REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
-REDIS_PORT = os.getenv('REDIS_PORT', 6379)
+REDIS_HOST = env('REDIS_HOST', 'localhost')
+REDIS_PORT = env.int('REDIS_PORT', 6379)
 
-CELERY_BROKER_URL = 'redis://{}:6379/1'.format(REDIS_HOST)
-CELERY_RESULT_BACKEND = 'redis://{}:6379/2'.format(REDIS_HOST)
+CELERY_BROKER_URL = f'redis://{REDIS_HOST}:6379/1'
+CELERY_RESULT_BACKEND = f'redis://{REDIS_HOST}:6379/2'
 # CELERY_RESULT_BACKEND = 'django-db'
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
