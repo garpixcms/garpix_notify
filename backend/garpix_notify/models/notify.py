@@ -24,6 +24,8 @@ from .log import NotifyErrorLog
 from .smtp import SMTPAccount
 from .template import NotifyTemplate
 from ..mixins import UserNotifyMixin
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 
 
 def chunks(s, n):
@@ -71,7 +73,7 @@ class Notify(UserNotifyMixin):
     def _send(self):
         if self.user:
             self.email = self.user.email
-            self.phone = self.user.phone
+            self.phone = str(self.user.phone)
             self.telegram_chat_id = self.user.telegram_chat_id
             self.viber_chat_id = self.user.viber_chat_id
         elif self.email:
@@ -90,6 +92,8 @@ class Notify(UserNotifyMixin):
             self.send_telegram()
         if self.type == TYPE.VIBER:
             self.send_viber()
+        if self.type == TYPE.SYSTEM:
+            self.send_system()
 
         self.save()
 
@@ -422,6 +426,21 @@ class Notify(UserNotifyMixin):
             else:
                 self.state = STATE.REJECTED
                 self.to_log('REJECTED WITH DATA, please test it.')
+        except Exception as e:  # noqa
+            self.state = STATE.REJECTED
+            self.to_log(str(e))
+
+    def send_system(self):
+        try:
+            async_to_sync(get_channel_layer().group_send)(
+                f'room_{self.user.id}',
+                {
+                    'type': 'send_notify',
+                    'message': self.html
+                }
+            )
+            self.state = STATE.DELIVERED
+            self.sent_at = now()
         except Exception as e:  # noqa
             self.state = STATE.REJECTED
             self.to_log(str(e))

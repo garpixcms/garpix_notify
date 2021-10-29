@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'garpix_notify',
     'app',
     'garpix_qa',
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -200,6 +201,7 @@ CKEDITOR_CONFIGS = {
 # Celery
 
 REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
+REDIS_PORT = os.getenv('REDIS_PORT', 6379)
 
 CELERY_BROKER_URL = 'redis://{}:6379/1'.format(REDIS_HOST)
 CELERY_RESULT_BACKEND = 'redis://{}:6379/2'.format(REDIS_HOST)
@@ -214,3 +216,13 @@ DJANGO_CELERY_BEAT_TZ_AWARE = False
 
 
 EMAIL_BACKEND = 'garpix_notify.smtp.EmailBackend'
+
+ASGI_APPLICATION = 'app.asgi.application'
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [(REDIS_HOST, REDIS_PORT)],
+        },
+    },
+}
