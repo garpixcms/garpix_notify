@@ -25,36 +25,36 @@ class SMTPAccount(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
 
-@classmethod
-def get_free_smtp(cls):
-    """
-    Проверяет и отдает один аккаунт SMTP, с которого можно отправить письмо
-    """
-    config = NotifyConfig.objects.get()
+    @classmethod
+    def get_free_smtp(cls):
+        """
+        Проверяет и отдает один аккаунт SMTP, с которого можно отправить письмо
+        """
+        config = NotifyConfig.objects.get()
 
-    hour_limit = now() - timedelta(hours=1)
-    day_limit = now() - timedelta(days=1)
+        hour_limit = now() - timedelta(hours=1)
+        day_limit = now() - timedelta(days=1)
 
-    accounts = cls.objects.filter(is_active=True).distinct()
+        accounts = cls.objects.filter(is_active=True).distinct()
 
-    for account in accounts:
+        for account in accounts:
 
-        if account.email_hour_used_date < hour_limit:
-            account.email_hour_used_date = now()
-            account.email_hour_used_times = 0
-        elif account.email_hour_used_times > config.email_max_hour_limit:
-            continue
+            if account.email_hour_used_date < hour_limit:
+                account.email_hour_used_date = now()
+                account.email_hour_used_times = 0
+            elif account.email_hour_used_times > config.email_max_hour_limit:
+                continue
 
-        if account.email_day_used_date < day_limit:
-            account.email_day_used_date = now()
-            account.email_day_used_times = 0
-        elif account.email_day_used_times > config.email_max_day_limit:
-            continue
+            if account.email_day_used_date < day_limit:
+                account.email_day_used_date = now()
+                account.email_day_used_times = 0
+            elif account.email_day_used_times > config.email_max_day_limit:
+                continue
 
-        account.email_hour_used_times += 1
-        account.email_day_used_times += 1
-        account.save()
-        return account
+            account.email_hour_used_times += 1
+            account.email_day_used_times += 1
+            account.save()
+            return account
 
     def is_worked_now(self):
         config = NotifyConfig.objects.get()
