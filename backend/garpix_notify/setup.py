@@ -8,7 +8,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='garpix_notify',
-    version='5.1.0',
+    version='5.1.2',
     description='',
     long_description=long_description,
     url='https://github.com/garpixcms/garpix_notify',
@@ -42,7 +42,8 @@ setup(
         'Pillow >= 8.2.0',
         'celery>=4.4.2',
         'redis >= 3.5.3',
-        'channels >= 3.0.3',
-        'channels-redis >= 3.3.1',
+        'channels == 3.0.3',
+        'channels-redis == 3.3.1',
+        'asgiref == 3.2.10',
     ],
 )
