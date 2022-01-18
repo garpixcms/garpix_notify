@@ -131,13 +131,13 @@ from garpix_notify.models import Notify
 # Пример
 user = request.user  # this will be the recipient of the notification.
 
-Notify(settings.REGISTRATION_EVENT, {
+Notify.send(settings.REGISTRATION_EVENT, {
     'confirmation_code': 'abcdef12345',
 }, user=user)
 
 # If we do not have a user in the system, but we need to send an email, we can do the following
 
-Notify(settings.EXAMPLE_EVENT_1, {
+Notify.send(settings.EXAMPLE_EVENT_1, {
     'confirmation_code': 'abcdef12345',
 }, email='example@mail.ru')
 
