@@ -236,8 +236,16 @@ application = ProtocolTypeRouter({
     ),
 })
 ```
+Socket notification example
 
-System messages will be sent in `'room_{id}'` where `'id'` is user id
+```python
+group_name = f'workflow-{user.pk}'
+Notify.send(settings.MY_NOTIFY, {
+        'message': 'my message',
+    }, room_name=group_name, user=user)
+```
+
+if room_name is missing system messages will be sent in `'room_{id}'` where `'id'` is user id
 
 # Changelog
 

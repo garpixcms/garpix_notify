@@ -59,6 +59,7 @@ class Notify(UserNotifyMixin):
 
     is_read = models.BooleanField(default=False, verbose_name='Прочитано')
     data_json = models.TextField(blank=True, null=True, verbose_name='Данные пуш-уведомления (JSON)')
+    room_name = models.CharField(max_length=255, null=True, blank=True, verbose_name='Название комнаты')
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     send_at = models.DateTimeField(blank=True, null=True, verbose_name='Время начала отправки')
@@ -196,7 +197,7 @@ class Notify(UserNotifyMixin):
 
     @staticmethod
     def send(event, context, user=None, email=None, phone=None, files=None, data_json=None, notify_templates=None,
-             viber_chat_id=None):
+             viber_chat_id=None, room_name=None):
         from user.models import User
 
         if user:
@@ -340,6 +341,7 @@ class Notify(UserNotifyMixin):
                     category=template.category,
                     data_json=data_json,
                     send_at=template.send_at,
+                    room_name=room_name
                 )
                 file_instance = instance.files
                 for f in file_instances:
@@ -431,9 +433,13 @@ class Notify(UserNotifyMixin):
             self.to_log(str(e))
 
     def send_system(self):
+        if self.room_name:
+            group_name = self.room_name
+        else:
+            group_name = f'room_{self.user.id}'
         try:
             async_to_sync(get_channel_layer().group_send)(
-                f'room_{self.user.id}',
+                group_name,
                 {
                     'type': 'send_notify',
                     'message': self.html
