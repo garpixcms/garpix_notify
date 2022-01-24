@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'app',
     'garpix_qa',
     'channels',
+    'django_celery_beat'
 ]
 
 MIDDLEWARE = [
@@ -152,6 +153,7 @@ LANGUAGES = (
 
 MIGRATION_MODULES = {
     'garpix_notify': 'app.migrations.garpix_notify',
+    'django_celery_beat': 'app.migrations.django_celery_beat'
 }
 
 AUTH_USER_MODEL = 'user.User'
@@ -226,3 +228,4 @@ CHANNEL_LAYERS = {
         },
     },
 }
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'

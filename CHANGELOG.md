@@ -1,3 +1,8 @@
+### (24.01.2022)
+
+- Added 6 new tasks for each notification type
+- django_celery_beat library included
+
 ### (20.01.2022)
 
 - room_name field added to Notify model
