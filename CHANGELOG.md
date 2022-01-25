@@ -1,6 +1,14 @@
+### (25.01.2022)
+
+- for notifications of the SYSTEM type, a separate non-periodic task is added
+
+### (20.01.2022)
+
+- room_name field added to Notify model
+
 ### 5.1.0-5.1.2 (11.01.2022)
 
-- Исправлен баг с лимитами отправки писем.
+- Fixed bug with email sending limits
 
 ### 5.0.0 (29.10.2021)
 
