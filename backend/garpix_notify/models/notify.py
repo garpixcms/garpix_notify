@@ -13,6 +13,8 @@ from django.utils.html import format_html
 from django.utils.module_loading import import_string
 from django.utils.safestring import mark_safe
 from django.utils.timezone import now
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from viberbot import Api, BotConfiguration
 from viberbot.api.messages import TextMessage
 from .category import NotifyCategory
@@ -59,6 +61,7 @@ class Notify(UserNotifyMixin):
 
     is_read = models.BooleanField(default=False, verbose_name='Прочитано')
     data_json = models.TextField(blank=True, null=True, verbose_name='Данные пуш-уведомления (JSON)')
+    room_name = models.CharField(max_length=255, null=True, blank=True, verbose_name='Название комнаты')
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     send_at = models.DateTimeField(blank=True, null=True, verbose_name='Время начала отправки')
@@ -92,8 +95,6 @@ class Notify(UserNotifyMixin):
             self.send_telegram()
         if self.type == TYPE.VIBER:
             self.send_viber()
-        if self.type == TYPE.SYSTEM:
-            self.send_system()
 
         self.save()
 
@@ -196,7 +197,7 @@ class Notify(UserNotifyMixin):
 
     @staticmethod
     def send(event, context, user=None, email=None, phone=None, files=None, data_json=None, notify_templates=None,
-             viber_chat_id=None):
+             viber_chat_id=None, room_name=None):
         from user.models import User
 
         if user:
@@ -340,6 +341,7 @@ class Notify(UserNotifyMixin):
                     category=template.category,
                     data_json=data_json,
                     send_at=template.send_at,
+                    room_name=room_name
                 )
                 file_instance = instance.files
                 for f in file_instances:
@@ -430,21 +432,6 @@ class Notify(UserNotifyMixin):
             self.state = STATE.REJECTED
             self.to_log(str(e))
 
-    def send_system(self):
-        try:
-            async_to_sync(get_channel_layer().group_send)(
-                f'room_{self.user.id}',
-                {
-                    'type': 'send_notify',
-                    'message': self.html
-                }
-            )
-            self.state = STATE.DELIVERED
-            self.sent_at = now()
-        except Exception as e:  # noqa
-            self.state = STATE.REJECTED
-            self.to_log(str(e))
-
     def _get_valid_smtp_account(self) -> Optional[SMTPAccount]:
         config = NotifyConfig.get_solo()
         if not config.is_email_enabled:
@@ -461,3 +448,10 @@ class Notify(UserNotifyMixin):
     class Meta:
         verbose_name = 'Уведомление'
         verbose_name_plural = 'Уведомления'
+
+
+@receiver(post_save, sender=Notify)
+def system_post_save(sender, instance, created, **kwargs):
+    from garpix_notify.tasks import send_system_notifications
+    if created and instance.type == TYPE.SYSTEM:
+        send_system_notifications.apply_async(args=(instance.pk,))
