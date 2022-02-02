@@ -13,6 +13,7 @@ from django.utils.html import format_html
 from django.utils.module_loading import import_string
 from django.utils.safestring import mark_safe
 from django.utils.timezone import now
+from django.contrib.auth import get_user_model
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from viberbot import Api, BotConfiguration
@@ -28,6 +29,8 @@ from .template import NotifyTemplate
 from ..mixins import UserNotifyMixin
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
+
+User = get_user_model()
 
 
 def chunks(s, n):
@@ -198,8 +201,6 @@ class Notify(UserNotifyMixin):
     @staticmethod
     def send(event, context, user=None, email=None, phone=None, files=None, data_json=None, notify_templates=None,
              viber_chat_id=None, room_name=None):
-        from user.models import User
-
         if user:
             email = user.email if not email else email
             phone = user.phone if not phone else phone
