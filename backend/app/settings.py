@@ -214,7 +214,6 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_ENABLE_UTC = False
 DJANGO_CELERY_BEAT_TZ_AWARE = False
 
-
 EMAIL_BACKEND = 'garpix_notify.smtp.EmailBackend'
 
 ASGI_APPLICATION = 'app.asgi.application'
