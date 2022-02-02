@@ -27,8 +27,6 @@ from .log import NotifyErrorLog
 from .smtp import SMTPAccount
 from .template import NotifyTemplate
 from ..mixins import UserNotifyMixin
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
 
 User = get_user_model()
 
@@ -198,10 +196,11 @@ class Notify(UserNotifyMixin):
             self.state = STATE.REJECTED
             self.to_log(str(e))
 
+    # todo - упростить метод (too complex)
     @staticmethod
-    def send(event, context, user=None, email=None, phone=None, files=None, data_json=None, notify_templates=None,
+    def send(event, context, user=None, email=None, phone=None, files=None, data_json=None, notify_templates=None,  # noqa
              viber_chat_id=None, room_name=None):
-        if user:
+        if user is not None:
             email = user.email if not email else email
             phone = user.phone if not phone else phone
 

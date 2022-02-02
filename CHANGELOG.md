@@ -1,4 +1,4 @@
-### 5.3.0 
+### 5.3.0 (02.02.2022)
 
 - for notifications of the SYSTEM type, a separate non-periodic task is added
 
