@@ -1,8 +1,8 @@
-### (25.01.2022)
+### 5.3.0 
 
 - for notifications of the SYSTEM type, a separate non-periodic task is added
 
-### (20.01.2022)
+### 5.2.0 (20.01.2022)
 
 - room_name field added to Notify model
 
