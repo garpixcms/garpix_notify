@@ -28,8 +28,6 @@ from .smtp import SMTPAccount
 from .template import NotifyTemplate
 from ..mixins import UserNotifyMixin
 
-User = get_user_model()
-
 
 def chunks(s, n):
     """Produce `n`-character chunks from `s`."""
@@ -200,6 +198,8 @@ class Notify(UserNotifyMixin):
     @staticmethod
     def send(event, context, user=None, email=None, phone=None, files=None, data_json=None, notify_templates=None,  # noqa
              viber_chat_id=None, room_name=None):
+        User = get_user_model()
+
         if user is not None:
             email = user.email if not email else email
             phone = user.phone if not phone else phone
