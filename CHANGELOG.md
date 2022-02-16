@@ -1,3 +1,7 @@
+### 5.3.1 (16.02.2022)
+
+- Fix user circular import error.
+
 ### 5.3.0 (02.02.2022)
 
 - for notifications of the SYSTEM type, a separate non-periodic task is added
