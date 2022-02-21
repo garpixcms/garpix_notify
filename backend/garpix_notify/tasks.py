@@ -42,6 +42,7 @@ def send_system_notifications(notify_pk):
     except Exception as e:  # noqa
         instance.state = STATE.REJECTED
         instance.to_log(str(e))
+    instance.save()
     return
 
 

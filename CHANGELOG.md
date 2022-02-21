@@ -1,3 +1,8 @@
+### 5.3.2 (21.02.2022)
+
+- Fixed a bug that changed the status of System notifications
+- Added additional processing for non-standard format phones
+
 ### 5.3.1 (16.02.2022)
 
 - Fix user circular import error.
