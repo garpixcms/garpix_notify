@@ -82,7 +82,7 @@ class Notify(UserNotifyMixin):
             self.email = self.email
 
         if self.phone is not None:
-            self.phone = re.sub("[^0-9]", "", str(self.phone))
+            self.phone = re.sub("[^0-9]", "", self.phone)
 
         if self.type == TYPE.EMAIL:
             self.send_email()
