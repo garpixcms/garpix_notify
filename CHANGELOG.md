@@ -1,3 +1,7 @@
+### 5.3.3 (25.02.2022)
+
+- When creating "System" notifications, the function will be called only when records in the database are committed
+
 ### 5.3.2 (22.02.2022)
 
 - Fixed a bug that changed the status of System notifications
