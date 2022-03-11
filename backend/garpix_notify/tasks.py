@@ -34,6 +34,7 @@ def send_system_notifications(notify_pk):
             group_name,
             {
                 'type': 'send_notify',
+                'event': instance.event,
                 'message': instance.html
             }
         )

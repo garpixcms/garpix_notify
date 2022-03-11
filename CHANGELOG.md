@@ -1,6 +1,7 @@
-### 5.3.3 (25.02.2022)
+### 5.3.3 (11.03.2022)
 
 - When creating "System" notifications, the function will be called only when records in the database are committed
+- In "system" notifications, the event of this notification is additionally received
 
 ### 5.3.2 (22.02.2022)
 
