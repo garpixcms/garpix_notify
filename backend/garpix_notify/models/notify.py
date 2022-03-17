@@ -7,7 +7,7 @@ from typing import Optional
 from smtplib import SMTP, SMTP_SSL
 import requests
 from django.conf import settings
-from django.db import models
+from django.db import models, transaction
 from django.template import Template, Context
 from django.utils.html import format_html
 from django.utils.module_loading import import_string
@@ -454,4 +454,4 @@ class Notify(UserNotifyMixin):
 def system_post_save(sender, instance, created, **kwargs):
     from garpix_notify.tasks import send_system_notifications
     if created and instance.type == TYPE.SYSTEM:
-        send_system_notifications.apply_async(args=(instance.pk,))
+        transaction.on_commit(lambda: send_system_notifications.delay(instance.pk))
