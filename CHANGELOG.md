@@ -1,3 +1,7 @@
+### 5.4.0 (01.04.2022)
+
+- Добавлена поддержка WEBSZK.
+
 ### 5.3.3 (11.03.2022)
 
 - When creating "System" notifications, the function will be called only when records in the database are committed
