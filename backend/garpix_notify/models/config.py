@@ -3,14 +3,34 @@ from solo.models import SingletonModel
 
 
 class NotifyConfig(SingletonModel):
+    class SMS_URL:
+        """
+        URL СМС провайдера
+        """
+
+        SMSRU_ID = 0
+        WEBSZK_ID = 1
+
+        SMSRU_URL = 'http://sms.ru/send/'
+        WEBSZK_URL = 'http://gateway.api.sc/get/'
+
+        TYPES = (
+            (SMSRU_ID, 'sms.ru'),
+            (WEBSZK_ID, 'web.szk-info.ru'),
+        )
+
     periodic = models.IntegerField(default=60, verbose_name='Периодичность отправки уведомлений (сек.)')
 
     email_max_day_limit = models.IntegerField(default=240, verbose_name='Дневной лимит отправки писем')
     email_max_hour_limit = models.IntegerField(default=40, verbose_name='Часовой лимит отправки писем')
 
-    sms_url = models.CharField(default='http://sms.ru/sms/send', max_length=255, verbose_name='URL СМС провайдера')
+    sms_url = models.IntegerField(default=SMS_URL.SMSRU_ID, choices=SMS_URL.TYPES, verbose_name='URL СМС провайдера')
     sms_api_id = models.CharField(default='1234567890', blank=True, max_length=255,
                                   verbose_name='API ID СМС провайдера')
+    sms_login = models.CharField(default='', blank=True, max_length=255,
+                                 verbose_name='Логин пользователя СМС провайдера')
+    sms_password = models.CharField(default='', blank=True, max_length=255,
+                                    verbose_name='Пароль для api СМС провайдера')
     sms_from = models.CharField(default='', blank=True, max_length=255, verbose_name='Отправитель СМС',
                                 help_text='Например, Garpix')
 
