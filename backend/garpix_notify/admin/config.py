@@ -14,7 +14,7 @@ class NotifyConfigAdmin(SingletonModelAdmin):
             'fields': ('email_max_day_limit', 'email_max_hour_limit')
         }),
         ('СМС', {
-            'fields': ('sms_url', 'sms_api_id', 'sms_from')
+            'fields': ('sms_url', 'sms_api_id', 'sms_login', 'sms_password', 'sms_from')
         }),
         ('Telegram', {
             'fields': ('telegram_api_key', 'telegram_bot_name', 'telegram_welcome_text', 'telegram_help_text', 'telegram_bad_command_text',
@@ -25,3 +25,9 @@ class NotifyConfigAdmin(SingletonModelAdmin):
                        'viber_failed_added_text', 'viber_text_for_new_sub', 'viber_welcome_text')
         })
     )
+
+    class Media:
+        css = {
+            'all': ('css/admin/garpix_notify.css', )
+        }
+        js = ('js/admin/garpix_notify.js',)

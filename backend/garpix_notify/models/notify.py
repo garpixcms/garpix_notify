@@ -124,20 +124,38 @@ class Notify(UserNotifyMixin):
 
         try:
             msg = str(self.text.replace(' ', '+'))
-            url = '{url}?msg={text}&to={to}&api_id={api_id}&from={from_text}&json=1'.format(
-                url=config.sms_url,
-                api_id=config.sms_api_id,
-                from_text=config.sms_from,
-                to=self.phone,
-                text=msg,
-            )
-            response = requests.get(url)
-            response_dict = response.json()
-            if response_dict.get('status'):
-                self.state = STATE.DELIVERED
-                self.sent_at = now()
+            if config.sms_url == NotifyConfig.SMS_URL.SMSRU_ID:
+                url = '{url}?msg={text}&to={to}&api_id={api_id}&from={from_text}&json=1'.format(
+                    url=NotifyConfig.SMS_URL.SMSRU_URL,
+                    api_id=config.sms_api_id,
+                    from_text=config.sms_from,
+                    to=self.phone,
+                    text=msg,
+                )
+                response = requests.get(url)
+                response_dict = response.json()
+                if response_dict.get('status'):
+                    self.state = STATE.DELIVERED
+                    self.sent_at = now()
+                else:
+                    self.state = STATE.REJECTED
             else:
-                self.state = STATE.REJECTED
+                url = '{url}?user={user}&pwd={pwd}&sadr={from_text}&text={text}&dadr={to}'.format(
+                    url=NotifyConfig.SMS_URL.WEBSZK_URL,
+                    user=config.sms_login,
+                    pwd=config.sms_password,
+                    from_text=config.sms_from,
+                    to=self.phone,
+                    text=msg,
+                )
+                response = requests.get(url)
+                try:
+                    sms_id = int(response.text)
+                    self.state = STATE.DELIVERED
+                    self.sent_at = now()
+                except Exception:
+                    self.state = STATE.REJECTED
+
         except Exception as e:  # noqa
             self.state = STATE.REJECTED
             self.to_log(str(e))
