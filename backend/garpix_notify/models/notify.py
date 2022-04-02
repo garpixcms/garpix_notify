@@ -150,7 +150,7 @@ class Notify(UserNotifyMixin):
                 )
                 response = requests.get(url)
                 try:
-                    sms_id = int(response.text)
+                    int(response.text)
                     self.state = STATE.DELIVERED
                     self.sent_at = now()
                 except Exception:
