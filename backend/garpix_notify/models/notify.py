@@ -124,7 +124,7 @@ class Notify(UserNotifyMixin):
 
         try:
             msg = str(self.text.replace(' ', '+'))
-            if config.sms_url == NotifyConfig.SMS_URL.SMSRU_ID:
+            if config.sms_url_type == NotifyConfig.SMS_URL.SMSRU_ID:
                 url = '{url}?msg={text}&to={to}&api_id={api_id}&from={from_text}&json=1'.format(
                     url=NotifyConfig.SMS_URL.SMSRU_URL,
                     api_id=config.sms_api_id,
