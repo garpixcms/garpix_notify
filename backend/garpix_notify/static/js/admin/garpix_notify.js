@@ -1,5 +1,5 @@
 window.onload = function(){
-    let sms_url = document.querySelector('#id_sms_url');
+    let sms_url = document.querySelector('#id_sms_url_type');
 
     if (parseInt(sms_url.value) == 0) {
         document.querySelector('.field-sms_login').classList.add('admin-none');

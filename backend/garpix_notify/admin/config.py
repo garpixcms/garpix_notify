@@ -14,7 +14,7 @@ class NotifyConfigAdmin(SingletonModelAdmin):
             'fields': ('email_max_day_limit', 'email_max_hour_limit')
         }),
         ('СМС', {
-            'fields': ('sms_url', 'sms_api_id', 'sms_login', 'sms_password', 'sms_from')
+            'fields': ('sms_url_type', 'sms_api_id', 'sms_login', 'sms_password', 'sms_from')
         }),
         ('Telegram', {
             'fields': ('telegram_api_key', 'telegram_bot_name', 'telegram_welcome_text', 'telegram_help_text', 'telegram_bad_command_text',

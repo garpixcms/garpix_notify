@@ -24,7 +24,7 @@ class NotifyConfig(SingletonModel):
     email_max_day_limit = models.IntegerField(default=240, verbose_name='Дневной лимит отправки писем')
     email_max_hour_limit = models.IntegerField(default=40, verbose_name='Часовой лимит отправки писем')
 
-    sms_url = models.IntegerField(default=SMS_URL.SMSRU_ID, choices=SMS_URL.TYPES, verbose_name='URL СМС провайдера')
+    sms_url_type = models.IntegerField(default=SMS_URL.SMSRU_ID, choices=SMS_URL.TYPES, verbose_name='URL СМС провайдера')
     sms_api_id = models.CharField(default='1234567890', blank=True, max_length=255,
                                   verbose_name='API ID СМС провайдера')
     sms_login = models.CharField(default='', blank=True, max_length=255,

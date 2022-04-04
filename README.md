@@ -27,10 +27,6 @@ FCM_DJANGO_SETTINGS = {
         "DELETE_INACTIVE_DEVICES": False,
 }
 
-NOTIFY_SMS_URL = "http://sms.ru/sms/send"
-NOTIFY_SMS_API_ID = "[your api key from sms.ru]"
-
-
 ```
 
 Package not included migrations, set path to migration directory. Don't forget create this directory (`app/migrations/garpix_notify/`) and place empty `__init__.py`:
