@@ -11,7 +11,6 @@ from garpix_notify.models.notify import Notify
 @celery_app.task
 def send_notifications():
     notifies = Notify.objects.filter(state__in=[STATE.WAIT]).exclude(type=TYPE.SYSTEM)
-    print(notifies, 'Тут')
 
     for notify in notifies.iterator():
         if notify.state == STATE.WAIT:
@@ -20,6 +19,7 @@ def send_notifications():
             else:
                 if timezone.now() > notify.send_at:
                     notify._send()
+    return
 
 
 @celery_app.task

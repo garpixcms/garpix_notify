@@ -262,35 +262,16 @@ class Notify(UserNotifyMixin):
                 }]
 
             for user_list in template.user_lists.all():
+                # Сначала проверям есть ли допольнительные список получателей
+                # Если у участника из дополнительного списка ничего не заполнено - не отправляем уведомление
                 for participant in user_list.participants.all():
-                    # Если у участника из дополнительного списка ничего не заполнено - не отправляем уведомление
-                    if participant.user and participant.email:
+                    if participant.user or participant.email:
                         recievers.append({
                             'user': participant.user,
                             'email': participant.email,
                             'phone': participant.phone,
                             'viber_chat_id': participant.viber_chat_id,
                         })
-
-                # Если в списке отмечены группы
-                if user_list.user_groups and not user_list.mail_to_all:
-                    group_users = User.objects.filter(
-                        Q(groups__in=list(
-                            user_list.user_groups.all()
-                        )))
-
-                    for user in group_users:
-                        recievers.append(
-                            {
-                                'user': user,
-                                'email': user.email,
-                                'phone': user.phone,
-                                'viber_chat_id': user.viber_chat_id,
-                            }
-                        )
-                    # Убираем дубликаты пользователей
-                    recievers = list({v['email']: v for v in recievers}.values())
-
                 # Если в списке пользователей отмечены все пользователи
                 if user_list.mail_to_all:
                     recievers = []
@@ -304,13 +285,33 @@ class Notify(UserNotifyMixin):
                                 'viber_chat_id': user.viber_chat_id,
                             }
                         )
+                    # Если в списке отмечены группы
+                    if user_list.user_groups and not user_list.mail_to_all:
+                        group_users = User.objects.filter(
+                            Q(groups__in=list(
+                                user_list.user_groups.all()
+                            )))
+
+                        for user in group_users:
+                            recievers.append(
+                                {
+                                    'user': user,
+                                    'email': user.email,
+                                    'phone': user.phone,
+                                    'viber_chat_id': user.viber_chat_id,
+                                }
+                            )
+
+                # Убираем дубликаты пользователей
+                recievers = list({v['email']: v for v in recievers}.values())
+
             for reciever in recievers:
                 template_user = reciever['user']
                 template_email = reciever['email']
                 template_phone = reciever['phone']
                 template_viber_chat_id = reciever['viber_chat_id']
-                # Если в шаблоне не указан получатель, то получатель тот, кого передали в коде
-                if template_user is None and template_email is None and template_phone is None and template_viber_chat_id is None:
+                # Если в шаблоне не указаны получатели, то получатель тот, кого передали в коде
+                if template_user is None and template_email is None:
                     template_user = user
                     template_email = email
                     template_phone = phone
