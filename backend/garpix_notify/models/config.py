@@ -60,8 +60,7 @@ class NotifyConfig(SingletonModel):
     is_email_enabled = models.BooleanField(default=True, verbose_name='Разрешить отправку Email')
     is_sms_enabled = models.BooleanField(default=True, verbose_name='Разрешить отправку SMS')
     is_push_enabled = models.BooleanField(default=True, verbose_name='Разрешить отправку PUSH')
-    is_telegram_enabled = models.BooleanField(default=True, verbose_name='Разрешить отправку Telegram',
-                                              help_text='Внимание! Telegram недоступен на серверах на территории РФ и работать на них не будет!.')
+    is_telegram_enabled = models.BooleanField(default=True, verbose_name='Разрешить отправку Telegram')
     is_viber_enabled = models.BooleanField(default=True, verbose_name='Разрешить отправку Viber')
 
     viber_success_added_text = models.TextField(blank=True,

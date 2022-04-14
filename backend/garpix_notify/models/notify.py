@@ -8,6 +8,7 @@ from smtplib import SMTP, SMTP_SSL
 import requests
 from django.conf import settings
 from django.db import models, transaction
+from django.db.models import Q
 from django.template import Template, Context
 from django.utils.html import format_html
 from django.utils.module_loading import import_string
@@ -214,9 +215,11 @@ class Notify(UserNotifyMixin):
 
     # todo - упростить метод (too complex)
     @staticmethod
-    def send(event, context, user=None, email=None, phone=None, files=None, data_json=None, notify_templates=None,  # noqa
+    def send(event, context, user=None, email=None, phone=None, files=None, data_json=None, category=None,  # noqa
              viber_chat_id=None, room_name=None):
         User = get_user_model()
+        print(event, 'Произошел ивент')
+        print(context, 'Контекст')
 
         if user is not None:
             email = user.email if not email else email
@@ -227,11 +230,13 @@ class Notify(UserNotifyMixin):
             user_want_message_check = import_string(settings.NOTIFY_USER_WANT_MESSAGE_CHECK)
 
         # Для выбора шаблонов в action'е
-        if notify_templates:
-            templates = NotifyTemplate.objects.filter(id__in=notify_templates, event=event, is_active=True)
+        if category:
+            templates = category.template_choice.all()
         else:
-            templates = NotifyTemplate.objects.filter(event=event, is_active=True)
-
+            templates = NotifyTemplate.objects.filter(
+                Q(event=event) & Q(is_active=True)
+            )
+        print(templates, 'Что приходит сюда')
         if files is None:
             files = []
 
@@ -243,38 +248,23 @@ class Notify(UserNotifyMixin):
             file_instances.append(instance)
 
         notification_count = 0
+        recievers = []
         for template in templates:
             # Формируем список основных и дополнительных получателей письма
             # Первого получателя заполняем из шаблона, его данные могут быть пустыми - чтобы можно было через
             # код отправить уведомление
-            if template.user or template.email or template.phone or template.viber_chat_id:
-                recievers = [{
-                    'user': template.user,
-                    'email': template.email,
-                    'phone': template.phone,
-                    'viber_chat_id': template.viber_chat_id,
-                }]
-            elif user or phone or email or viber_chat_id:
+            if user or phone or email or viber_chat_id:
                 recievers = [{
                     'user': user,
                     'email': email,
                     'phone': phone,
                     'viber_chat_id': viber_chat_id,
                 }]
-            else:
-                recievers = []
 
             for user_list in template.user_lists.all():
                 for participant in user_list.participants.all():
                     # Если у участника из дополнительного списка ничего не заполнено - не отправляем уведомление
-                    if participant.user is not None:
-                        recievers.append({
-                            'user': participant.user,
-                            'email': participant.email,
-                            'phone': participant.phone,
-                            'viber_chat_id': participant.viber_chat_id,
-                        })
-                    elif participant.email is not None:
+                    if participant.user and participant.email:
                         recievers.append({
                             'user': participant.user,
                             'email': participant.email,
@@ -284,7 +274,11 @@ class Notify(UserNotifyMixin):
 
                 # Если в списке отмечены группы
                 if user_list.user_groups and not user_list.mail_to_all:
-                    group_users = User.objects.filter(groups__in=list(user_list.user_groups.all()))
+                    group_users = User.objects.filter(
+                        Q(groups__in=list(
+                            user_list.user_groups.all()
+                        )))
+
                     for user in group_users:
                         recievers.append(
                             {
@@ -470,6 +464,6 @@ class Notify(UserNotifyMixin):
 
 @receiver(post_save, sender=Notify)
 def system_post_save(sender, instance, created, **kwargs):
-    from garpix_notify.tasks import send_system_notifications
+    from garpix_notify.tasks.tasks import send_system_notifications
     if created and instance.type == TYPE.SYSTEM:
         transaction.on_commit(lambda: send_system_notifications.delay(instance.pk))

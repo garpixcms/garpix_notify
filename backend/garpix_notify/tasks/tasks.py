@@ -3,14 +3,15 @@ from app.celery import app as celery_app
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
-from .models.choices import STATE, TYPE
-from .models.config import NotifyConfig
-from .models.notify import Notify
+from garpix_notify.models.choices import STATE, TYPE
+from garpix_notify.models.config import NotifyConfig
+from garpix_notify.models.notify import Notify
 
 
 @celery_app.task
 def send_notifications():
     notifies = Notify.objects.filter(state__in=[STATE.WAIT]).exclude(type=TYPE.SYSTEM)
+    print(notifies, 'Тут')
 
     for notify in notifies.iterator():
         if notify.state == STATE.WAIT:
@@ -19,8 +20,6 @@ def send_notifications():
             else:
                 if timezone.now() > notify.send_at:
                     notify._send()
-    return
-
 
 @celery_app.task
 def send_system_notifications(notify_pk):
