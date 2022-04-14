@@ -21,6 +21,7 @@ def send_notifications():
                 if timezone.now() > notify.send_at:
                     notify._send()
 
+
 @celery_app.task
 def send_system_notifications(notify_pk):
     try:
@@ -48,7 +49,7 @@ def send_system_notifications(notify_pk):
 
 celery_app.conf.beat_schedule.update({
     'periodic_task': {
-        'task': 'garpix_notify.tasks.send_notifications',
+        'task': 'garpix_notify.tasks.tasks.send_notifications',
         'schedule': NotifyConfig.get_solo().periodic,
     },
 })
