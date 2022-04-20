@@ -104,6 +104,7 @@ class Notify(UserNotifyMixin):
         try:
             body = self._render_body(account.sender, self.category.template)
             server = SMTP_SSL(account.host, account.port) if account.is_use_ssl else SMTP(account.host, account.port)
+            server.set_debuglevel(1)
             server.ehlo()
             if account.is_use_tls:
                 server.starttls()
@@ -231,7 +232,9 @@ class Notify(UserNotifyMixin):
 
         # Для выбора шаблонов в action'е
         if category:
-            templates = category.template_choice.all()
+            templates = NotifyTemplate.objects.filter(
+                Q(event=event) & Q(is_active=True)
+            )
         else:
             templates = NotifyTemplate.objects.filter(
                 Q(event=event) & Q(is_active=True)
@@ -351,11 +354,12 @@ class Notify(UserNotifyMixin):
                     viber_chat_id=template_viber_chat_id if template_viber_chat_id is not None else "",
                     type=template.type,
                     event=template.event,
-                    category=template.category,
+                    category=category,
                     data_json=data_json,
                     send_at=template.send_at,
                     room_name=room_name
                 )
+                print(instance, 'Такое уведомление создалось')
                 file_instance = instance.files
                 for f in file_instances:
                     file_instance.add(f)

@@ -37,7 +37,7 @@ class NotifyTemplateAdmin(admin.ModelAdmin):
 
     def response_change(self, request, obj):
         from ..models.notify import Notify
-        if (obj.user_lists and "_send_now" in request.POST) or (obj.email and "_send_now" in request.POST):
+        if obj.user_lists and "_send_now" in request.POST:
 
             context = obj.get_test_data()
             template = obj

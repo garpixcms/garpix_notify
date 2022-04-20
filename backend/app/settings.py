@@ -12,9 +12,6 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 
 import os
 from pathlib import Path
-
-import django
-from django.conf import settings
 from environs import Env
 
 env = Env()
@@ -35,13 +32,6 @@ DEBUG = env.bool('DEBUG', True)
 ALLOWED_HOSTS = ['*']
 
 # Application definition
-
-SETTINGS = dict((key, val) for key, val in locals().items() if key.isupper())
-if not settings.configured:
-    settings.configure(**SETTINGS)
-django.setup()
-
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -170,6 +160,7 @@ REGISTRATION_EVENT = 1
 FEEDBACK_EVENT = 2
 EXAMPLE_EVENT_1 = 3
 EXAMPLE_EVENT_2 = 4
+TEST_EVENT_2 = 5
 
 
 NOTIFY_EVENTS = {
@@ -185,6 +176,10 @@ NOTIFY_EVENTS = {
     EXAMPLE_EVENT_2: {
         'title': 'Example 2',
     },
+    TEST_EVENT_2:
+        {
+            'title': 'TestEvent',
+        },
 }
 
 CHOICES_NOTIFY_EVENT = [(k, v['title']) for k, v in NOTIFY_EVENTS.items()]
