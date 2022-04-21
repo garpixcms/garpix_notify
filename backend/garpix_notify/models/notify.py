@@ -19,6 +19,8 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from viberbot import Api, BotConfiguration
 from viberbot.api.messages import TextMessage
+
+from .user_list import NotifyUserList
 from .category import NotifyCategory
 from .choices import TYPE, STATE
 from .config import NotifyConfig
@@ -63,6 +65,8 @@ class Notify(UserNotifyMixin):
     data_json = models.TextField(blank=True, null=True, verbose_name='Данные пуш-уведомления (JSON)')
     room_name = models.CharField(max_length=255, null=True, blank=True, verbose_name='Название комнаты')
 
+    users_list = models.ManyToManyField(NotifyUserList, blank=True, verbose_name='Списки пользователей для рассылки')
+
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     send_at = models.DateTimeField(blank=True, null=True, verbose_name='Время начала отправки')
     sent_at = models.DateTimeField(blank=True, null=True, verbose_name='Дата отправки')
@@ -104,7 +108,6 @@ class Notify(UserNotifyMixin):
         try:
             body = self._render_body(account.sender, self.category.template)
             server = SMTP_SSL(account.host, account.port) if account.is_use_ssl else SMTP(account.host, account.port)
-            server.set_debuglevel(1)
             server.ehlo()
             if account.is_use_tls:
                 server.starttls()
@@ -230,11 +233,14 @@ class Notify(UserNotifyMixin):
         if hasattr(settings, 'NOTIFY_USER_WANT_MESSAGE_CHECK') and settings.NOTIFY_USER_WANT_MESSAGE_CHECK is not None:
             user_want_message_check = import_string(settings.NOTIFY_USER_WANT_MESSAGE_CHECK)
 
-        # Для выбора шаблонов в action'е
+        # Для выбора шаблонов из Категории или по ивенту
         if category:
-            templates = NotifyTemplate.objects.filter(
-                Q(event=event) & Q(is_active=True)
-            )
+            category = NotifyCategory.objects.filter(Q(title=category)).first()
+            category_template = category.template_choice.pk
+            if category_template:
+                templates = NotifyTemplate.objects.filter(
+                    Q(pk=category_template) & Q(is_active=True)
+                )
         else:
             templates = NotifyTemplate.objects.filter(
                 Q(event=event) & Q(is_active=True)

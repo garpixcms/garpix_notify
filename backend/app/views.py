@@ -8,9 +8,8 @@ category = NotifyCategory.objects.all().first()
 
 
 def example_send_notify(request):
-    print(NotifyCategory.objects.all().first())
     Notify.send(settings.EXAMPLE_EVENT_1, {
         'confirmation_code': 'abcdef12345',
-    }, email='aleksey@garpix.com', category=category
+    }, email='aleksey@garpix.com', category='test12'
                 )
     return render(request, 'example.html')
