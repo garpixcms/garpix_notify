@@ -223,7 +223,6 @@ class Notify(UserNotifyMixin):
     def send(event, context, user=None, email=None, phone=None, files=None, data_json=None, category=None,  # noqa
              viber_chat_id=None, room_name=None):
         local_context = context.copy()
-        User = get_user_model()
 
         if user is not None:
             email = user.email if not email else email
@@ -262,7 +261,7 @@ class Notify(UserNotifyMixin):
             # Если в шаблоне передаются списки пользователей, то отдаем их уведомлениям
             # Если уведомление для одного пользователя, то создаем для одного
             users_lists = template.user_lists.all()
-            print(users_lists, 'Списки')
+
             if users_lists:
                 local_context['event_id'] = event
                 instance = Notify.objects.create(
@@ -277,7 +276,6 @@ class Notify(UserNotifyMixin):
                     room_name=room_name,
                 )
                 instance.users_list.add(*users_lists)
-                print(instance, 'Такое уведомление создалось2')
                 file_instance = instance.files
                 for f in file_instances:
                     file_instance.add(f)
@@ -315,8 +313,6 @@ class Notify(UserNotifyMixin):
                     if user_want_message_check is not None and not \
                             user_want_message_check(event, template.type, template_user):  # noqa
                         continue
-
-                    local_context = context.copy()
 
                     # Добавляем пользователя в контекст, если его там не передали
                     if template_user is not None:
