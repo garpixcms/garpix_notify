@@ -356,6 +356,7 @@ class Notify(UserNotifyMixin):
     def _render_body(self, mail_from, layout):
         msg = MIMEMultipart('alternative')
         if self.users_list is not None:
+            User = get_user_model()
             for user_list in self.users_list.all():
                 recievers = []
                 # Сначала проверям есть ли допольнительные список получателей
@@ -424,7 +425,6 @@ class Notify(UserNotifyMixin):
             part['Content-Disposition'] = 'attachment; filename="%s"' % fl.file.name.split('/')[-1]
 
             msg.attach(part)
-        print(msg)
 
         return msg
 
