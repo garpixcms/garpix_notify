@@ -1,6 +1,7 @@
 from django.contrib import admin
 from ..models.user_list import NotifyUserList
 from ..models.user_list_participant import NotifyUserListParticipant
+from .mainadmin import MainAdmin
 
 
 class NotifyUserListParticipantInline(admin.TabularInline):
@@ -10,7 +11,7 @@ class NotifyUserListParticipantInline(admin.TabularInline):
 
 
 @admin.register(NotifyUserList)
-class NotifyUserListAdmin(admin.ModelAdmin):
+class NotifyUserListAdmin(MainAdmin):
     list_display = ('title',)
     inlines = [
         NotifyUserListParticipantInline

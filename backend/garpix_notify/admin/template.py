@@ -3,10 +3,11 @@ from ..models.template import NotifyTemplate
 from ..models.notify import Notify
 from django.http import HttpResponseRedirect
 from ..models import NotifyCategory, SMTPAccount
+from .mainadmin import MainAdmin
 
 
 @admin.register(NotifyTemplate)
-class NotifyTemplateAdmin(admin.ModelAdmin):
+class NotifyTemplateAdmin(MainAdmin):
     change_form_template = "send_notify.html"
     fields = (
         'title',

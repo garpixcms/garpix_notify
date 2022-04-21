@@ -6,3 +6,4 @@ from .fcm import NotifyDeviceAdmin
 from .template import NotifyTemplateAdmin
 from .file import NotifyFileAdmin
 from .user_list import NotifyUserListAdmin
+from .mainadmin import MainAdmin

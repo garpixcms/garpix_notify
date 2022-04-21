@@ -1,6 +1,7 @@
 from django.contrib import admin
 from ..models.notify import Notify
 from .log import NotifyErrorLogInline
+from .mainadmin import MainAdmin
 
 
 class FileInline(admin.TabularInline):
@@ -12,7 +13,7 @@ class FileInline(admin.TabularInline):
 
 
 @admin.register(Notify)
-class NotifyAdmin(admin.ModelAdmin):
+class NotifyAdmin(MainAdmin):
     list_display = ('__str__', 'type', 'event', 'user', 'email', 'phone', 'get_format_state', 'created_at', 'send_at',
                     'sent_at')
     inlines = [
