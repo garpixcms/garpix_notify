@@ -213,7 +213,7 @@ class Notify(UserNotifyMixin):
     # todo - упростить метод (too complex)
     @staticmethod
     def send(event, context, category=None, user=None, email=None, phone=None, files=None, data_json=None,  # noqa
-             viber_chat_id=None, room_name=None):
+             viber_chat_id=None, room_name=None, templates=None):
         local_context = context.copy()
 
         if user is not None:
@@ -249,17 +249,67 @@ class Notify(UserNotifyMixin):
         notification_count = 0
         recievers = []
         for template in templates:
+            template_user = None
+            template_email = None
+            template_phone = None
+            template_viber_chat_id = None
+            if user or phone or email or viber_chat_id:
+                # Формируем список основных и дополнительных получателей письма
+                # Первого получателя заполняем из шаблона, его данные могут быть пустыми - чтобы можно было через
+                # код отправить уведомление
+                recievers = [{
+                    'user': user,
+                    'email': email,
+                    'phone': phone,
+                    'viber_chat_id': viber_chat_id,
+                }]
+            for reciever in recievers:
+                template_user = reciever['user']
+                template_email = reciever['email']
+                template_phone = reciever['phone']
+                template_viber_chat_id = reciever['viber_chat_id']
+                # Если в шаблоне не указаны получатели, то получатель тот, кого передали в коде
+                if template_user is None and template_email is None:
+                    template_user = user
+                    template_email = email
+                    template_phone = phone
+                    template_viber_chat_id = viber_chat_id
+                    # Если пользователь заполнен, то перезаписываем поля емейла и номера телефона,
+                    # даже если они были переданы.
+                    if user is not None:
+                        template_email = user.email
+                        template_phone = user.phone
+                        template_viber_chat_id = user.viber_chat_id
+                # Проверка, хочет ли получить сообщение
+                if user_want_message_check is not None and not \
+                        user_want_message_check(event, template.type, template_user):  # noqa
+                    continue
+
+                # Добавляем пользователя в контекст, если его там не передали
+                if template_user is not None:
+                    if local_context is not None:
+                        local_context.update({
+                            'user': template_user,
+                        })
+                    else:
+                        local_context = {
+                            'user': template_user,
+                        }
+                local_context['event_id'] = event
             # Проверка на наличие списка в шаблоне
             # Если в шаблоне передаются списки пользователей, то отдаем их уведомлениям
             # Если уведомление для одного пользователя, то создаем для одного
             users_lists = template.user_lists.all()
-
             if users_lists:
                 local_context['event_id'] = event
                 instance = Notify.objects.create(
                     subject=template.render_subject(local_context),
                     text=template.render_text(local_context),
                     html=template.render_html(local_context),
+                    user=template_user,
+                    email=template_email,
+                    phone=template_phone if template_phone is not None else "",
+                    viber_chat_id=template_viber_chat_id if template_viber_chat_id is not None else "",
                     type=template.type,
                     event=template.event,
                     category=category,
@@ -274,70 +324,26 @@ class Notify(UserNotifyMixin):
                 instance.save()
                 notification_count += 1
             else:
-                # Формируем список основных и дополнительных получателей письма
-                # Первого получателя заполняем из шаблона, его данные могут быть пустыми - чтобы можно было через
-                # код отправить уведомление
-                if user or phone or email or viber_chat_id:
-                    recievers = [{
-                        'user': user,
-                        'email': email,
-                        'phone': phone,
-                        'viber_chat_id': viber_chat_id,
-                    }]
-                for reciever in recievers:
-                    template_user = reciever['user']
-                    template_email = reciever['email']
-                    template_phone = reciever['phone']
-                    template_viber_chat_id = reciever['viber_chat_id']
-                    # Если в шаблоне не указаны получатели, то получатель тот, кого передали в коде
-                    if template_user is None and template_email is None:
-                        template_user = user
-                        template_email = email
-                        template_phone = phone
-                        template_viber_chat_id = viber_chat_id
-                        # Если пользователь заполнен, то перезаписываем поля емейла и номера телефона,
-                        # даже если они были переданы.
-                        if user is not None:
-                            template_email = user.email
-                            template_phone = user.phone
-                            template_viber_chat_id = user.viber_chat_id
-                    # Проверка, хочет ли получить сообщение
-                    if user_want_message_check is not None and not \
-                            user_want_message_check(event, template.type, template_user):  # noqa
-                        continue
-
-                    # Добавляем пользователя в контекст, если его там не передали
-                    if template_user is not None:
-                        if local_context is not None:
-                            local_context.update({
-                                'user': template_user,
-                            })
-                        else:
-                            local_context = {
-                                'user': template_user,
-                            }
-                    local_context['event_id'] = event
-
-                    instance = Notify.objects.create(
-                        subject=template.render_subject(local_context),
-                        text=template.render_text(local_context),
-                        html=template.render_html(local_context),
-                        user=template_user,
-                        email=template_email,
-                        phone=template_phone if template_phone is not None else "",
-                        viber_chat_id=template_viber_chat_id if template_viber_chat_id is not None else "",
-                        type=template.type,
-                        event=template.event,
-                        category=category,
-                        data_json=data_json,
-                        send_at=template.send_at,
-                        room_name=room_name
-                    )
-                    file_instance = instance.files
-                    for f in file_instances:
-                        file_instance.add(f)
-                    instance.save()
-                    notification_count += 1
+                instance = Notify.objects.create(
+                    subject=template.render_subject(local_context),
+                    text=template.render_text(local_context),
+                    html=template.render_html(local_context),
+                    user=template_user,
+                    email=template_email,
+                    phone=template_phone if template_phone is not None else "",
+                    viber_chat_id=template_viber_chat_id if template_viber_chat_id is not None else "",
+                    type=template.type,
+                    event=template.event,
+                    category=category,
+                    data_json=data_json,
+                    send_at=template.send_at,
+                    room_name=room_name
+                )
+                file_instance = instance.files
+                for f in file_instances:
+                    file_instance.add(f)
+                instance.save()
+                notification_count += 1
 
         return notification_count
 

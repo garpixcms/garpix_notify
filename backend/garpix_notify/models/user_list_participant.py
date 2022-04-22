@@ -16,5 +16,5 @@ class NotifyUserListParticipant(UserNotifyMixin):
         return f'Участник рассылки {self.pk}'
 
     class Meta:
-        verbose_name = 'Участник списка пользователей'
-        verbose_name_plural = 'Участники списка пользователей'
+        verbose_name = 'Дополнительный участник списка рассылки'
+        verbose_name_plural = 'Дополнительные участники списка рассылки'
