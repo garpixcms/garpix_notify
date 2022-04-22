@@ -99,7 +99,7 @@ class PreBuildTestCase(TestCase):
         # Создание пользователя
         user = User.objects.create_user(**self.data_user)
         # Создание списка
-        user_list = NotifyUserList.objects.create(title='userlist_' +random_char(4))
+        user_list = NotifyUserList.objects.create(title='userlist_' + random_char(4))
         group = Group.objects.create(name='group_' + random_char(4))
         user_list.user_groups.add(group)
 
@@ -152,8 +152,6 @@ class PreBuildTestCase(TestCase):
         self.assertEqual(notify.type, self.data_compiled_email['type'])
         self.assertEqual(notify.event, self.data_compiled_email['event'])
         self.assertEqual(notify.email, 'test@garpix.com')
-       # self.assertEqual(notify.users_list.all(), user_list)
-
 
     def test_notify_viber(self):
         self.data_template_viber = {
