@@ -4,6 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+django = "==3.2"
 environs = "*"
 psycopg2-binary = "*"
 coverage = "*"
@@ -18,13 +19,12 @@ django-ckeditor = "*"
 python-telegram-bot = "*"
 viberbot = "*"
 django-uuslug = "*"
-Pillow = "*"
+pillow = "*"
 redis = "*"
 channels = "==3.0.3"
 channels-redis = "==3.3.1"
-asgiref = "==3.2.10"
+asgiref = "==3.3.4"
 mistune = "==0.8.4"
-django = "==3.1"
 
 [dev-packages]
 
