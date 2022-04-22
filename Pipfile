@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-django = "==3.1"
+django = "==3.2"
 environs = "*"
 psycopg2-binary = "*"
 coverage = "*"
@@ -23,8 +23,8 @@ pillow = "*"
 redis = "*"
 channels = "==3.0.3"
 channels-redis = "==3.3.1"
-asgiref = "==3.2.10"
-mistune= "==0.8.4"
+asgiref = "==3.3.4"
+mistune = "==0.8.4"
 
 [dev-packages]
 

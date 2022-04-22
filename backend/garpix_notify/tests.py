@@ -25,10 +25,6 @@ class PreBuildTestCase(TestCase):
             'last_name': 'Ivanov',
         }
         # data
-        self.data_category = {
-            'title': 'Основная категория',
-            'template': '<div>{{text}}</div>',
-        }
         self.data_template_email = {
             'title': 'Тестовый темплейт',
             'subject': 'Тестовый темплейт {{user.email}}',
@@ -36,6 +32,11 @@ class PreBuildTestCase(TestCase):
             'html': 'Контент HTML {{user.email}} - {{sometext}}',
             'type': TYPE.EMAIL,
             'event': self.PASS_TEST_EVENT,
+        }
+        self.data_category = {
+            'title': 'Основная категория',
+            'template': '<div>{{text}}</div>',
+            'template_choice': self.data_template_email
         }
         self.sometext = 'bla bla'
         self.data_compiled_email = {

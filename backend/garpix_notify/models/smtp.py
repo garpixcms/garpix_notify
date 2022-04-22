@@ -7,7 +7,7 @@ from .config import NotifyConfig
 
 class SMTPAccount(models.Model):
     host = models.CharField(default='smtp.yandex.ru', max_length=255, verbose_name='Хост')
-    port = models.IntegerField(default=587, verbose_name='Порт')
+    port = models.IntegerField(default=465, verbose_name='Порт')
     is_use_tls = models.BooleanField(default=True, verbose_name='Использовать TLS?')
     is_use_ssl = models.BooleanField(default=False, verbose_name='Использовать SSL?')
     sender = models.EmailField(max_length=255, blank=True, default='', verbose_name='Отправитель')

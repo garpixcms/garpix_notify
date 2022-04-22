@@ -3,9 +3,9 @@ from app.celery import app as celery_app
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
-from .models.choices import STATE, TYPE
-from .models.config import NotifyConfig
-from .models.notify import Notify
+from garpix_notify.models.choices import STATE, TYPE
+from garpix_notify.models.config import NotifyConfig
+from garpix_notify.models.notify import Notify
 
 
 @celery_app.task
@@ -49,7 +49,7 @@ def send_system_notifications(notify_pk):
 
 celery_app.conf.beat_schedule.update({
     'periodic_task': {
-        'task': 'garpix_notify.tasks.send_notifications',
+        'task': 'garpix_notify.tasks.tasks.send_notifications',
         'schedule': NotifyConfig.get_solo().periodic,
     },
 })

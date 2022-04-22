@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User
+from user.models.user import User
 from django.contrib.auth.admin import UserAdmin
 
 
@@ -14,6 +14,9 @@ class UserAdmin(UserAdmin):
         }),
         ('Telegram', {
             'fields': ('telegram_chat_id', 'telegram_secret', 'get_telegram_connect_user_help'),
+        }),
+        (None, {
+            'fields': ('phone', ),
         })
     ) + UserAdmin.fieldsets
     readonly_fields = ['telegram_secret', 'get_telegram_connect_user_help'] + list(UserAdmin.readonly_fields)
