@@ -358,7 +358,8 @@ class Notify(UserNotifyMixin):
             for user in receivers:
                 if user['email']:
                     emails.append(user['email'])
-            msg['BCC'] = ', '.join(emails)
+            msg['To'] = ', '.join(emails[:1])
+            msg['BCC'] = ', '.join(emails[0:])
         else:
             msg['To'] = self.email
         msg['Subject'] = self.subject
