@@ -59,7 +59,7 @@ class Notify(UserNotifyMixin):
     type = models.IntegerField(choices=TYPE.CHOICES, verbose_name='Тип')
     state = models.IntegerField(choices=STATE.CHOICES, default=STATE.WAIT, verbose_name='Состояние')
     category = models.ForeignKey(NotifyCategory, on_delete=models.CASCADE, related_name='notifies',
-                                 verbose_name='Категория')
+                                 verbose_name='Категория', blank=True, null=True)
     event = models.IntegerField(choices=settings.CHOICES_NOTIFY_EVENT, blank=True, null=True, verbose_name='Событие')
     files = models.ManyToManyField(NotifyFile, verbose_name='Файлы')
 
@@ -108,7 +108,7 @@ class Notify(UserNotifyMixin):
         account = self._get_valid_smtp_account()
 
         try:
-            body = self._render_body(account.sender, self.category.template)
+            body = self._render_body(account.sender, self.category)
             server = SMTP_SSL(account.host, account.port) if account.is_use_ssl else SMTP(account.host, account.port)
             server.ehlo()
             if account.is_use_tls:
@@ -212,7 +212,7 @@ class Notify(UserNotifyMixin):
 
     # todo - упростить метод (too complex)
     @staticmethod
-    def send(event, context, user=None, email=None, phone=None, files=None, data_json=None, category=None,  # noqa
+    def send(event, context, category=None, user=None, email=None, phone=None, files=None, data_json=None,  # noqa
              viber_chat_id=None, room_name=None):
         local_context = context.copy()
 

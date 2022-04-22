@@ -11,6 +11,6 @@ def example_send_notify(request):
     Notify.send(settings.REGISTRATION_EVENT, {
         'confirmation_code': 'abcdef12345',
         'message': 'Привет, тут твое сообщение'
-    }, email='aleksey@garpix.com', category='register'
+    }, email='aleksey@garpix.com',
                 )
     return render(request, 'example.html')
