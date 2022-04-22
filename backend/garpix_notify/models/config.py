@@ -10,13 +10,25 @@ class NotifyConfig(SingletonModel):
 
         SMSRU_ID = 0
         WEBSZK_ID = 1
+        IQSMS_ID = 2
+        INFOSMS_ID = 3
+        SMSCENTRE_ID = 4
+        SMS_SENDING_ID = 5
 
         SMSRU_URL = 'http://sms.ru/send/'
         WEBSZK_URL = 'http://gateway.api.sc/get/'
+        IQSMS_URL = 'https://api.iqsms.ru/messages/v2/send/'
+        INFOSMS_URL = 'http://api.infosmska.ru/interfaces/SendMessages.ashx'
+        SMSCENTRE_URL = 'https://smsc.ru/sys/send.php'
+        SMS_SENDING_URL = 'http://lcab.sms-sending.ru/lcabApi/sendSms.php'
 
         TYPES = (
             (SMSRU_ID, 'sms.ru'),
             (WEBSZK_ID, 'web.szk-info.ru'),
+            (IQSMS_ID, 'iqsms.ru'),
+            (INFOSMS_ID, 'infosmska.ru'),
+            (SMSCENTRE_ID, 'smsc.ru'),
+            (SMS_SENDING_ID, 'sms-sending.ru'),
         )
 
     periodic = models.IntegerField(default=60, verbose_name='Периодичность отправки уведомлений (сек.)')

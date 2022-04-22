@@ -31,6 +31,7 @@ from .log import NotifyErrorLog
 from .smtp import SMTPAccount
 from .template import NotifyTemplate
 from ..mixins import UserNotifyMixin
+from ..utils import sms_checker, receiving
 
 
 def chunks(s, n):
@@ -129,38 +130,29 @@ class Notify(UserNotifyMixin):
             return
 
         try:
-            msg = str(self.text.replace(' ', '+'))
-            if config.sms_url_type == NotifyConfig.SMS_URL.SMSRU_ID:
-                url = '{url}?msg={text}&to={to}&api_id={api_id}&from={from_text}&json=1'.format(
-                    url=NotifyConfig.SMS_URL.SMSRU_URL,
-                    api_id=config.sms_api_id,
-                    from_text=config.sms_from,
-                    to=self.phone,
-                    text=msg,
-                )
-                response = requests.get(url)
-                response_dict = response.json()
-                if response_dict.get('status'):
-                    self.state = STATE.DELIVERED
-                    self.sent_at = now()
-                else:
-                    self.state = STATE.REJECTED
+            if self.users_list is not None:
+                users_list = self.users_list.all()
+                receivers = receiving(users_list)
+                # Убираем дубликаты пользователей
+                receivers = list({v['phone']: v for v in receivers}.values())
+                phones = []
+                for user in receivers:
+                    if user['phone']:
+                        phones.append(user['phone'])
+                print(phones)
+                phones = ', '.join(phones)
             else:
-                url = '{url}?user={user}&pwd={pwd}&sadr={from_text}&text={text}&dadr={to}'.format(
-                    url=NotifyConfig.SMS_URL.WEBSZK_URL,
-                    user=config.sms_login,
-                    pwd=config.sms_password,
-                    from_text=config.sms_from,
-                    to=self.phone,
-                    text=msg,
-                )
-                response = requests.get(url)
-                try:
-                    int(response.text)
-                    self.state = STATE.DELIVERED
-                    self.sent_at = now()
-                except Exception:
-                    self.state = STATE.REJECTED
+                phones = self.phone
+            msg = str(self.text.replace(' ', '+'))
+            url = sms_checker(msg, phones, config, NotifyConfig)
+            response = requests.get(url)
+            try:
+                int(response.text)
+                self.state = STATE.DELIVERED
+                self.sent_at = now()
+            except Exception:
+                self.state = STATE.REJECTED
+
 
         except Exception as e:  # noqa
             self.state = STATE.REJECTED
@@ -352,51 +344,15 @@ class Notify(UserNotifyMixin):
     def _render_body(self, mail_from, layout):
         msg = MIMEMultipart('alternative')
         if self.users_list is not None:
-            User = get_user_model()
-            for user_list in self.users_list.all():
-                recievers = []
-                # Сначала проверям есть ли допольнительные список получателей
-                # Если у участника из дополнительного списка ничего не заполнено - не отправляем уведомление
-                for participant in user_list.participants.all():
-                    if participant.user or participant.email:
-                        recievers.append({
-                            'user': participant.user,
-                            'email': participant.email,
-                            'phone': participant.phone,
-                            'viber_chat_id': participant.viber_chat_id,
-                        })
-                # Проверяем в не отмечена ли массовая рассылка
-                if user_list.mail_to_all is False:
-                    group_users = User.objects.filter(
-                        Q(groups__in=list(
-                            user_list.user_groups.all()
-                        )))
-                    for user in group_users:
-                        recievers.append(
-                            {
-                                'user': user,
-                                'email': user.email,
-                                'phone': user.phone,
-                                'viber_chat_id': user.viber_chat_id,
-                            }
-                        )
-                else:
-                    users = User.objects.all()
-                    for user in users:
-                        recievers.append(
-                            {
-                                'user': user,
-                                'email': user.email,
-                                'phone': user.phone,
-                                'viber_chat_id': user.viber_chat_id,
-                            }
-                        )
-                # Убираем дубликаты пользователей
-                recievers = list({v['email']: v for v in recievers}.values())
-                emails = []
-                for email in recievers:
-                    emails.append(email['email'])
-                msg['To'] = ', '.join(emails)
+            users_list = self.users_list.all()
+            receivers = receiving(users_list)
+            # Убираем дубликаты пользователей
+            receivers = list({v['email']: v for v in receivers}.values())
+            emails = []
+            for user in receivers:
+                if user['email']:
+                    emails.append(user['email'])
+            msg['To'] = ', '.join(emails)
         else:
             msg['To'] = self.email
         msg['Subject'] = self.subject
