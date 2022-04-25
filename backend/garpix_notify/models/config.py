@@ -15,9 +15,9 @@ class NotifyConfig(SingletonModel):
         SMSCENTRE_ID = 4
         SMS_SENDING_ID = 5
 
-        SMSRU_URL = 'http://sms.ru/send/'
+        SMSRU_URL = 'https://sms.ru/sms/send/'
         WEBSZK_URL = 'http://gateway.api.sc/get/'
-        IQSMS_URL = 'https://api.iqsms.ru/messages/v2/send/'
+        IQSMS_URL = 'https://api.iqsms.ru/messages/v2/send.json'
         INFOSMS_URL = 'http://api.infosmska.ru/interfaces/SendMessages.ashx'
         SMSCENTRE_URL = 'https://smsc.ru/sys/send.php'
         SMS_SENDING_URL = 'http://lcab.sms-sending.ru/lcabApi/sendSms.php'

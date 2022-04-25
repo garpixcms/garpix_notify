@@ -32,6 +32,7 @@ from .smtp import SMTPAccount
 from .template import NotifyTemplate
 from ..mixins import UserNotifyMixin
 from ..utils import sms_checker, receiving
+from ..utils.sms_checker import SMSCLient
 
 
 def chunks(s, n):
@@ -40,7 +41,10 @@ def chunks(s, n):
         yield s[start:start + n]
 
 
-class Notify(UserNotifyMixin):
+config = NotifyConfig.get_solo()
+
+
+class Notify(UserNotifyMixin, SMSCLient):
     """
     Уведомление
     """
@@ -122,44 +126,7 @@ class Notify(UserNotifyMixin):
             self.state = STATE.REJECTED
             self.to_log(str(e))
 
-    def send_sms(self):
-        config = NotifyConfig.get_solo()
-
-        if not config.is_sms_enabled:
-            self.state = STATE.DISABLED
-            return
-
-        try:
-            if self.users_list is not None:
-                users_list = self.users_list.all()
-                receivers = receiving(users_list)
-                # Убираем дубликаты пользователей
-                receivers = list({v['phone']: v for v in receivers}.values())
-                phones = []
-                for user in receivers:
-                    if user['phone']:
-                        phones.append(user['phone'])
-                print(phones)
-                phones = ', '.join(phones)
-            else:
-                phones = self.phone
-            msg = str(self.text.replace(' ', '+'))
-            url = sms_checker(msg, phones, config, NotifyConfig)
-            response = requests.get(url)
-            try:
-                int(response.text)
-                self.state = STATE.DELIVERED
-                self.sent_at = now()
-            except Exception:
-                self.state = STATE.REJECTED
-
-
-        except Exception as e:  # noqa
-            self.state = STATE.REJECTED
-            self.to_log(str(e))
-
     def send_push(self):
-        config = NotifyConfig.get_solo()
 
         if not config.is_push_enabled:
             self.state = STATE.DISABLED
@@ -189,7 +156,6 @@ class Notify(UserNotifyMixin):
 
     def send_telegram(self):
         import telegram
-        config = NotifyConfig.get_solo()
         bot = telegram.Bot(token=config.telegram_api_key)
 
         if not config.is_telegram_enabled:
@@ -405,7 +371,6 @@ class Notify(UserNotifyMixin):
         log.save()
 
     def send_viber(self):
-        config = NotifyConfig.get_solo()
         viber = Api(BotConfiguration(
             name=config.viber_bot_name,
             avatar='',
@@ -440,7 +405,6 @@ class Notify(UserNotifyMixin):
             self.to_log(str(e))
 
     def _get_valid_smtp_account(self) -> Optional[SMTPAccount]:
-        config = NotifyConfig.get_solo()
         if not config.is_email_enabled:
             self.state = STATE.DISABLED
             return

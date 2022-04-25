@@ -4,9 +4,7 @@ import os
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "app.settings")
 django.setup()
 
-import random
-import string
-
+from django.utils.crypto import get_random_string
 from unittest import TestCase
 
 from django.contrib.auth import get_user_model
@@ -22,17 +20,13 @@ from .models.choices import TYPE
 User = get_user_model()
 
 
-def random_char(char_num):
-    return ''.join(random.choice(string.ascii_letters) for _ in range(char_num))
-
-
 class PreBuildTestCase(TestCase):
     def setUp(self):
         # нулевой евент, только для теста
         self.PASS_TEST_EVENT = 0
         # тестовый пользователь
         self.data_user = {
-            'username': 'email_test' + random_char(4),
+            'username': 'email_test' + get_random_string(length=4),
             'email': 'test@garpix.com',
             'password': 'BlaBla123',
             'first_name': 'Ivan',
@@ -48,7 +42,7 @@ class PreBuildTestCase(TestCase):
             'event': self.PASS_TEST_EVENT,
         }
         self.data_category = {
-            'title': 'Основная категория_' + random_char(3),
+            'title': 'Основная категория_' + get_random_string(length=4),
             'template': '<div>{{text}}</div>',
         }
         self.sometext = 'bla bla'
@@ -99,8 +93,8 @@ class PreBuildTestCase(TestCase):
         # Создание пользователя
         user = User.objects.create_user(**self.data_user)
         # Создание списка
-        user_list = NotifyUserList.objects.create(title='userlist_' + random_char(4))
-        group = Group.objects.create(name='group_' + random_char(4))
+        user_list = NotifyUserList.objects.create(title='userlist_' + get_random_string(length=4))
+        group = Group.objects.create(name='group_' + get_random_string(length=4))
         user_list.user_groups.add(group)
 
         user_list_participant1 = NotifyUserListParticipant.objects.create(  # noqa
@@ -163,7 +157,7 @@ class PreBuildTestCase(TestCase):
             'event': self.PASS_TEST_EVENT,
         }
         self.data_viber_user = {
-            'username': 'viber_' + random_char(5),
+            'username': 'viber_' + get_random_string(length=5),
             'viber_secret_key': '111',
             'viber_chat_id': 'm4FsaRu5kBi8HzSAC0liFQ==',
             'password': 'BlaBla123',
@@ -180,7 +174,7 @@ class PreBuildTestCase(TestCase):
         # Создание пользователя
         user = User.objects.create_user(**self.data_viber_user)
         # Создание списка
-        user_list = NotifyUserList.objects.create(title='viber_' + random_char(4))
+        user_list = NotifyUserList.objects.create(title='viber_' + get_random_string(length=4))
         user_list_participant1 = NotifyUserListParticipant.objects.create(  # noqa
             user_list=user_list,
         )
