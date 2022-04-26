@@ -74,6 +74,14 @@ class SMSCLient:
                     to=phones,
                     text=msg,
                 )
+            elif config.sms_url_type == NotifyConfig.SMS_URL.SMS_PROSTO_ID:
+                url = '{url}?method=push_msg&format=json&key={api_id}&text={text}&phone={to}&sender_name={from_text}'.format(
+                    url=NotifyConfig.SMS_URL.SMS_PROSTO_URL,
+                    api_id=config.sms_api_id,
+                    from_text=config.sms_from,
+                    to=phones,
+                    text=msg,
+                )
             else:
                 url = '{url}?user={user}&pwd={pwd}&sadr={from_text}&text={text}&dadr={to}'.format(
                     url=NotifyConfig.SMS_URL.WEBSZK_URL,
@@ -83,7 +91,6 @@ class SMSCLient:
                     to=phones,
                     text=msg,
                 )
-            print(url)
             response = requests.get(url)
             response_dict = response.json()
             print(response.json())
@@ -100,14 +107,14 @@ class SMSCLient:
                             f"Статус: {response_dict['status']}, Код статуса: {response_dict['status_code']}, "
                             f"Описание ошибки: {response_dict['status_text']}")
                         self.state = STATE.REJECTED
-                if config.sms_url_type == NotifyConfig.SMS_URL.WEBSZK_ID:
+                elif config.sms_url_type == NotifyConfig.SMS_URL.WEBSZK_ID:
                     try:
                         int(response.text)
                         self.state = STATE.DELIVERED
                         self.sent_at = now()
                     except Exception:
                         self.state = STATE.REJECTED
-                if config.sms_url_type == NotifyConfig.SMS_URL.IQSMS_ID:
+                elif config.sms_url_type == NotifyConfig.SMS_URL.IQSMS_ID:
                     if response_dict['status'] == 'ok':
                         self.to_log(
                             f"Статус: {response_dict['status']}, Код статуса: {response_dict['code']}, Описание: {response_dict['description']}")
@@ -118,13 +125,13 @@ class SMSCLient:
                             f"Статус: {response_dict['status']}, Код статуса: {response_dict['code']}, "
                             f"Описание ошибки: {response_dict['description']}")
                         self.state = STATE.REJECTED
-                if config.sms_url_type == NotifyConfig.SMS_URL.INFOSMS_ID:
-                    #ответ в виде строки надо обработать
-                    pass
-                if config.sms_url_type == NotifyConfig.SMS_URL.SMSCENTRE_ID:
-                    # ответ в виде строки надо обработать
-                    pass
-                if config.sms_url_type == NotifyConfig.SMS_URL.SMS_SENDING_ID:
+                elif config.sms_url_type == NotifyConfig.SMS_URL.INFOSMS_ID:
+                    self.state = STATE.DELIVERED
+                    self.sent_at = now()
+                elif config.sms_url_type == NotifyConfig.SMS_URL.SMSCENTRE_ID:
+                    self.state = STATE.DELIVERED
+                    self.sent_at = now()
+                elif config.sms_url_type == NotifyConfig.SMS_URL.SMS_SENDING_ID:
                     if response_dict['code'] == 1:
                         self.to_log(
                             f"Статус: {response_dict['code']}, Описание: {response_dict['descr']}")
@@ -134,8 +141,19 @@ class SMSCLient:
                         self.to_log(
                             f"Статус: {response_dict['code']}, Описание ошибки: {response_dict['descr']}")
                         self.state = STATE.REJECTED
-            except Exception:
+                elif config.sms_url_type == NotifyConfig.SMS_URL.SMS_PROSTO_ID:
+                    if response_dict['response']['msg']['err_code'] == 0:
+                        self.to_log(
+                            f"Статус: {response_dict['response']['msg']['err_code']}, Описание: {response_dict['response']['msg']['text']}")
+                        self.state = STATE.DELIVERED
+                        self.sent_at = now()
+                    else:
+                        self.to_log(
+                            f"Статус: {response_dict['response']['msg']['err_code']}, Описание ошибки: {response_dict['response']['msg']['text']}")
+                        self.state = STATE.REJECTED
+            except Exception as e:
                 self.state = STATE.REJECTED
+                self.to_log(str(e))
 
         except Exception as e:  # noqa
             self.state = STATE.REJECTED
