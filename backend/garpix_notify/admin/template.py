@@ -13,11 +13,14 @@ class NotifyTemplateAdmin(admin.ModelAdmin):
         'is_active',
         'subject',
         'get_context_description',
-        'text',
         'html',
+        'user',
+        'email',
+        'phone',
         'telegram_chat_id',
         'viber_chat_id',
         'type',
+        'category',
         'event',
         'user_lists',
         'send_at',
@@ -26,8 +29,8 @@ class NotifyTemplateAdmin(admin.ModelAdmin):
         'get_context_description',
         'get_event_description',
     )
-    list_display = ('title', 'is_active', 'type', 'event', 'send_at')
-    list_filter = ('type', 'event', 'is_active')
+    list_display = ('title', 'is_active', 'type', 'category', 'event', 'user', 'email', 'phone', 'send_at')
+    list_filter = ('type', 'category', 'event', 'is_active')
     actions = ['create_mailing', ]
     filter_horizontal = ('user_lists',)
 
@@ -59,7 +62,7 @@ class NotifyTemplateAdmin(admin.ModelAdmin):
                 text=template.render_text(context),
                 html=template.render_html(context),
                 type=template.type,
-                category=category
+                category=template.category,
             )
             instance.save()
             instance._send()
