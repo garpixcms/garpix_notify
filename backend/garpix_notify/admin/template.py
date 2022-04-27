@@ -61,6 +61,8 @@ class NotifyTemplateAdmin(admin.ModelAdmin):
                 subject=template.render_subject(template.subject),
                 text=template.render_text(context),
                 html=template.render_html(context),
+                user=template.user,
+                email=template.email,
                 type=template.type,
                 category=template.category,
             )
