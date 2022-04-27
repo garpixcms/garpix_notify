@@ -17,10 +17,10 @@ class SMSCLient:
             return
 
         try:
-            print(self, 'Поехали')
-            if self.users_list is None:
-                print('пошел не туда')
-                users_list = self.users_list.all()
+            users_list = self.users_list.all()
+            if users_list.count() == 0:
+                phones = self.phone
+            else:
                 receivers = receiving(users_list)
                 # Убираем дубликаты пользователей
                 receivers = list({v['phone']: v for v in receivers}.values())
@@ -29,9 +29,6 @@ class SMSCLient:
                     if user['phone']:
                         phones.append(user['phone'])
                 phones = ','.join(phones)
-            else:
-                phones = self.phone
-                print(phones, 'елефоны')
             msg = str(self.text.replace(' ', '+'))
             if config.sms_url_type == NotifyConfig.SMS_URL.SMSRU_ID:
                 url = '{url}?api_id={api_id}&to={to}&msg={text}&json=1'.format(
@@ -93,8 +90,6 @@ class SMSCLient:
                 )
             response = requests.get(url)
             response_dict = response.json()
-            print(response.json())
-            print(response, 'ОТвет')
             try:
                 if config.sms_url_type == NotifyConfig.SMS_URL.SMSRU_ID:
                     if response_dict['status'] == 'OK':

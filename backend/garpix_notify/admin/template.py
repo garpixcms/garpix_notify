@@ -3,11 +3,10 @@ from ..models.template import NotifyTemplate
 from ..models.notify import Notify
 from django.http import HttpResponseRedirect
 from ..models import NotifyCategory, SMTPAccount
-from .mainadmin import MainAdmin
 
 
 @admin.register(NotifyTemplate)
-class NotifyTemplateAdmin(MainAdmin):
+class NotifyTemplateAdmin(admin.ModelAdmin):
     change_form_template = "send_notify.html"
     fields = (
         'title',
@@ -30,6 +29,7 @@ class NotifyTemplateAdmin(MainAdmin):
     list_display = ('title', 'is_active', 'type', 'event', 'send_at')
     list_filter = ('type', 'event', 'is_active')
     actions = ['create_mailing', ]
+    filter_horizontal = ('user_lists',)
 
     def create_mailing(self, request, queryset):
         count = Notify.send(event=None, context={}, notify_templates=queryset)

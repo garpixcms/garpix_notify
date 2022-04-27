@@ -5,7 +5,6 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Optional
 from smtplib import SMTP, SMTP_SSL
-import requests
 from django.conf import settings
 from django.db import models, transaction
 from django.db.models import Q
@@ -14,13 +13,11 @@ from django.utils.html import format_html
 from django.utils.module_loading import import_string
 from django.utils.safestring import mark_safe
 from django.utils.timezone import now
-from django.contrib.auth import get_user_model
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from viberbot import Api, BotConfiguration
 from viberbot.api.messages import TextMessage
 
-from user.models import User
 from .user_list import NotifyUserList
 from .category import NotifyCategory
 from .choices import TYPE, STATE
@@ -31,7 +28,7 @@ from .log import NotifyErrorLog
 from .smtp import SMTPAccount
 from .template import NotifyTemplate
 from ..mixins import UserNotifyMixin
-from ..utils import sms_checker, receiving
+from ..utils import receiving
 from ..utils.sms_checker import SMSCLient
 
 
@@ -48,8 +45,6 @@ class Notify(UserNotifyMixin, SMSCLient):
     """
     Уведомление
     """
-
-    # title = models.CharField(max_length=255, verbose_name='Название для админа')
     subject = models.CharField(max_length=255, default='', blank=True, verbose_name='Тема')
     text = models.TextField(verbose_name='Текст')
     html = models.TextField(verbose_name='HTML', blank=True, default='')
@@ -62,8 +57,7 @@ class Notify(UserNotifyMixin, SMSCLient):
 
     type = models.IntegerField(choices=TYPE.CHOICES, verbose_name='Тип')
     state = models.IntegerField(choices=STATE.CHOICES, default=STATE.WAIT, verbose_name='Состояние')
-    category = models.ForeignKey(NotifyCategory, on_delete=models.CASCADE, related_name='notifies',
-                                 verbose_name='Категория', blank=True, null=True)
+    category = models.ForeignKey(NotifyCategory, on_delete=models.CASCADE, related_name='notifies', verbose_name='Категория')
     event = models.IntegerField(choices=settings.CHOICES_NOTIFY_EVENT, blank=True, null=True, verbose_name='Событие')
     files = models.ManyToManyField(NotifyFile, verbose_name='Файлы')
 
@@ -110,15 +104,28 @@ class Notify(UserNotifyMixin, SMSCLient):
 
     def send_email(self):
         account = self._get_valid_smtp_account()
+        emails = []
+        if self.users_list.all().count() != 0:
+            users_list = self.users_list.all()
+            receivers = receiving(users_list)
+            # Убираем дубликаты пользователей
+            receivers = list({v['email']: v for v in receivers}.values())
+            for user in receivers:
+                if user['email']:
+                    emails.append(user['email'])
+            if self.email:
+                emails.append(self.email)
+        else:
+            emails.append(self.email)
 
         try:
-            body = self._render_body(account.sender, self.category)
+            body = self._render_body(mail_from=account.sender, layout=self.category, emails=emails)
             server = SMTP_SSL(account.host, account.port) if account.is_use_ssl else SMTP(account.host, account.port)
             server.ehlo()
             if account.is_use_tls:
                 server.starttls()
             server.login(account.username, account.password)
-            server.sendmail(account.sender, [self.email], body.as_string())
+            server.sendmail(account.sender, emails, body.as_string())
             server.close()
             self.state = STATE.DELIVERED
             self.sent_at = now()
@@ -178,8 +185,8 @@ class Notify(UserNotifyMixin, SMSCLient):
 
     # todo - упростить метод (too complex)
     @staticmethod
-    def send(event, context, category=None, user=None, email=None, phone=None, files=None, data_json=None,  # noqa
-             viber_chat_id=None, room_name=None, templates=None):
+    def send(event, context, user=None, email=None, phone=None, files=None, data_json=None,  # noqa
+             viber_chat_id=None, room_name=None, notify_templates=None):
         local_context = context.copy()
 
         if user is not None:
@@ -191,13 +198,8 @@ class Notify(UserNotifyMixin, SMSCLient):
             user_want_message_check = import_string(settings.NOTIFY_USER_WANT_MESSAGE_CHECK)
 
         # Для выбора шаблонов из Категории или по ивенту
-        if category:
-            category = NotifyCategory.objects.filter(Q(title=category)).first()
-            category_template = category.template_choice.pk
-            if category_template:
-                templates = NotifyTemplate.objects.filter(
-                    Q(pk=category_template) & Q(is_active=True)
-                )
+        if notify_templates:
+            templates = NotifyTemplate.objects.filter(id__in=notify_templates, event=event, is_active=True)
         else:
             templates = NotifyTemplate.objects.filter(
                 Q(event=event) & Q(is_active=True)
@@ -266,8 +268,7 @@ class Notify(UserNotifyMixin, SMSCLient):
             # Если в шаблоне передаются списки пользователей, то отдаем их уведомлениям
             # Если уведомление для одного пользователя, то создаем для одного
             users_lists = template.user_lists.all()
-            if users_lists:
-                local_context['event_id'] = event
+            if users_lists.count() == 0:
                 instance = Notify.objects.create(
                     subject=template.render_subject(local_context),
                     text=template.render_text(local_context),
@@ -278,12 +279,11 @@ class Notify(UserNotifyMixin, SMSCLient):
                     viber_chat_id=template_viber_chat_id if template_viber_chat_id is not None else "",
                     type=template.type,
                     event=template.event,
-                    category=category,
+                    category=template.category if template.category else None,
                     data_json=data_json,
                     send_at=template.send_at,
-                    room_name=room_name,
+                    room_name=room_name
                 )
-                instance.users_list.add(*users_lists)
                 file_instance = instance.files
                 for f in file_instances:
                     file_instance.add(f)
@@ -300,11 +300,12 @@ class Notify(UserNotifyMixin, SMSCLient):
                     viber_chat_id=template_viber_chat_id if template_viber_chat_id is not None else "",
                     type=template.type,
                     event=template.event,
-                    category=category,
+                    category=template.category if template.category else None,
                     data_json=data_json,
                     send_at=template.send_at,
-                    room_name=room_name
+                    room_name=room_name,
                 )
+                instance.users_list.add(*users_lists)
                 file_instance = instance.files
                 for f in file_instances:
                     file_instance.add(f)
@@ -313,21 +314,12 @@ class Notify(UserNotifyMixin, SMSCLient):
 
         return notification_count
 
-    def _render_body(self, mail_from, layout):
+    def _render_body(self, mail_from, layout, emails):
         msg = MIMEMultipart('alternative')
-        if self.users_list is not None:
-            users_list = self.users_list.all()
-            receivers = receiving(users_list)
-            # Убираем дубликаты пользователей
-            receivers = list({v['email']: v for v in receivers}.values())
-            emails = []
-            for user in receivers:
-                if user['email']:
-                    emails.append(user['email'])
-            msg['To'] = ', '.join(emails[:1])
-            msg['BCC'] = ', '.join(emails[0:])
+        if len(emails) > 1:
+            msg['BCC'] = ', '.join(emails)
         else:
-            msg['To'] = self.email
+            msg['To'] = ''.join(emails)
         msg['Subject'] = self.subject
         msg['From'] = mail_from
 
@@ -335,7 +327,7 @@ class Notify(UserNotifyMixin, SMSCLient):
         msg.attach(text)
 
         if self.html:
-            template = Template(layout)
+            template = Template(layout.template)
             context = Context({'text': mark_safe(self.html)})
             html = MIMEText(mark_safe(template.render(context)), 'html')
             msg.attach(html)

@@ -58,8 +58,13 @@ class PreBuildTestCase(TestCase):
     def test_notify_email_positive(self):
         # Создание пользователя
         user = User.objects.create_user(**self.data_user)
+        # Создание категории
+        category = NotifyCategory.objects.create(**self.data_category)
+        category = NotifyCategory.objects.get(pk=category.pk)
+        self.assertEqual(category.title, self.data_category['title'])
+        self.assertEqual(category.template, self.data_category['template'])
         # Создание шаблона
-        template_email = NotifyTemplate.objects.create(**self.data_template_email)
+        template_email = NotifyTemplate.objects.create(category=category, **self.data_template_email)
         template_email = NotifyTemplate.objects.get(pk=template_email.pk)
         self.assertEqual(template_email.title, self.data_template_email['title'])
         self.assertEqual(template_email.subject, self.data_template_email['subject'])
@@ -67,19 +72,12 @@ class PreBuildTestCase(TestCase):
         self.assertEqual(template_email.html, self.data_template_email['html'])
         self.assertEqual(template_email.type, self.data_template_email['type'])
         self.assertEqual(template_email.event, self.data_template_email['event'])
-        # Создание категории
-        category = NotifyCategory.objects.create(**self.data_category)
-        category = NotifyCategory.objects.get(pk=category.pk)
-        category.template_choice = template_email
-        category.save()
-        self.assertEqual(category.title, self.data_category['title'])
-        self.assertEqual(category.template, self.data_category['template'])
-        self.assertEqual(category.template_choice.id, template_email.id)
+        self.assertEqual(template_email.category.id, category.id)
         # Создание пробного письма
         Notify.send(self.PASS_TEST_EVENT, {
             'sometext': self.sometext,
             'user': user,
-        }, user=user, category=category)
+        }, user=user)
         self.assertEqual(Notify.objects.all().count(), 1)
         notify = Notify.objects.all().first()
         self.assertEqual(notify.subject, self.data_compiled_email['subject'])
@@ -87,7 +85,6 @@ class PreBuildTestCase(TestCase):
         self.assertEqual(notify.html, self.data_compiled_email['html'])
         self.assertEqual(notify.type, self.data_compiled_email['type'])
         self.assertEqual(notify.event, self.data_compiled_email['event'])
-        self.assertEqual(notify.category.id, category.id)
 
     def test_notify_email_user_list(self):
         # Создание пользователя
@@ -109,8 +106,14 @@ class PreBuildTestCase(TestCase):
             email='test3@garpix.com',
         )
 
+        # Создание категории
+        category = NotifyCategory.objects.create(**self.data_category)
+        category = NotifyCategory.objects.get(pk=category.pk)
+        self.assertEqual(category.title, self.data_category['title'])
+        self.assertEqual(category.template, self.data_category['template'])
+
         # Создание шаблона
-        template_email = NotifyTemplate.objects.create(**self.data_template_email)
+        template_email = NotifyTemplate.objects.create(category=category, **self.data_template_email)
         template_email = NotifyTemplate.objects.get(pk=template_email.pk)
         template_email.user_lists.add(user_list)
         template_email.save()
@@ -121,20 +124,13 @@ class PreBuildTestCase(TestCase):
         self.assertEqual(template_email.html, self.data_template_email['html'])
         self.assertEqual(template_email.type, self.data_template_email['type'])
         self.assertEqual(template_email.event, self.data_template_email['event'])
-        # Создание категории
-        category = NotifyCategory.objects.create(**self.data_category)
-        category = NotifyCategory.objects.get(pk=category.pk)
-        category.template_choice = template_email
-        category.save()
-        self.assertEqual(category.title, self.data_category['title'])
-        self.assertEqual(category.template, self.data_category['template'])
-        self.assertEqual(category.template_choice.id, template_email.id)
+        self.assertEqual(template_email.category.id, category.id)
 
         # Создание пробного письма
         Notify.send(self.PASS_TEST_EVENT, {
             'sometext': self.sometext,
             'user': user,
-        }, user=user, category=category)
+        }, user=user)
 
         self.assertEqual(Notify.objects.all().count(), 2)
 
@@ -178,31 +174,36 @@ class PreBuildTestCase(TestCase):
         user_list_participant1 = NotifyUserListParticipant.objects.create(  # noqa
             user_list=user_list,
         )
+        # Создание категории
+        category = NotifyCategory.objects.create(**self.data_category)
+        category = NotifyCategory.objects.get(pk=category.pk)
+
+        self.assertEqual(category.title, self.data_category['title'])
+        self.assertEqual(category.template, self.data_category['template'])
+
         # Создание шаблона
-        template_viber = NotifyTemplate.objects.create(**self.data_template_viber)
-        template_viber.user_lists.add(user_list)
+        template_viber = NotifyTemplate.objects.create(**self.data_template_viber, category=category)
         template_viber = NotifyTemplate.objects.get(pk=template_viber.pk)
+        template_viber.user_lists.add(user_list)
+        template_viber.save()
+
         self.assertEqual(template_viber.title, self.data_template_viber['title'])
         self.assertEqual(template_viber.subject, self.data_template_viber['subject'])
         self.assertEqual(template_viber.text, self.data_template_viber['text'])
         self.assertEqual(template_viber.html, self.data_template_viber['html'])
         self.assertEqual(template_viber.type, self.data_template_viber['type'])
         self.assertEqual(template_viber.event, self.data_template_viber['event'])
-        # Создание категории
-        category = NotifyCategory.objects.create(**self.data_category)
-        category = NotifyCategory.objects.get(pk=category.pk)
-        category.template_choice = template_viber
-        category.save()
-        self.assertEqual(category.title, self.data_category['title'])
-        self.assertEqual(category.template, self.data_category['template'])
-        self.assertEqual(category.template_choice.id, template_viber.id)
+        self.assertEqual(template_viber.category.id, category.id)
+
+        # Создание уведомления
         Notify.send(self.PASS_TEST_EVENT, {
             'sometext': self.sometext,
             'user': user,
-        }, user=user, category=category)
+        }, user=user)
+
         self.assertEqual(Notify.objects.all().count(), 3)
 
-        # notify 1
+        # notify
         notify = Notify.objects.get(user=user)
         self.assertEqual(notify.subject, self.data_compiled_viber['subject'])
         self.assertEqual(notify.text, self.data_compiled_viber['text'])
