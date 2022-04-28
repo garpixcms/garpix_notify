@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from django.template import Template, Context
 
+from .category import NotifyCategory
 from .choices import TYPE
 from .user_list import NotifyUserList
 
@@ -15,7 +16,13 @@ class NotifyTemplate(UserNotifyMixin):
     text = models.TextField(verbose_name='Текст')
     html = RichTextUploadingField(verbose_name='HTML')
 
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True,
+                             verbose_name='Пользователь (получатель)')
+    email = models.EmailField(max_length=255, blank=True, null=True, verbose_name='Email получатель',
+                              help_text='Используется только в случае отсутствия указанного пользователя')
+
     type = models.IntegerField(choices=TYPE.CHOICES, verbose_name='Тип')
+    category = models.ForeignKey(NotifyCategory, on_delete=models.CASCADE, related_name='templates', verbose_name='Категория')
     event = models.IntegerField(choices=settings.CHOICES_NOTIFY_EVENT, blank=True, null=True, verbose_name='Событие')
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
