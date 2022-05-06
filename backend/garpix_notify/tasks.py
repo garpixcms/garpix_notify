@@ -33,6 +33,7 @@ def send_system_notifications(notify_pk):
         async_to_sync(get_channel_layer().group_send)(
             group_name,
             {
+                'id': notify_pk,
                 'type': 'send_notify',
                 'event': instance.event,
                 'message': instance.html
