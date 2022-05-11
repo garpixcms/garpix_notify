@@ -1,3 +1,9 @@
+### 5.5.0 (10.05.2022)
+
+- Added the possibility of mass mailing,
+- Telecom operators added,
+- Fixed bugs.
+
 ### 5.4.2 (06.05.2022)
 
 - In "system" notifications, the id of this notification is additionally received
