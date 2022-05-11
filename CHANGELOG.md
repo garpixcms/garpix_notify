@@ -4,6 +4,10 @@
 - Telecom operators added,
 - Fixed bugs.
 
+### 5.4.2 (06.05.2022)
+
+- In "system" notifications, the id of this notification is additionally received
+
 ### 5.4.1 (04.04.2022)
 
 - Fixed version issue with existing projects
