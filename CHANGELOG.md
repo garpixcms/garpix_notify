@@ -1,10 +1,16 @@
+### 5.5.0 (10.05.2022)
+
+- Added the possibility of mass mailing,
+- Telecom operators added,
+- Fixed bugs.
+
 ### 5.4.1 (04.04.2022)
 
-- Исправлена проблема совместимости версии с существующими проектами
+- Fixed version issue with existing projects
 
 ### 5.4.0 (01.04.2022)
 
-- Добавлена поддержка WEBSZK.
+- Added support for WEBSZK.
 
 ### 5.3.3 (11.03.2022)
 
