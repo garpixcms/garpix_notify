@@ -6,7 +6,7 @@ from ..models.user_list_participant import NotifyUserListParticipant
 class NotifyUserListParticipantInline(admin.TabularInline):
     model = NotifyUserListParticipant
     raw_id_fields = ('user', )
-    fields = ('user', 'email')
+    fields = ('user', 'email', 'phone', 'viber_chat_id')
 
 
 @admin.register(NotifyUserList)

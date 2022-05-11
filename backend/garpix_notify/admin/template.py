@@ -45,26 +45,14 @@ class NotifyTemplateAdmin(admin.ModelAdmin):
 
             context = obj.get_test_data()
             template = obj
-            category = NotifyCategory.objects.create(
-                title=template.title,
-                template_choice=template,
-            )
-            smtp = SMTPAccount.objects.all()
-            if smtp is None:
-                print('>No smtp-accounts detected!<')
-            else:
-                smtp = SMTPAccount.objects.first()
-                smtp.category = category
-                smtp.save()
-                print(f'>Changes have been made for {smtp.sender}<')
             instance = Notify.objects.create(
-                subject=template.render_subject(template.subject),
-                text=template.render_text(context),
-                html=template.render_html(context),
-                user=template.user,
-                email=template.email,
-                type=template.type,
-                category=template.category,
+                subject=obj.render_subject(template.subject),
+                text=obj.render_text(context),
+                html=obj.render_html(context),
+                user=obj.user,
+                email=obj.email,
+                type=obj.type,
+                category=obj.category,
             )
             instance.save()
             instance._send()
