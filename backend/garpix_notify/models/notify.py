@@ -3,6 +3,7 @@ import re
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.header import Header
 from typing import Optional
 from smtplib import SMTP, SMTP_SSL
 from django.conf import settings
@@ -28,7 +29,7 @@ from .log import NotifyErrorLog
 from .smtp import SMTPAccount
 from .template import NotifyTemplate
 from ..mixins import UserNotifyMixin
-from ..utils import receiving
+from ..utils import receiving_users
 from ..utils.sms_checker import SMSCLient
 
 
@@ -38,7 +39,25 @@ def chunks(s, n):
         yield s[start:start + n]
 
 
-config = NotifyConfig.get_solo()
+try:
+    config = NotifyConfig.get_solo()
+    IS_PUSH_ENABLED = config.is_push_enabled
+    IS_TELEGRAM_ENABLED = config.is_telegram_enabled
+    TELEGRAM_API_KEY = config.telegram_api_key
+    IS_VIBER_ENABLED = config.is_viber_enabled
+    VIBER_API_KEY = config.viber_api_key
+    VIBER_BOT_NAME = config.viber_bot_name
+    IS_EMAIL_ENABLED = config.is_email_enabled
+    EMAIL_MALLING = config.email_malling
+except Exception:
+    IS_PUSH_ENABLED = getattr(settings, 'IS_PUSH_ENABLED', True)
+    IS_TELEGRAM_ENABLED = getattr(settings, 'IS_TELEGRAM_ENABLED', True)
+    TELEGRAM_API_KEY = getattr(settings, 'TELEGRAM_API_KEY', '000000000:AAAAAAAAAA-AAAAAAAA-_AAAAAAAAAAAAAA')
+    IS_VIBER_ENABLED = getattr(settings, 'IS_VIBER_ENABLED', True)
+    VIBER_API_KEY = getattr(settings, 'VIBER_API_KEY', '000000000:AAAAAAAAAA-AAAAAAAA-_AAAAAAAAAAAAAA')
+    VIBER_BOT_NAME = getattr(settings, 'VIBER_BOT_NAME', 'MySuperBot')
+    IS_EMAIL_ENABLED = getattr(settings, 'IS_EMAIL_ENABLED', True)
+    EMAIL_MALLING = getattr(settings, 'EMAIL_MALLING', 1)
 
 
 class Notify(UserNotifyMixin, SMSCLient):
@@ -107,7 +126,7 @@ class Notify(UserNotifyMixin, SMSCLient):
         emails = []
         if self.users_list.all().count() != 0:
             users_list = self.users_list.all()
-            receivers = receiving(users_list)
+            receivers = receiving_users(users_list)
             # Убираем дубликаты пользователей
             receivers = list({v['email']: v for v in receivers}.values())
             for user in receivers:
@@ -135,7 +154,7 @@ class Notify(UserNotifyMixin, SMSCLient):
 
     def send_push(self):
 
-        if not config.is_push_enabled:
+        if not IS_PUSH_ENABLED:
             self.state = STATE.DISABLED
             return
 
@@ -163,9 +182,9 @@ class Notify(UserNotifyMixin, SMSCLient):
 
     def send_telegram(self):
         import telegram
-        bot = telegram.Bot(token=config.telegram_api_key)
+        bot = telegram.Bot(token=TELEGRAM_API_KEY)
 
-        if not config.is_telegram_enabled:
+        if not IS_TELEGRAM_ENABLED:
             self.state = STATE.DISABLED
             return
 
@@ -183,7 +202,103 @@ class Notify(UserNotifyMixin, SMSCLient):
             self.state = STATE.REJECTED
             self.to_log(str(e))
 
-    # todo - упростить метод (too complex)
+    def _render_body(self, mail_from, layout, emails):
+        msg = MIMEMultipart('alternative')
+        if len(emails) > 1:
+            if EMAIL_MALLING == 1:
+                msg['BCC'] = ', '.join(emails)
+            else:
+                msg['СС'] = ', '.join(emails)
+        else:
+            msg['To'] = ''.join(emails)
+        msg['Subject'] = Header(self.subject, 'utf-8')
+        msg['From'] = mail_from
+
+        text = MIMEText(self.text, 'plain', 'utf-8')
+        msg.attach(text)
+
+        if self.html:
+            template = Template(layout.template)
+            context = Context({'text': mark_safe(self.html)})
+            html = MIMEText(mark_safe(template.render(context)), 'html', 'utf-8')
+            msg.attach(html)
+
+        for fl in self.files.all():
+            with fl.file.open(mode='rb') as f:
+                part = MIMEApplication(
+                    f.read(),
+                    Name=fl.file.name.split('/')[-1]
+                )
+
+            part['Content-Disposition'] = 'attachment; filename="%s"' % fl.file.name.split('/')[-1]
+
+            msg.attach(part)
+
+        return msg
+
+    def get_format_state(self):
+        if self.state == STATE.WAIT:
+            return format_html('<span style="color:orange;">В ожидании</span>')
+        elif self.state == STATE.DELIVERED:
+            return format_html('<span style="color:green;">Отправлено</span>')
+        elif self.state == STATE.REJECTED:
+            return format_html('<span style="color:red;">Отклонено</span>')
+        elif self.state == STATE.DISABLED:
+            return format_html('<span style="color:red;">Отправка запрещена</span>')
+        return format_html('<span style="color:black;">Неизвестный статус</span>')
+
+    get_format_state.short_description = 'Статус'
+
+    def to_log(self, error_text):
+        log = NotifyErrorLog(notify=self, error=error_text)
+        log.save()
+
+    def send_viber(self):
+        viber = Api(BotConfiguration(
+            name=VIBER_BOT_NAME,
+            avatar='',
+            auth_token=VIBER_API_KEY
+        ))
+        if not IS_VIBER_ENABLED:
+            self.state = STATE.DISABLED
+            return
+        try:
+            result = False
+            # из шаблона получаем выбраные списки пользователей для рассылки
+            for user_lists_in_template in NotifyTemplate.objects.all().prefetch_related('user_lists'):
+                # проверяем добавлены ли списки пользователей для рассылки в шаблон
+                if user_lists_in_template.user_lists.all().exists():
+                    # перебираем списки пользователей для рассылки
+                    for participants_in_user_lists in user_lists_in_template.user_lists.all():
+                        # перебираем участников списка пользователей
+                        for participant in participants_in_user_lists.participants.all():
+                            result = viber.send_messages(to=participant.user.viber_chat_id,
+                                                         messages=[TextMessage(text=self.text)])
+                # если не добавлены, сообщение приходит пользователю(получателю) или тому, кто указан в коде
+                else:
+                    result = viber.send_messages(to=self.viber_chat_id, messages=[TextMessage(text=self.text)])
+            if result:
+                self.state = STATE.DELIVERED
+                self.sent_at = now()
+            else:
+                self.state = STATE.REJECTED
+                self.to_log('REJECTED WITH DATA, please test it.')
+        except Exception as e:  # noqa
+            self.state = STATE.REJECTED
+            self.to_log(str(e))
+
+    def _get_valid_smtp_account(self) -> Optional[SMTPAccount]:
+        if not IS_EMAIL_ENABLED:
+            self.state = STATE.DISABLED
+            return
+
+        account = SMTPAccount.get_free_smtp()
+        self.sender_email = account.sender
+        if account is None or not account.is_active:
+            return
+
+        return account
+
     @staticmethod
     def send(event, context, user=None, email=None, phone=None, files=None, data_json=None,  # noqa
              viber_chat_id=None, room_name=None, notify_templates=None):
@@ -215,7 +330,7 @@ class Notify(UserNotifyMixin, SMSCLient):
             file_instances.append(instance)
 
         notification_count = 0
-        recievers = []
+        receivers = []
         for template in templates:
             template_user = None
             template_email = None
@@ -225,18 +340,18 @@ class Notify(UserNotifyMixin, SMSCLient):
                 # Формируем список основных и дополнительных получателей письма
                 # Первого получателя заполняем из шаблона, его данные могут быть пустыми - чтобы можно было через
                 # код отправить уведомление
-                recievers = [{
+                receivers = [{
                     'user': user,
                     'email': email,
                     'phone': phone,
                     'viber_chat_id': viber_chat_id,
                 }]
-            for reciever in recievers:
-                template_user = reciever['user']
-                template_email = reciever['email']
-                template_phone = reciever['phone']
-                template_viber_chat_id = reciever['viber_chat_id']
-                # Если в шаблоне не указаны получатели, то получатель тот, кого передали в коде
+            for receiver in receivers:
+                template_user = receiver['user']
+                template_email = receiver['email']
+                template_phone = receiver['phone']
+                template_viber_chat_id = receiver['viber_chat_id']
+                # Если в шаблоне не указаны получатели, то получатель тот, кого передали в функцию
                 if template_user is None and template_email is None:
                     template_user = user
                     template_email = email
@@ -313,100 +428,6 @@ class Notify(UserNotifyMixin, SMSCLient):
                 notification_count += 1
 
         return notification_count
-
-    def _render_body(self, mail_from, layout, emails):
-        msg = MIMEMultipart('alternative')
-        if len(emails) > 1:
-            msg['BCC'] = ', '.join(emails)
-        else:
-            msg['To'] = ''.join(emails)
-        msg['Subject'] = self.subject
-        msg['From'] = mail_from
-
-        text = MIMEText(self.text, 'plain')
-        msg.attach(text)
-
-        if self.html:
-            template = Template(layout.template)
-            context = Context({'text': mark_safe(self.html)})
-            html = MIMEText(mark_safe(template.render(context)), 'html')
-            msg.attach(html)
-
-        for fl in self.files.all():
-            with fl.file.open(mode='rb') as f:
-                part = MIMEApplication(
-                    f.read(),
-                    Name=fl.file.name.split('/')[-1]
-                )
-
-            part['Content-Disposition'] = 'attachment; filename="%s"' % fl.file.name.split('/')[-1]
-
-            msg.attach(part)
-
-        return msg
-
-    def get_format_state(self):
-        if self.state == STATE.WAIT:
-            return format_html('<span style="color:orange;">В ожидании</span>')
-        elif self.state == STATE.DELIVERED:
-            return format_html('<span style="color:green;">Отправлено</span>')
-        elif self.state == STATE.REJECTED:
-            return format_html('<span style="color:red;">Отклонено</span>')
-        elif self.state == STATE.DISABLED:
-            return format_html('<span style="color:red;">Отправка запрещена</span>')
-        return format_html('<span style="color:black;">Неизвестный статус</span>')
-
-    get_format_state.short_description = 'Статус'
-
-    def to_log(self, error_text):
-        log = NotifyErrorLog(notify=self, error=error_text)
-        log.save()
-
-    def send_viber(self):
-        viber = Api(BotConfiguration(
-            name=config.viber_bot_name,
-            avatar='',
-            auth_token=config.viber_api_key
-        ))
-        if not config.is_viber_enabled:
-            self.state = STATE.DISABLED
-            return
-        try:
-            result = False
-            # из шаблона получаем выбраные списки пользователей для рассылки
-            for user_lists_in_template in NotifyTemplate.objects.all().prefetch_related('user_lists'):
-                # проверяем добавлены ли списки пользователей для рассылки в шаблон
-                if user_lists_in_template.user_lists.all().exists():
-                    # перебираем списки пользователей для рассылки
-                    for participants_in_user_lists in user_lists_in_template.user_lists.all():
-                        # перебираем участников списка пользователей
-                        for participant in participants_in_user_lists.participants.all():
-                            result = viber.send_messages(to=participant.user.viber_chat_id,
-                                                         messages=[TextMessage(text=self.text)])
-                # если не добавлены, сообщение приходит пользователю(получателю) или тому, кто указан в коде
-                else:
-                    result = viber.send_messages(to=self.viber_chat_id, messages=[TextMessage(text=self.text)])
-            if result:
-                self.state = STATE.DELIVERED
-                self.sent_at = now()
-            else:
-                self.state = STATE.REJECTED
-                self.to_log('REJECTED WITH DATA, please test it.')
-        except Exception as e:  # noqa
-            self.state = STATE.REJECTED
-            self.to_log(str(e))
-
-    def _get_valid_smtp_account(self) -> Optional[SMTPAccount]:
-        if not config.is_email_enabled:
-            self.state = STATE.DISABLED
-            return
-
-        account = SMTPAccount.get_free_smtp()
-        self.sender_email = account.sender
-        if account is None or not account.is_active:
-            return
-
-        return account
 
     class Meta:
         verbose_name = 'Уведомление'

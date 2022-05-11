@@ -3,6 +3,14 @@ from solo.models import SingletonModel
 
 
 class NotifyConfig(SingletonModel):
+    class EMAIL_MALLING:
+        CC = 0
+        BCC = 1
+        TYPES = (
+            (CC, 'Обычная рассылка'),
+            (BCC, 'Скрытая рассылка'),
+        )
+
     class SMS_URL:
         """
         URL СМС провайдера
@@ -92,7 +100,13 @@ class NotifyConfig(SingletonModel):
     viber_welcome_text = models.TextField(blank=True,
                                           default='для активации бота нужно отправить любое сообщения',
                                           verbose_name='Viber - Приветственный текст бота')
+    email_malling = models.IntegerField(default=EMAIL_MALLING.BCC, choices=EMAIL_MALLING.TYPES,
+                                        verbose_name='Тип массовой рассылки',
+                                        help_text='Если выбрана обычная рассылка, то пользователи будут видеть email друг друга')
 
     class Meta:
         verbose_name = 'Настройка'
         verbose_name_plural = 'Настройки'
+
+    def __str__(self):
+        return 'Настройки'

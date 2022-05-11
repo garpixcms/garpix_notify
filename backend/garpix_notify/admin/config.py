@@ -11,7 +11,7 @@ class NotifyConfigAdmin(SingletonModelAdmin):
                        'is_viber_enabled')
         }),
         ('Почта', {
-            'fields': ('email_max_day_limit', 'email_max_hour_limit')
+            'fields': ('email_max_day_limit', 'email_max_hour_limit', 'email_malling')
         }),
         ('СМС', {
             'fields': ('sms_url_type', 'sms_api_id', 'sms_login', 'sms_password', 'sms_from')

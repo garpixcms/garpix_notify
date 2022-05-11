@@ -2,28 +2,28 @@ from django.contrib.auth import get_user_model
 from django.db.models import Q
 
 
-def receiving(users_list):
+def receiving_users(users_list):
     User = get_user_model()
     for user_list in users_list:
-        recievers = []
-        # Сначала проверям есть ли допольнительные список получателей
-        # Если у участника из дополнительного списка ничего не заполнено - не отправляем уведомление
+        receivers = []
+        # Сначала проверям есть ли дополнительные списки получателей
+        # Если у участника из дополнительного списка ничего не заполнено - ему уведомление не отправляем
         for participant in user_list.participants.all():
             if participant.user or participant.email:
-                recievers.append({
+                receivers.append({
                     'user': participant.user,
                     'email': participant.email,
                     'phone': participant.phone,
                     'viber_chat_id': participant.viber_chat_id,
                 })
-        # Проверяем в не отмечена ли массовая рассылка
+        # Проверяем рассылку, не отмечена ли массовая рассылка
         if user_list.mail_to_all is False:
             group_users = User.objects.filter(
                 Q(groups__in=list(
                     user_list.user_groups.all()
                 )))
             for user in group_users:
-                recievers.append(
+                receivers.append(
                     {
                         'user': user,
                         'email': user.email,
@@ -34,7 +34,7 @@ def receiving(users_list):
         else:
             users = User.objects.all()
             for user in users:
-                recievers.append(
+                receivers.append(
                     {
                         'user': user,
                         'email': user.email,
@@ -42,4 +42,4 @@ def receiving(users_list):
                         'viber_chat_id': user.viber_chat_id,
                     }
                 )
-        return recievers
+        return receivers
