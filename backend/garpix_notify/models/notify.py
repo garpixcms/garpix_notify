@@ -301,7 +301,7 @@ class Notify(UserNotifyMixin, SMSCLient):
 
     @staticmethod
     def send(event, context, user=None, email=None, phone=None, files=None, data_json=None,  # noqa
-             viber_chat_id=None, room_name=None, notify_templates=None):
+             viber_chat_id=None, room_name=None, notify_templates=None, send_at=None):
         local_context = context.copy()
 
         if user is not None:
@@ -382,6 +382,11 @@ class Notify(UserNotifyMixin, SMSCLient):
             # Проверка на наличие списка в шаблоне
             # Если в шаблоне передаются списки пользователей, то отдаем их уведомлениям
             # Если уведомление для одного пользователя, то создаем для одного
+            # Также идет проверка на время оправки
+            if send_at is not None:
+                notify_send = send_at
+            else:
+                notify_send = template.send_at
             users_lists = template.user_lists.all()
             if users_lists.count() == 0:
                 instance = Notify.objects.create(
@@ -396,7 +401,7 @@ class Notify(UserNotifyMixin, SMSCLient):
                     event=template.event,
                     category=template.category if template.category else None,
                     data_json=data_json,
-                    send_at=template.send_at,
+                    send_at=notify_send,
                     room_name=room_name
                 )
                 file_instance = instance.files
@@ -417,7 +422,7 @@ class Notify(UserNotifyMixin, SMSCLient):
                     event=template.event,
                     category=template.category if template.category else None,
                     data_json=data_json,
-                    send_at=template.send_at,
+                    send_at=notify_send,
                     room_name=room_name,
                 )
                 instance.users_list.add(*users_lists)
