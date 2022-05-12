@@ -14,8 +14,7 @@ class SMTPAccount(models.Model):
     username = models.CharField(max_length=255, blank=True, default='', verbose_name='Имя пользователя')
     password = models.CharField(max_length=255, blank=True, default='', verbose_name='Пароль пользователя')
     timeout = models.IntegerField(default=5000, verbose_name='Таймаут (сек.)')
-    category = models.ForeignKey(NotifyCategory, on_delete=models.CASCADE, related_name='accounts', verbose_name='Тип', blank=True, null=True)
-
+    category = models.ForeignKey(NotifyCategory, on_delete=models.CASCADE, related_name='accounts', verbose_name='Тип')
     is_active = models.BooleanField(default=True, verbose_name='Включить аккаунт')
 
     email_hour_used_times = models.IntegerField(default=0, verbose_name='Количество использований в час')

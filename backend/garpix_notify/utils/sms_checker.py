@@ -15,7 +15,7 @@ try:
     SMS_PASSWORD = config.sms_password
     SMS_FROM = config.sms_from
 except Exception:
-    IS_SMS_ENABLED = getattr(settings, 'IS_SMS_ENABLED', True)
+    IS_SMS_ENABLED = True
     SMS_URL_TYPE = getattr(settings, 'SMS_URL_TYPE', 0)
     SMS_API_ID = getattr(settings, 'SMS_API_ID', 1234567890)
     SMS_LOGIN = getattr(settings, 'SMS_LOGIN', '')

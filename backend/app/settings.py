@@ -177,8 +177,7 @@ NOTIFY_EVENTS = {
     EXAMPLE_EVENT_2: {
         'title': 'Example 2',
     },
-    TEST_EVENT_2:
-        {
+    TEST_EVENT_2: {
             'title': 'TestEvent',
         },
 }

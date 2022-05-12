@@ -50,13 +50,13 @@ try:
     IS_EMAIL_ENABLED = config.is_email_enabled
     EMAIL_MALLING = config.email_malling
 except Exception:
-    IS_PUSH_ENABLED = getattr(settings, 'IS_PUSH_ENABLED', True)
-    IS_TELEGRAM_ENABLED = getattr(settings, 'IS_TELEGRAM_ENABLED', True)
+    IS_PUSH_ENABLED = True
+    IS_TELEGRAM_ENABLED = True
+    IS_VIBER_ENABLED = True
+    IS_EMAIL_ENABLED = True
     TELEGRAM_API_KEY = getattr(settings, 'TELEGRAM_API_KEY', '000000000:AAAAAAAAAA-AAAAAAAA-_AAAAAAAAAAAAAA')
-    IS_VIBER_ENABLED = getattr(settings, 'IS_VIBER_ENABLED', True)
     VIBER_API_KEY = getattr(settings, 'VIBER_API_KEY', '000000000:AAAAAAAAAA-AAAAAAAA-_AAAAAAAAAAAAAA')
     VIBER_BOT_NAME = getattr(settings, 'VIBER_BOT_NAME', 'MySuperBot')
-    IS_EMAIL_ENABLED = getattr(settings, 'IS_EMAIL_ENABLED', True)
     EMAIL_MALLING = getattr(settings, 'EMAIL_MALLING', 1)
 
 
@@ -301,7 +301,7 @@ class Notify(UserNotifyMixin, SMSCLient):
 
     @staticmethod
     def send(event, context, user=None, email=None, phone=None, files=None, data_json=None,  # noqa
-             viber_chat_id=None, room_name=None, notify_templates=None):
+             viber_chat_id=None, room_name=None, notify_templates=None, send_at=None):
         local_context = context.copy()
 
         if user is not None:
@@ -382,6 +382,11 @@ class Notify(UserNotifyMixin, SMSCLient):
             # Проверка на наличие списка в шаблоне
             # Если в шаблоне передаются списки пользователей, то отдаем их уведомлениям
             # Если уведомление для одного пользователя, то создаем для одного
+            # Также идет проверка на время оправки
+            if send_at is not None:
+                notify_send = send_at
+            else:
+                notify_send = template.send_at
             users_lists = template.user_lists.all()
             if users_lists.count() == 0:
                 instance = Notify.objects.create(
@@ -396,7 +401,7 @@ class Notify(UserNotifyMixin, SMSCLient):
                     event=template.event,
                     category=template.category if template.category else None,
                     data_json=data_json,
-                    send_at=template.send_at,
+                    send_at=notify_send,
                     room_name=room_name
                 )
                 file_instance = instance.files
@@ -417,7 +422,7 @@ class Notify(UserNotifyMixin, SMSCLient):
                     event=template.event,
                     category=template.category if template.category else None,
                     data_json=data_json,
-                    send_at=template.send_at,
+                    send_at=notify_send,
                     room_name=room_name,
                 )
                 instance.users_list.add(*users_lists)
