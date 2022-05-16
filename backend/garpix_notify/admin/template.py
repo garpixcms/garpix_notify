@@ -13,6 +13,7 @@ class NotifyTemplateAdmin(admin.ModelAdmin):
         'is_active',
         'subject',
         'get_context_description',
+        'text',
         'html',
         'user',
         'email',

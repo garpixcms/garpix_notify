@@ -8,7 +8,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='garpix_notify',
-    version='5.4.2',
+    version='5.5.0',
     description='',
     long_description=long_description,
     url='https://github.com/garpixcms/garpix_notify',
