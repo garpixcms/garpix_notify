@@ -2,7 +2,6 @@ from django.contrib import admin
 from ..models.template import NotifyTemplate
 from ..models.notify import Notify
 from django.http import HttpResponseRedirect
-from ..models import NotifyCategory, SMTPAccount
 
 
 @admin.register(NotifyTemplate)

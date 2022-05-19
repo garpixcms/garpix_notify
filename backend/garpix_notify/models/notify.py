@@ -346,11 +346,11 @@ class Notify(UserNotifyMixin, SMSCLient):
                     'phone': phone,
                     'viber_chat_id': viber_chat_id,
                 }]
-            for receiver in receivers:
-                template_user = receiver['user']
-                template_email = receiver['email']
-                template_phone = receiver['phone']
-                template_viber_chat_id = receiver['viber_chat_id']
+            for recipient in receivers:
+                template_user = recipient['user']
+                template_email = recipient['email']
+                template_phone = recipient['phone']
+                template_viber_chat_id = recipient['viber_chat_id']
                 # Если в шаблоне не указаны получатели, то получатель тот, кого передали в функцию
                 if template_user is None and template_email is None:
                     template_user = user

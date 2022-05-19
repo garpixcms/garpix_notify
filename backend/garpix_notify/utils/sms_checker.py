@@ -2,7 +2,7 @@ import requests
 from django.conf import settings
 from django.utils.timezone import now
 
-from ..models.config import NotifyConfig
+from garpix_notify.models.config import NotifyConfig
 from garpix_notify.models.choices import STATE
 from garpix_notify.utils.receiving import receiving_users
 
@@ -49,7 +49,6 @@ class SMSCLient:
                 url = '{url}?api_id={api_id}&to={to}&msg={text}&json=1'.format(
                     url=NotifyConfig.SMS_URL.SMSRU_URL,
                     api_id=SMS_API_ID,
-                    from_text=SMS_FROM,
                     to=phones,
                     text=msg,
                 )

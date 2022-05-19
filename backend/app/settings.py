@@ -163,7 +163,6 @@ EXAMPLE_EVENT_1 = 3
 EXAMPLE_EVENT_2 = 4
 TEST_EVENT_2 = 5
 
-
 NOTIFY_EVENTS = {
     REGISTRATION_EVENT: {
         'title': 'Register',
@@ -178,8 +177,8 @@ NOTIFY_EVENTS = {
         'title': 'Example 2',
     },
     TEST_EVENT_2: {
-            'title': 'TestEvent',
-        },
+        'title': 'TestEvent',
+    },
 }
 
 CHOICES_NOTIFY_EVENT = [(k, v['title']) for k, v in NOTIFY_EVENTS.items()]
