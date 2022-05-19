@@ -228,3 +228,5 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
+GARPIX_NOTIFY_MIXIN = 'app.models.notify_mixin.NotifyMixin'

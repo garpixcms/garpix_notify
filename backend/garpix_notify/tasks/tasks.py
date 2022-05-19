@@ -24,8 +24,8 @@ def send_notifications():
 
 @celery_app.task
 def send_system_notifications(notify_pk):
+    instance = Notify.objects.get(pk=notify_pk)
     try:
-        instance = Notify.objects.get(pk=notify_pk)
         if instance.room_name:
             group_name = instance.room_name
         else:
