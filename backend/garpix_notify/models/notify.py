@@ -35,7 +35,10 @@ def chunks(s, n):
         yield s[start:start + n]
 
 
-class Notify(UserNotifyMixin):
+NotifyMixin = import_string(settings.GARPIX_NOTIFY_MIXIN)
+
+
+class Notify(UserNotifyMixin, NotifyMixin):
     """
     Уведомление
     """
@@ -214,8 +217,9 @@ class Notify(UserNotifyMixin):
 
     # todo - упростить метод (too complex)
     @staticmethod
-    def send(event, context, user=None, email=None, phone=None, files=None, data_json=None, notify_templates=None,  # noqa
-             viber_chat_id=None, room_name=None):
+    def send(event, context, user=None, email=None, phone=None, files=None, data_json=None, notify_templates=None,
+             # noqa
+             viber_chat_id=None, room_name=None, **kwargs):
         User = get_user_model()
 
         if user is not None:
@@ -359,12 +363,14 @@ class Notify(UserNotifyMixin):
                     category=template.category,
                     data_json=data_json,
                     send_at=template.send_at,
-                    room_name=room_name
+                    room_name=room_name,
+                    **kwargs
                 )
                 file_instance = instance.files
                 for f in file_instances:
                     file_instance.add(f)
                 instance.save()
+
                 notification_count += 1
 
         return notification_count

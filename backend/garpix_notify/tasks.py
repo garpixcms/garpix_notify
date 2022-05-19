@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.utils import timezone
 from app.celery import app as celery_app
 from asgiref.sync import async_to_sync
@@ -10,7 +11,7 @@ from .models.notify import Notify
 
 @celery_app.task
 def send_notifications():
-    notifies = Notify.objects.filter(state__in=[STATE.WAIT]).exclude(type=TYPE.SYSTEM)
+    notifies = Notify.objects.filter(Q(state__in=[STATE.WAIT]) & ~Q(type=TYPE.SYSTEM))
 
     for notify in notifies.iterator():
         if notify.state == STATE.WAIT:
@@ -19,13 +20,14 @@ def send_notifications():
             else:
                 if timezone.now() > notify.send_at:
                     notify._send()
+
     return
 
 
 @celery_app.task
 def send_system_notifications(notify_pk):
+    instance = Notify.objects.get(pk=notify_pk)
     try:
-        instance = Notify.objects.get(pk=notify_pk)
         if instance.room_name:
             group_name = instance.room_name
         else:
@@ -44,7 +46,6 @@ def send_system_notifications(notify_pk):
         instance.state = STATE.REJECTED
         instance.to_log(str(e))
     instance.save()
-    return
 
 
 celery_app.conf.beat_schedule.update({
