@@ -2,6 +2,7 @@ from django.contrib import admin
 from ..models.template import NotifyTemplate
 from ..models.notify import Notify
 from django.http import HttpResponseRedirect
+from ..models import NotifyCategory, SMTPAccount
 
 
 @admin.register(NotifyTemplate)
@@ -32,6 +33,7 @@ class NotifyTemplateAdmin(admin.ModelAdmin):
     list_display = ('title', 'is_active', 'type', 'category', 'event', 'user', 'email', 'phone', 'send_at')
     list_filter = ('type', 'category', 'event', 'is_active')
     actions = ['create_mailing', ]
+    filter_horizontal = ('user_lists',)
 
     def create_mailing(self, request, queryset):
         count = Notify.send(event=None, context={}, notify_templates=queryset)
@@ -40,18 +42,18 @@ class NotifyTemplateAdmin(admin.ModelAdmin):
 
     def response_change(self, request, obj):
         from ..models.notify import Notify
-        if (obj.user and "_send_now" in request.POST) or (obj.email and "_send_now" in request.POST):
+        if obj.user_lists and "_send_now" in request.POST:
 
             context = obj.get_test_data()
             template = obj
             instance = Notify.objects.create(
-                subject=template.render_subject(template.subject),
-                text=template.render_text(context),
-                html=template.render_html(context),
-                user=template.user,
-                email=template.email,
-                type=template.type,
-                category=template.category
+                subject=obj.render_subject(template.subject),
+                text=obj.render_text(context),
+                html=obj.render_html(context),
+                user=obj.user,
+                email=obj.email,
+                type=obj.type,
+                category=obj.category,
             )
             instance.save()
             instance._send()

@@ -1,13 +1,21 @@
-from django.test import TestCase
-from .models import NotifyTemplate
-from .models import NotifyCategory
-from .models import Notify
-from .models import NotifyUserList
-from .models import NotifyUserListParticipant
-from .models.choices import TYPE
+import django
+import os
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "app.settings")
+django.setup()
+
+from django.utils.crypto import get_random_string
+from unittest import TestCase
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 
+from .models import Notify
+from .models import NotifyCategory
+from .models import NotifyTemplate
+from .models import NotifyUserList
+from .models import NotifyUserListParticipant
+from .models.choices import TYPE
 
 User = get_user_model()
 
@@ -18,17 +26,13 @@ class PreBuildTestCase(TestCase):
         self.PASS_TEST_EVENT = 0
         # тестовый пользователь
         self.data_user = {
-            'username': 'test',
+            'username': 'email_test' + get_random_string(length=4),
             'email': 'test@garpix.com',
             'password': 'BlaBla123',
             'first_name': 'Ivan',
             'last_name': 'Ivanov',
         }
         # data
-        self.data_category = {
-            'title': 'Основная категория',
-            'template': '<div>{{text}}</div>',
-        }
         self.data_template_email = {
             'title': 'Тестовый темплейт',
             'subject': 'Тестовый темплейт {{user.email}}',
@@ -36,6 +40,10 @@ class PreBuildTestCase(TestCase):
             'html': 'Контент HTML {{user.email}} - {{sometext}}',
             'type': TYPE.EMAIL,
             'event': self.PASS_TEST_EVENT,
+        }
+        self.data_category = {
+            'title': 'Основная категория_' + get_random_string(length=4),
+            'template': '<div>{{text}}</div>',
         }
         self.sometext = 'bla bla'
         self.data_compiled_email = {
@@ -81,14 +89,9 @@ class PreBuildTestCase(TestCase):
     def test_notify_email_user_list(self):
         # Создание пользователя
         user = User.objects.create_user(**self.data_user)
-        # Создание категории
-        category = NotifyCategory.objects.create(**self.data_category)
-        category = NotifyCategory.objects.get(pk=category.pk)
-        self.assertEqual(category.title, self.data_category['title'])
-        self.assertEqual(category.template, self.data_category['template'])
         # Создание списка
-        user_list = NotifyUserList.objects.create(title='Админы')
-        group = Group.objects.create(name="Админы клиенты")
+        user_list = NotifyUserList.objects.create(title='userlist_' + get_random_string(length=4))
+        group = Group.objects.create(name='group_' + get_random_string(length=4))
         user_list.user_groups.add(group)
 
         user_list_participant1 = NotifyUserListParticipant.objects.create(  # noqa
@@ -103,10 +106,17 @@ class PreBuildTestCase(TestCase):
             email='test3@garpix.com',
         )
 
+        # Создание категории
+        category = NotifyCategory.objects.create(**self.data_category)
+        category = NotifyCategory.objects.get(pk=category.pk)
+        self.assertEqual(category.title, self.data_category['title'])
+        self.assertEqual(category.template, self.data_category['template'])
+
         # Создание шаблона
         template_email = NotifyTemplate.objects.create(category=category, **self.data_template_email)
-        template_email.user_lists.add(user_list)
         template_email = NotifyTemplate.objects.get(pk=template_email.pk)
+        template_email.user_lists.add(user_list)
+        template_email.save()
 
         self.assertEqual(template_email.title, self.data_template_email['title'])
         self.assertEqual(template_email.subject, self.data_template_email['subject'])
@@ -122,9 +132,9 @@ class PreBuildTestCase(TestCase):
             'user': user,
         }, user=user)
 
-        self.assertEqual(Notify.objects.all().count(), 3)
+        self.assertEqual(Notify.objects.all().count(), 2)
 
-        # notify 1
+        # notify
         notify = Notify.objects.get(user=user)
         self.assertEqual(notify.subject, self.data_compiled_email['subject'])
         self.assertEqual(notify.text, self.data_compiled_email['text'])
@@ -132,22 +142,6 @@ class PreBuildTestCase(TestCase):
         self.assertEqual(notify.type, self.data_compiled_email['type'])
         self.assertEqual(notify.event, self.data_compiled_email['event'])
         self.assertEqual(notify.email, 'test@garpix.com')
-        # notify 2
-        notify = Notify.objects.get(email='test2@garpix.com')
-        self.assertEqual(notify.subject, self.data_compiled_email['subject'])
-        self.assertEqual(notify.text, self.data_compiled_email['text'])
-        self.assertEqual(notify.html, self.data_compiled_email['html'])
-        self.assertEqual(notify.type, self.data_compiled_email['type'])
-        self.assertEqual(notify.event, self.data_compiled_email['event'])
-        self.assertEqual(notify.email, 'test2@garpix.com')
-        # notify 3
-        notify = Notify.objects.get(email='test3@garpix.com')
-        self.assertEqual(notify.subject, self.data_compiled_email['subject'])
-        self.assertEqual(notify.text, self.data_compiled_email['text'])
-        self.assertEqual(notify.html, self.data_compiled_email['html'])
-        self.assertEqual(notify.type, self.data_compiled_email['type'])
-        self.assertEqual(notify.event, self.data_compiled_email['event'])
-        self.assertEqual(notify.email, 'test3@garpix.com')
 
     def test_notify_viber(self):
         self.data_template_viber = {
@@ -159,12 +153,12 @@ class PreBuildTestCase(TestCase):
             'event': self.PASS_TEST_EVENT,
         }
         self.data_viber_user = {
-            'username': 'test',
+            'username': 'viber_' + get_random_string(length=5),
             'viber_secret_key': '111',
             'viber_chat_id': 'm4FsaRu5kBi8HzSAC0liFQ==',
             'password': 'BlaBla123',
-            'first_name': 'Ivan',
-            'last_name': 'Ivanov',
+            'first_name': 'IvanViber',
+            'last_name': 'IvanovViber',
         }
         self.data_compiled_viber = {
             'subject': f'Тестовый темплейт {self.data_viber_user["viber_chat_id"]}',
@@ -175,19 +169,24 @@ class PreBuildTestCase(TestCase):
         }
         # Создание пользователя
         user = User.objects.create_user(**self.data_viber_user)
-        # Создание категории
-        category = NotifyCategory.objects.create(**self.data_category)
-        category = NotifyCategory.objects.get(pk=category.pk)
-        self.assertEqual(category.title, self.data_category['title'])
-        self.assertEqual(category.template, self.data_category['template'])
         # Создание списка
-        user_list = NotifyUserList.objects.create(title='viber_user_list')
+        user_list = NotifyUserList.objects.create(title='viber_' + get_random_string(length=4))
         user_list_participant1 = NotifyUserListParticipant.objects.create(  # noqa
             user_list=user_list,
         )
-        template_viber = NotifyTemplate.objects.create(category=category, **self.data_template_viber)
-        template_viber.user_lists.add(user_list)
+        # Создание категории
+        category = NotifyCategory.objects.create(**self.data_category)
+        category = NotifyCategory.objects.get(pk=category.pk)
+
+        self.assertEqual(category.title, self.data_category['title'])
+        self.assertEqual(category.template, self.data_category['template'])
+
+        # Создание шаблона
+        template_viber = NotifyTemplate.objects.create(**self.data_template_viber, category=category)
         template_viber = NotifyTemplate.objects.get(pk=template_viber.pk)
+        template_viber.user_lists.add(user_list)
+        template_viber.save()
+
         self.assertEqual(template_viber.title, self.data_template_viber['title'])
         self.assertEqual(template_viber.subject, self.data_template_viber['subject'])
         self.assertEqual(template_viber.text, self.data_template_viber['text'])
@@ -196,13 +195,15 @@ class PreBuildTestCase(TestCase):
         self.assertEqual(template_viber.event, self.data_template_viber['event'])
         self.assertEqual(template_viber.category.id, category.id)
 
+        # Создание уведомления
         Notify.send(self.PASS_TEST_EVENT, {
             'sometext': self.sometext,
             'user': user,
         }, user=user)
-        self.assertEqual(Notify.objects.all().count(), 1)
 
-        # notify 1
+        self.assertEqual(Notify.objects.all().count(), 3)
+
+        # notify
         notify = Notify.objects.get(user=user)
         self.assertEqual(notify.subject, self.data_compiled_viber['subject'])
         self.assertEqual(notify.text, self.data_compiled_viber['text'])

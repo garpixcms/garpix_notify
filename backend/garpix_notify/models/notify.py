@@ -3,21 +3,23 @@ import re
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.header import Header
 from typing import Optional
 from smtplib import SMTP, SMTP_SSL
-import requests
 from django.conf import settings
 from django.db import models, transaction
+from django.db.models import Q
 from django.template import Template, Context
 from django.utils.html import format_html
 from django.utils.module_loading import import_string
 from django.utils.safestring import mark_safe
 from django.utils.timezone import now
-from django.contrib.auth import get_user_model
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from viberbot import Api, BotConfiguration
 from viberbot.api.messages import TextMessage
+
+from .user_list import NotifyUserList
 from .category import NotifyCategory
 from .choices import TYPE, STATE
 from .config import NotifyConfig
@@ -27,6 +29,8 @@ from .log import NotifyErrorLog
 from .smtp import SMTPAccount
 from .template import NotifyTemplate
 from ..mixins import UserNotifyMixin
+from ..utils import receiving_users
+from ..utils.sms_checker import SMSCLient
 
 
 def chunks(s, n):
@@ -35,12 +39,31 @@ def chunks(s, n):
         yield s[start:start + n]
 
 
-class Notify(UserNotifyMixin):
+try:
+    config = NotifyConfig.get_solo()
+    IS_PUSH_ENABLED = config.is_push_enabled
+    IS_TELEGRAM_ENABLED = config.is_telegram_enabled
+    TELEGRAM_API_KEY = config.telegram_api_key
+    IS_VIBER_ENABLED = config.is_viber_enabled
+    VIBER_API_KEY = config.viber_api_key
+    VIBER_BOT_NAME = config.viber_bot_name
+    IS_EMAIL_ENABLED = config.is_email_enabled
+    EMAIL_MALLING = config.email_malling
+except Exception:
+    IS_PUSH_ENABLED = True
+    IS_TELEGRAM_ENABLED = True
+    IS_VIBER_ENABLED = True
+    IS_EMAIL_ENABLED = True
+    TELEGRAM_API_KEY = getattr(settings, 'TELEGRAM_API_KEY', '000000000:AAAAAAAAAA-AAAAAAAA-_AAAAAAAAAAAAAA')
+    VIBER_API_KEY = getattr(settings, 'VIBER_API_KEY', '000000000:AAAAAAAAAA-AAAAAAAA-_AAAAAAAAAAAAAA')
+    VIBER_BOT_NAME = getattr(settings, 'VIBER_BOT_NAME', 'MySuperBot')
+    EMAIL_MALLING = getattr(settings, 'EMAIL_MALLING', 1)
+
+
+class Notify(UserNotifyMixin, SMSCLient):
     """
     Уведомление
     """
-
-    # title = models.CharField(max_length=255, verbose_name='Название для админа')
     subject = models.CharField(max_length=255, default='', blank=True, verbose_name='Тема')
     text = models.TextField(verbose_name='Текст')
     html = models.TextField(verbose_name='HTML', blank=True, default='')
@@ -53,14 +76,15 @@ class Notify(UserNotifyMixin):
 
     type = models.IntegerField(choices=TYPE.CHOICES, verbose_name='Тип')
     state = models.IntegerField(choices=STATE.CHOICES, default=STATE.WAIT, verbose_name='Состояние')
-    category = models.ForeignKey(NotifyCategory, on_delete=models.CASCADE, related_name='notifies',
-                                 verbose_name='Категория')
+    category = models.ForeignKey(NotifyCategory, on_delete=models.CASCADE, related_name='notifies', verbose_name='Категория')
     event = models.IntegerField(choices=settings.CHOICES_NOTIFY_EVENT, blank=True, null=True, verbose_name='Событие')
     files = models.ManyToManyField(NotifyFile, verbose_name='Файлы')
 
     is_read = models.BooleanField(default=False, verbose_name='Прочитано')
     data_json = models.TextField(blank=True, null=True, verbose_name='Данные пуш-уведомления (JSON)')
     room_name = models.CharField(max_length=255, null=True, blank=True, verbose_name='Название комнаты')
+
+    users_list = models.ManyToManyField(NotifyUserList, blank=True, verbose_name='Списки пользователей для рассылки')
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     send_at = models.DateTimeField(blank=True, null=True, verbose_name='Время начала отправки')
@@ -99,15 +123,28 @@ class Notify(UserNotifyMixin):
 
     def send_email(self):
         account = self._get_valid_smtp_account()
+        emails = []
+        if self.users_list.all().count() != 0:
+            users_list = self.users_list.all()
+            receivers = receiving_users(users_list)
+            # Убираем дубликаты пользователей
+            receivers = list({v['email']: v for v in receivers}.values())
+            for user in receivers:
+                if user['email']:
+                    emails.append(user['email'])
+            if self.email:
+                emails.append(self.email)
+        else:
+            emails.append(self.email)
 
         try:
-            body = self._render_body(account.sender, self.category.template)
+            body = self._render_body(mail_from=account.sender, layout=self.category, emails=emails)
             server = SMTP_SSL(account.host, account.port) if account.is_use_ssl else SMTP(account.host, account.port)
             server.ehlo()
             if account.is_use_tls:
                 server.starttls()
             server.login(account.username, account.password)
-            server.sendmail(account.sender, [self.email], body.as_string())
+            server.sendmail(account.sender, emails, body.as_string())
             server.close()
             self.state = STATE.DELIVERED
             self.sent_at = now()
@@ -115,55 +152,9 @@ class Notify(UserNotifyMixin):
             self.state = STATE.REJECTED
             self.to_log(str(e))
 
-    def send_sms(self):
-        config = NotifyConfig.get_solo()
-
-        if not config.is_sms_enabled:
-            self.state = STATE.DISABLED
-            return
-
-        try:
-            msg = str(self.text.replace(' ', '+'))
-            if config.sms_url_type == NotifyConfig.SMS_URL.SMSRU_ID:
-                url = '{url}?msg={text}&to={to}&api_id={api_id}&from={from_text}&json=1'.format(
-                    url=NotifyConfig.SMS_URL.SMSRU_URL,
-                    api_id=config.sms_api_id,
-                    from_text=config.sms_from,
-                    to=self.phone,
-                    text=msg,
-                )
-                response = requests.get(url)
-                response_dict = response.json()
-                if response_dict.get('status'):
-                    self.state = STATE.DELIVERED
-                    self.sent_at = now()
-                else:
-                    self.state = STATE.REJECTED
-            else:
-                url = '{url}?user={user}&pwd={pwd}&sadr={from_text}&text={text}&dadr={to}'.format(
-                    url=NotifyConfig.SMS_URL.WEBSZK_URL,
-                    user=config.sms_login,
-                    pwd=config.sms_password,
-                    from_text=config.sms_from,
-                    to=self.phone,
-                    text=msg,
-                )
-                response = requests.get(url)
-                try:
-                    int(response.text)
-                    self.state = STATE.DELIVERED
-                    self.sent_at = now()
-                except Exception:
-                    self.state = STATE.REJECTED
-
-        except Exception as e:  # noqa
-            self.state = STATE.REJECTED
-            self.to_log(str(e))
-
     def send_push(self):
-        config = NotifyConfig.get_solo()
 
-        if not config.is_push_enabled:
+        if not IS_PUSH_ENABLED:
             self.state = STATE.DISABLED
             return
 
@@ -191,10 +182,9 @@ class Notify(UserNotifyMixin):
 
     def send_telegram(self):
         import telegram
-        config = NotifyConfig.get_solo()
-        bot = telegram.Bot(token=config.telegram_api_key)
+        bot = telegram.Bot(token=TELEGRAM_API_KEY)
 
-        if not config.is_telegram_enabled:
+        if not IS_TELEGRAM_ENABLED:
             self.state = STATE.DISABLED
             return
 
@@ -212,177 +202,25 @@ class Notify(UserNotifyMixin):
             self.state = STATE.REJECTED
             self.to_log(str(e))
 
-    # todo - упростить метод (too complex)
-    @staticmethod
-    def send(event, context, user=None, email=None, phone=None, files=None, data_json=None, notify_templates=None,  # noqa
-             viber_chat_id=None, room_name=None):
-        User = get_user_model()
-
-        if user is not None:
-            email = user.email if not email else email
-            phone = user.phone if not phone else phone
-
-        user_want_message_check = None
-        if hasattr(settings, 'NOTIFY_USER_WANT_MESSAGE_CHECK') and settings.NOTIFY_USER_WANT_MESSAGE_CHECK is not None:
-            user_want_message_check = import_string(settings.NOTIFY_USER_WANT_MESSAGE_CHECK)
-
-        # Для выбора шаблонов в action'е
-        if notify_templates:
-            templates = NotifyTemplate.objects.filter(id__in=notify_templates, event=event, is_active=True)
-        else:
-            templates = NotifyTemplate.objects.filter(event=event, is_active=True)
-
-        if files is None:
-            files = []
-
-        data_json = json.dumps(data_json) if data_json is not None else None
-
-        file_instances = []
-        for f in files:
-            instance = NotifyFile.objects.create(file=f)
-            file_instances.append(instance)
-
-        notification_count = 0
-        for template in templates:
-            # Формируем список основных и дополнительных получателей письма
-            # Первого получателя заполняем из шаблона, его данные могут быть пустыми - чтобы можно было через
-            # код отправить уведомление
-            if template.user or template.email or template.phone or template.viber_chat_id:
-                recievers = [{
-                    'user': template.user,
-                    'email': template.email,
-                    'phone': template.phone,
-                    'viber_chat_id': template.viber_chat_id,
-                }]
-            elif user or phone or email or viber_chat_id:
-                recievers = [{
-                    'user': user,
-                    'email': email,
-                    'phone': phone,
-                    'viber_chat_id': viber_chat_id,
-                }]
-            else:
-                recievers = []
-
-            for user_list in template.user_lists.all():
-                for participant in user_list.participants.all():
-                    # Если у участника из дополнительного списка ничего не заполнено - не отправляем уведомление
-                    if participant.user is not None:
-                        recievers.append({
-                            'user': participant.user,
-                            'email': participant.email,
-                            'phone': participant.phone,
-                            'viber_chat_id': participant.viber_chat_id,
-                        })
-                    elif participant.email is not None:
-                        recievers.append({
-                            'user': participant.user,
-                            'email': participant.email,
-                            'phone': participant.phone,
-                            'viber_chat_id': participant.viber_chat_id,
-                        })
-
-                # Если в списке отмечены группы
-                if user_list.user_groups and not user_list.mail_to_all:
-                    group_users = User.objects.filter(groups__in=list(user_list.user_groups.all()))
-                    for user in group_users:
-                        recievers.append(
-                            {
-                                'user': user,
-                                'email': user.email,
-                                'phone': user.phone,
-                                'viber_chat_id': user.viber_chat_id,
-                            }
-                        )
-                    # Убираем дубликаты пользователей
-                    recievers = list({v['email']: v for v in recievers}.values())
-
-                # Если в списке пользователей отмечены все пользователи
-                if user_list.mail_to_all:
-                    recievers = []
-                    users = User.objects.all()
-                    for user in users:
-                        recievers.append(
-                            {
-                                'user': user,
-                                'email': user.email,
-                                'phone': user.phone,
-                                'viber_chat_id': user.viber_chat_id,
-                            }
-                        )
-            for reciever in recievers:
-                template_user = reciever['user']
-                template_email = reciever['email']
-                template_phone = reciever['phone']
-                template_viber_chat_id = reciever['viber_chat_id']
-                # Если в шаблоне не указан получатель, то получатель тот, кого передали в коде
-                if template_user is None and template_email is None and template_phone is None and template_viber_chat_id is None:
-                    template_user = user
-                    template_email = email
-                    template_phone = phone
-                    template_viber_chat_id = viber_chat_id
-                    # Если пользователь заполнен, то перезаписываем поля емейла и номера телефона,
-                    # даже если они были переданы.
-                    if user is not None:
-                        template_email = user.email
-                        template_phone = user.phone
-                        template_viber_chat_id = user.viber_chat_id
-                # Проверка, хочет ли получить сообщение
-                if user_want_message_check is not None and not \
-                        user_want_message_check(event, template.type, template_user):  # noqa
-                    continue
-
-                local_context = context.copy()
-
-                # Добавляем пользователя в контекст, если его там не передали
-                if template_user is not None:
-                    if local_context is not None:
-                        local_context.update({
-                            'user': template_user,
-                        })
-                    else:
-                        local_context = {
-                            'user': template_user,
-                        }
-                local_context['event_id'] = event
-
-                instance = Notify.objects.create(
-                    subject=template.render_subject(local_context),
-                    text=template.render_text(local_context),
-                    html=template.render_html(local_context),
-                    user=template_user,
-                    email=template_email,
-                    phone=template_phone if template_phone is not None else "",
-                    viber_chat_id=template_viber_chat_id if template_viber_chat_id is not None else "",
-                    type=template.type,
-                    event=template.event,
-                    category=template.category,
-                    data_json=data_json,
-                    send_at=template.send_at,
-                    room_name=room_name
-                )
-                file_instance = instance.files
-                for f in file_instances:
-                    file_instance.add(f)
-                instance.save()
-                notification_count += 1
-
-        return notification_count
-
-    def _render_body(self, mail_from, layout):
+    def _render_body(self, mail_from, layout, emails):
         msg = MIMEMultipart('alternative')
-
-        msg['Subject'] = self.subject
+        if len(emails) > 1:
+            if EMAIL_MALLING == 1:
+                msg['BCC'] = ', '.join(emails)
+            else:
+                msg['СС'] = ', '.join(emails)
+        else:
+            msg['To'] = ''.join(emails)
+        msg['Subject'] = Header(self.subject, 'utf-8')
         msg['From'] = mail_from
-        msg['To'] = self.email
 
-        text = MIMEText(self.text, 'plain')
+        text = MIMEText(self.text, 'plain', 'utf-8')
         msg.attach(text)
 
         if self.html:
-            template = Template(layout)
+            template = Template(layout.template)
             context = Context({'text': mark_safe(self.html)})
-            html = MIMEText(mark_safe(template.render(context)), 'html')
+            html = MIMEText(mark_safe(template.render(context)), 'html', 'utf-8')
             msg.attach(html)
 
         for fl in self.files.all():
@@ -416,13 +254,12 @@ class Notify(UserNotifyMixin):
         log.save()
 
     def send_viber(self):
-        config = NotifyConfig.get_solo()
         viber = Api(BotConfiguration(
-            name=config.viber_bot_name,
+            name=VIBER_BOT_NAME,
             avatar='',
-            auth_token=config.viber_api_key
+            auth_token=VIBER_API_KEY
         ))
-        if not config.is_viber_enabled:
+        if not IS_VIBER_ENABLED:
             self.state = STATE.DISABLED
             return
         try:
@@ -451,8 +288,7 @@ class Notify(UserNotifyMixin):
             self.to_log(str(e))
 
     def _get_valid_smtp_account(self) -> Optional[SMTPAccount]:
-        config = NotifyConfig.get_solo()
-        if not config.is_email_enabled:
+        if not IS_EMAIL_ENABLED:
             self.state = STATE.DISABLED
             return
 
@@ -463,6 +299,141 @@ class Notify(UserNotifyMixin):
 
         return account
 
+    @staticmethod
+    def send(event, context, user=None, email=None, phone=None, files=None, data_json=None,  # noqa
+             viber_chat_id=None, room_name=None, notify_templates=None, send_at=None):
+        local_context = context.copy()
+
+        if user is not None:
+            email = user.email if not email else email
+            phone = user.phone if not phone else phone
+
+        user_want_message_check = None
+        if hasattr(settings, 'NOTIFY_USER_WANT_MESSAGE_CHECK') and settings.NOTIFY_USER_WANT_MESSAGE_CHECK is not None:
+            user_want_message_check = import_string(settings.NOTIFY_USER_WANT_MESSAGE_CHECK)
+
+        # Для выбора шаблонов из Категории или по ивенту
+        if notify_templates:
+            templates = NotifyTemplate.objects.filter(id__in=notify_templates, event=event, is_active=True)
+        else:
+            templates = NotifyTemplate.objects.filter(
+                Q(event=event) & Q(is_active=True)
+            )
+        if files is None:
+            files = []
+
+        data_json = json.dumps(data_json) if data_json is not None else None
+
+        file_instances = []
+        for f in files:
+            instance = NotifyFile.objects.create(file=f)
+            file_instances.append(instance)
+
+        notification_count = 0
+        receivers = []
+        for template in templates:
+            template_user = None
+            template_email = None
+            template_phone = None
+            template_viber_chat_id = None
+            if user or phone or email or viber_chat_id:
+                # Формируем список основных и дополнительных получателей письма
+                # Первого получателя заполняем из шаблона, его данные могут быть пустыми - чтобы можно было через
+                # код отправить уведомление
+                receivers = [{
+                    'user': user,
+                    'email': email,
+                    'phone': phone,
+                    'viber_chat_id': viber_chat_id,
+                }]
+            for receiver in receivers:
+                template_user = receiver['user']
+                template_email = receiver['email']
+                template_phone = receiver['phone']
+                template_viber_chat_id = receiver['viber_chat_id']
+                # Если в шаблоне не указаны получатели, то получатель тот, кого передали в функцию
+                if template_user is None and template_email is None:
+                    template_user = user
+                    template_email = email
+                    template_phone = phone
+                    template_viber_chat_id = viber_chat_id
+                    # Если пользователь заполнен, то перезаписываем поля емейла и номера телефона,
+                    # даже если они были переданы.
+                    if user is not None:
+                        template_email = user.email
+                        template_phone = user.phone
+                        template_viber_chat_id = user.viber_chat_id
+                # Проверка, хочет ли получить сообщение
+                if user_want_message_check is not None and not \
+                        user_want_message_check(event, template.type, template_user):  # noqa
+                    continue
+
+                # Добавляем пользователя в контекст, если его там не передали
+                if template_user is not None:
+                    if local_context is not None:
+                        local_context.update({
+                            'user': template_user,
+                        })
+                    else:
+                        local_context = {
+                            'user': template_user,
+                        }
+                local_context['event_id'] = event
+            # Проверка на наличие списка в шаблоне
+            # Если в шаблоне передаются списки пользователей, то отдаем их уведомлениям
+            # Если уведомление для одного пользователя, то создаем для одного
+            # Также идет проверка на время оправки
+            if send_at is not None:
+                notify_send = send_at
+            else:
+                notify_send = template.send_at
+            users_lists = template.user_lists.all()
+            if users_lists.count() == 0:
+                instance = Notify.objects.create(
+                    subject=template.render_subject(local_context),
+                    text=template.render_text(local_context),
+                    html=template.render_html(local_context),
+                    user=template_user,
+                    email=template_email,
+                    phone=template_phone if template_phone is not None else "",
+                    viber_chat_id=template_viber_chat_id if template_viber_chat_id is not None else "",
+                    type=template.type,
+                    event=template.event,
+                    category=template.category if template.category else None,
+                    data_json=data_json,
+                    send_at=notify_send,
+                    room_name=room_name
+                )
+                file_instance = instance.files
+                for f in file_instances:
+                    file_instance.add(f)
+                instance.save()
+                notification_count += 1
+            else:
+                instance = Notify.objects.create(
+                    subject=template.render_subject(local_context),
+                    text=template.render_text(local_context),
+                    html=template.render_html(local_context),
+                    user=template_user,
+                    email=template_email,
+                    phone=template_phone if template_phone is not None else "",
+                    viber_chat_id=template_viber_chat_id if template_viber_chat_id is not None else "",
+                    type=template.type,
+                    event=template.event,
+                    category=template.category if template.category else None,
+                    data_json=data_json,
+                    send_at=notify_send,
+                    room_name=room_name,
+                )
+                instance.users_list.add(*users_lists)
+                file_instance = instance.files
+                for f in file_instances:
+                    file_instance.add(f)
+                instance.save()
+                notification_count += 1
+
+        return notification_count
+
     class Meta:
         verbose_name = 'Уведомление'
         verbose_name_plural = 'Уведомления'
@@ -470,6 +441,6 @@ class Notify(UserNotifyMixin):
 
 @receiver(post_save, sender=Notify)
 def system_post_save(sender, instance, created, **kwargs):
-    from garpix_notify.tasks import send_system_notifications
+    from garpix_notify.tasks.tasks import send_system_notifications
     if created and instance.type == TYPE.SYSTEM:
         transaction.on_commit(lambda: send_system_notifications.delay(instance.pk))

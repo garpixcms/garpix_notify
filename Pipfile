@@ -15,7 +15,7 @@ celery = ">=4.4.2"
 django-solo = "*"
 fcm-django = "==0.3.11"
 requests = "*"
-django-ckeditor = "*"
+django-ckeditor = "==6.3.0"
 python-telegram-bot = "*"
 viberbot = "*"
 django-uuslug = "*"
@@ -24,7 +24,7 @@ redis = "*"
 channels = "==3.0.3"
 channels-redis = "==3.3.1"
 asgiref = "==3.2.10"
-mistune= "==0.8.4"
+mistune = "==0.8.4"
 
 [dev-packages]
 

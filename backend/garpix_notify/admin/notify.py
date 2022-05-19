@@ -1,4 +1,5 @@
 from django.contrib import admin
+
 from ..models.notify import Notify
 from .log import NotifyErrorLogInline
 
@@ -24,3 +25,4 @@ class NotifyAdmin(admin.ModelAdmin):
     list_filter = ('event', 'state', 'type', 'category')
     search_fields = ('subject', 'text')
     raw_id_fields = ('user',)
+    filter_horizontal = ('users_list', )

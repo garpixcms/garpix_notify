@@ -2,8 +2,8 @@ from django.db import models
 from django.conf import settings
 from django.template import Template, Context
 
-from .choices import TYPE
 from .category import NotifyCategory
+from .choices import TYPE
 from .user_list import NotifyUserList
 
 from ckeditor_uploader.fields import RichTextUploadingField
@@ -16,8 +16,10 @@ class NotifyTemplate(UserNotifyMixin):
     text = models.TextField(verbose_name='Текст')
     html = RichTextUploadingField(verbose_name='HTML')
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True, verbose_name='Пользователь (получатель)')
-    email = models.EmailField(max_length=255, blank=True, null=True, verbose_name='Email получатель', help_text='Используется только в случае отсутствия указанного пользователя')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True,
+                             verbose_name='Пользователь (получатель)')
+    email = models.EmailField(max_length=255, blank=True, null=True, verbose_name='Email получатель',
+                              help_text='Используется только в случае отсутствия указанного пользователя')
 
     type = models.IntegerField(choices=TYPE.CHOICES, verbose_name='Тип')
     category = models.ForeignKey(NotifyCategory, on_delete=models.CASCADE, related_name='templates', verbose_name='Категория')
@@ -27,7 +29,7 @@ class NotifyTemplate(UserNotifyMixin):
     is_active = models.BooleanField(default=True, verbose_name='Активный')
     send_at = models.DateTimeField(blank=True, null=True, verbose_name='Время начала отправки')
 
-    user_lists = models.ManyToManyField(NotifyUserList, blank=True, verbose_name='Списки пользователей, которые получат копию уведомления')
+    user_lists = models.ManyToManyField(NotifyUserList, blank=True, verbose_name='Списки пользователей для рассылки')
 
     def render_subject(self, ct):
         template = Template(self.subject)
