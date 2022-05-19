@@ -19,7 +19,6 @@ def send_notifications():
             else:
                 if timezone.now() > notify.send_at:
                     notify._send()
-
     return
 
 
