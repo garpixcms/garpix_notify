@@ -1,8 +1,8 @@
-from .category import NotifyCategoryAdmin
-from .config import NotifyConfigAdmin
-from .notify import NotifyAdmin
-from .smtp import SMTPAccountAdmin
-from .fcm import NotifyDeviceAdmin
-from .template import NotifyTemplateAdmin
-from .file import NotifyFileAdmin
-from .user_list import NotifyUserListAdmin
+from .category import NotifyCategoryAdmin  # noqa
+from .config import NotifyConfigAdmin  # noqa
+from .notify import NotifyAdmin  # noqa
+from .smtp import SMTPAccountAdmin  # noqa
+from .fcm import NotifyDeviceAdmin  # noqa
+from .template import NotifyTemplateAdmin  # noqa
+from .file import NotifyFileAdmin  # noqa
+from .user_list import NotifyUserListAdmin  # noqa
