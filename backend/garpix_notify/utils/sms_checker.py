@@ -25,7 +25,7 @@ except Exception:
 
 class SMSCLient:
 
-    def send_sms(self):
+    def send_sms(self):  # noqa
 
         if not IS_SMS_ENABLED:
             self.state = STATE.DISABLED

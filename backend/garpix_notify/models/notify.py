@@ -59,8 +59,10 @@ except Exception:
     VIBER_BOT_NAME = getattr(settings, 'VIBER_BOT_NAME', 'MySuperBot')
     EMAIL_MALLING = getattr(settings, 'EMAIL_MALLING', 1)
 
+NotifyMixin = import_string(settings.GARPIX_NOTIFY_MIXIN)
 
-class Notify(UserNotifyMixin, SMSCLient):
+
+class Notify(NotifyMixin, UserNotifyMixin, SMSCLient):
     """
     Уведомление
     """
@@ -301,7 +303,7 @@ class Notify(UserNotifyMixin, SMSCLient):
 
     @staticmethod
     def send(event, context, user=None, email=None, phone=None, files=None, data_json=None,  # noqa
-             viber_chat_id=None, room_name=None, notify_templates=None, send_at=None):
+             viber_chat_id=None, room_name=None, notify_templates=None, send_at=None, **kwargs):
         local_context = context.copy()
 
         if user is not None:
@@ -402,7 +404,8 @@ class Notify(UserNotifyMixin, SMSCLient):
                     category=template.category if template.category else None,
                     data_json=data_json,
                     send_at=notify_send,
-                    room_name=room_name
+                    room_name=room_name,
+                    **kwargs
                 )
                 file_instance = instance.files
                 for f in file_instances:
@@ -424,6 +427,7 @@ class Notify(UserNotifyMixin, SMSCLient):
                     data_json=data_json,
                     send_at=notify_send,
                     room_name=room_name,
+                    **kwargs
                 )
                 instance.users_list.add(*users_lists)
                 file_instance = instance.files

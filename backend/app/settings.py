@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 import os
 from pathlib import Path
 from environs import Env
-from garpix_notify.settings import *
+from garpix_notify.settings import *  # noqa
 
 env = Env()
 env.read_env()
@@ -228,3 +228,5 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
+GARPIX_NOTIFY_MIXIN = 'garpix_notify.mixins.notify_mixin.NotifyMixin'

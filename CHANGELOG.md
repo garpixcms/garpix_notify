@@ -1,3 +1,11 @@
+### 5.6.1 (19.05.2022)
+
+- Fixed path to NotifyMixin.
+
+### 5.6.0 (19.05.2022)
+
+- Customizing NotifyMixin added.
+
 ### 5.5.0 (10.05.2022)
 
 - Added the possibility of mass mailing,
