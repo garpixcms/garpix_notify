@@ -1,3 +1,7 @@
+### 5.6.2 (30.05.2022)
+
+- Fixed path to Celery tasks.
+
 ### 5.6.1 (19.05.2022)
 
 - Fixed path to NotifyMixin.
