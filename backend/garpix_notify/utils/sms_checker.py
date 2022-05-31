@@ -108,7 +108,11 @@ class SMSCLient:
                 if SMS_URL_TYPE == NotifyConfig.SMS_URL.SMSRU_ID:
                     if response_dict['status'] == 'OK':
                         self.to_log(
-                            f"Статус: {response_dict['status']}, Код статуса: {response_dict['status_code']}, Описание: {response_dict['status_text']}")
+                            f"Статус основного запроса: {response_dict['status']}, Код статуса: {response_dict['status_code']}, Баланс: {response_dict['balance']}")
+                        for key in response_dict['sms']:
+                            if response_dict['sms'][key]['status'] == 'ERROR':
+                                self.to_log(
+                                    f"Ошибка у абонента: Номер: {key}, Статус: {response_dict['sms'][key]['status']}, Код статуса: {response_dict['sms'][key]['status_code']}, Описание: {response_dict['sms'][key]['status_text']}")
                         self.state = STATE.DELIVERED
                         self.sent_at = now()
                     else:
