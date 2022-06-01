@@ -1,5 +1,6 @@
 from django.db import models
-from ..utils import get_file_path
+
+from garpix_notify.utils import get_file_path
 
 
 class NotifyFile(models.Model):

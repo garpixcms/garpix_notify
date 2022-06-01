@@ -1,5 +1,5 @@
 from django.contrib import admin
-from ..models.category import NotifyCategory
+from garpix_notify.models.category import NotifyCategory
 
 
 @admin.register(NotifyCategory)

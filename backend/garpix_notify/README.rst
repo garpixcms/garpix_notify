@@ -49,6 +49,16 @@ Add path to settings:
        'garpix_notify': 'app.migrations.garpix_notify',
    }
 
+
+Add mixin to settings:
+
+.. code-block::
+
+    # settings.py
+
+    GARPIX_NOTIFY_MIXIN = 'app.models.notify_mixin.NotifyMixin'
+
+
 Create your custom user model and add ``AUTH_USER_MODEL`` to ``app/settings.py``\ :
 
 .. code-block::
@@ -153,7 +163,7 @@ Step 4. Also go to "Notifications" - "Categories"
 Create a category that will be used to send emails. Usually one category is enough. The ability to enter several categories
 is necessary to divide them into informational and marketing notifications.
 
-Step 4. Go to "Notifications" - "Templates"
+Step 5. Go to "Notifications" - "Templates"
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Create a template for a specific event (when you added them to ``settings.py``\ ).
@@ -178,18 +188,17 @@ In the code where it is necessary to work out sending a notification, we perform
    # Example
    user = request.user  # this will be the recipient of the notification.
 
-   Notify(settings.REGISTRATION_EVENT, {
+   Notify.send(settings.REGISTRATION_EVENT, {
        'confirmation_code': 'abcdef12345',
    }, user=user)
 
    # If we do not have a user in the system, but we need to send an email, we can do the following
 
-   Notify(settings.EXAMPLE_EVENT_1, {
+   Notify.send(settings.EXAMPLE_EVENT_1, {
        'confirmation_code': 'abcdef12345',
    }, email='example@mail.ru')
 
    # If you need more detailed time settings, add send_at
-
    Notify(settings.EXAMPLE_EVENT_1, {
        'confirmation_code': 'abcdef12345',
    }, email='example@mail.ru', send_at=(datetime.datetime.now() + datetime.timedelta(days=1)))

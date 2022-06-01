@@ -50,17 +50,19 @@ try:
     IS_EMAIL_ENABLED = config.is_email_enabled
     EMAIL_MALLING = config.email_malling
 except Exception:
-    IS_PUSH_ENABLED = getattr(settings, 'IS_PUSH_ENABLED', True)
-    IS_TELEGRAM_ENABLED = getattr(settings, 'IS_TELEGRAM_ENABLED', True)
+    IS_PUSH_ENABLED = True
+    IS_TELEGRAM_ENABLED = True
+    IS_VIBER_ENABLED = True
+    IS_EMAIL_ENABLED = True
     TELEGRAM_API_KEY = getattr(settings, 'TELEGRAM_API_KEY', '000000000:AAAAAAAAAA-AAAAAAAA-_AAAAAAAAAAAAAA')
-    IS_VIBER_ENABLED = getattr(settings, 'IS_VIBER_ENABLED', True)
     VIBER_API_KEY = getattr(settings, 'VIBER_API_KEY', '000000000:AAAAAAAAAA-AAAAAAAA-_AAAAAAAAAAAAAA')
     VIBER_BOT_NAME = getattr(settings, 'VIBER_BOT_NAME', 'MySuperBot')
-    IS_EMAIL_ENABLED = getattr(settings, 'IS_EMAIL_ENABLED', True)
     EMAIL_MALLING = getattr(settings, 'EMAIL_MALLING', 1)
 
+NotifyMixin = import_string(settings.GARPIX_NOTIFY_MIXIN)
 
-class Notify(UserNotifyMixin, SMSCLient):
+
+class Notify(NotifyMixin, UserNotifyMixin, SMSCLient):
     """
     Уведомление
     """
@@ -301,7 +303,8 @@ class Notify(UserNotifyMixin, SMSCLient):
 
     @staticmethod
     def send(event, context, user=None, email=None, phone=None, files=None, data_json=None,  # noqa
-             viber_chat_id=None, room_name=None, notify_templates=None, send_at=None):
+             viber_chat_id=None, room_name=None, notify_templates=None, send_at=None, **kwargs):
+
         local_context = context.copy()
 
         if user is not None:
@@ -346,11 +349,11 @@ class Notify(UserNotifyMixin, SMSCLient):
                     'phone': phone,
                     'viber_chat_id': viber_chat_id,
                 }]
-            for receiver in receivers:
-                template_user = receiver['user']
-                template_email = receiver['email']
-                template_phone = receiver['phone']
-                template_viber_chat_id = receiver['viber_chat_id']
+            for recipient in receivers:
+                template_user = recipient['user']
+                template_email = recipient['email']
+                template_phone = recipient['phone']
+                template_viber_chat_id = recipient['viber_chat_id']
                 # Если в шаблоне не указаны получатели, то получатель тот, кого передали в функцию
                 if template_user is None and template_email is None:
                     template_user = user
@@ -402,7 +405,8 @@ class Notify(UserNotifyMixin, SMSCLient):
                     category=template.category if template.category else None,
                     data_json=data_json,
                     send_at=notify_send,
-                    room_name=room_name
+                    room_name=room_name,
+                    **kwargs
                 )
                 file_instance = instance.files
                 for f in file_instances:
@@ -424,6 +428,7 @@ class Notify(UserNotifyMixin, SMSCLient):
                     data_json=data_json,
                     send_at=notify_send,
                     room_name=room_name,
+                    **kwargs
                 )
                 instance.users_list.add(*users_lists)
                 file_instance = instance.files

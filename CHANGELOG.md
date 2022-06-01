@@ -1,3 +1,19 @@
+### 5.6.3 (01.06.2022)
+
+- Fixed response from SMS_RU.
+
+### 5.6.2 (30.05.2022)
+
+- Fixed path to Celery tasks.
+
+### 5.6.1 (19.05.2022)
+
+- Fixed path to NotifyMixin.
+
+### 5.6.0 (19.05.2022)
+
+- Customizing NotifyMixin added.
+
 ### 5.5.0 (10.05.2022)
 
 - Added the possibility of mass mailing,

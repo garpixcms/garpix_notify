@@ -2,7 +2,7 @@ import requests
 from django.conf import settings
 from django.utils.timezone import now
 
-from ..models.config import NotifyConfig
+from garpix_notify.models.config import NotifyConfig
 from garpix_notify.models.choices import STATE
 from garpix_notify.utils.receiving import receiving_users
 
@@ -15,7 +15,7 @@ try:
     SMS_PASSWORD = config.sms_password
     SMS_FROM = config.sms_from
 except Exception:
-    IS_SMS_ENABLED = getattr(settings, 'IS_SMS_ENABLED', True)
+    IS_SMS_ENABLED = True
     SMS_URL_TYPE = getattr(settings, 'SMS_URL_TYPE', 0)
     SMS_API_ID = getattr(settings, 'SMS_API_ID', 1234567890)
     SMS_LOGIN = getattr(settings, 'SMS_LOGIN', '')
@@ -25,7 +25,7 @@ except Exception:
 
 class SMSCLient:
 
-    def send_sms(self):
+    def send_sms(self):  # noqa
 
         if not IS_SMS_ENABLED:
             self.state = STATE.DISABLED
@@ -49,7 +49,6 @@ class SMSCLient:
                 url = '{url}?api_id={api_id}&to={to}&msg={text}&json=1'.format(
                     url=NotifyConfig.SMS_URL.SMSRU_URL,
                     api_id=SMS_API_ID,
-                    from_text=SMS_FROM,
                     to=phones,
                     text=msg,
                 )
@@ -109,7 +108,11 @@ class SMSCLient:
                 if SMS_URL_TYPE == NotifyConfig.SMS_URL.SMSRU_ID:
                     if response_dict['status'] == 'OK':
                         self.to_log(
-                            f"Статус: {response_dict['status']}, Код статуса: {response_dict['status_code']}, Описание: {response_dict['status_text']}")
+                            f"Статус основного запроса: {response_dict['status']}, Код статуса: {response_dict['status_code']}, Баланс: {response_dict['balance']}")
+                        for key in response_dict['sms']:
+                            if response_dict['sms'][key]['status'] == 'ERROR':
+                                self.to_log(
+                                    f"Ошибка у абонента: Номер: {key}, Статус: {response_dict['sms'][key]['status']}, Код статуса: {response_dict['sms'][key]['status_code']}, Описание: {response_dict['sms'][key]['status_text']}")
                         self.state = STATE.DELIVERED
                         self.sent_at = now()
                     else:

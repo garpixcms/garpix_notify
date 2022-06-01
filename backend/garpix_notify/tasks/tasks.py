@@ -24,8 +24,8 @@ def send_notifications():
 
 @celery_app.task
 def send_system_notifications(notify_pk):
+    instance = Notify.objects.get(pk=notify_pk)
     try:
-        instance = Notify.objects.get(pk=notify_pk)
         if instance.room_name:
             group_name = instance.room_name
         else:
@@ -45,7 +45,6 @@ def send_system_notifications(notify_pk):
         instance.state = STATE.REJECTED
         instance.to_log(str(e))
     instance.save()
-    return
 
 
 celery_app.conf.beat_schedule.update({
