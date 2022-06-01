@@ -42,12 +42,24 @@ class NotifyConfig(SingletonModel):
             (SMS_PROSTO_ID, 'sms-prosto.ru')
         )
 
+    class CALL_URL:
+        SMSRU_CALL_API_ID = 0
+        SMSRU_CALL_ID = 1
+
+        SMSRU_CALL_URL = 'https://sms.ru/code/call?'
+
+        TYPES = (
+            (SMSRU_CALL_API_ID, 'sms.ru API'),
+            (SMSRU_CALL_ID, 'sms.ru LOGIN'),
+        )
+
     periodic = models.IntegerField(default=60, verbose_name='Периодичность отправки уведомлений (сек.)')
 
     email_max_day_limit = models.IntegerField(default=240, verbose_name='Дневной лимит отправки писем')
     email_max_hour_limit = models.IntegerField(default=40, verbose_name='Часовой лимит отправки писем')
 
-    sms_url_type = models.IntegerField(default=SMS_URL.SMSRU_ID, choices=SMS_URL.TYPES, verbose_name='URL СМС провайдера')
+    sms_url_type = models.IntegerField(default=SMS_URL.SMSRU_ID, choices=SMS_URL.TYPES,
+                                       verbose_name='URL СМС провайдера')
     sms_api_id = models.CharField(default='1234567890', blank=True, max_length=255,
                                   verbose_name='API ID СМС провайдера')
     sms_login = models.CharField(default='', blank=True, max_length=255,
@@ -56,7 +68,14 @@ class NotifyConfig(SingletonModel):
                                     verbose_name='Пароль для api СМС провайдера')
     sms_from = models.CharField(default='', blank=True, max_length=255, verbose_name='Отправитель СМС',
                                 help_text='Например, Garpix')
-
+    call_url_type = models.IntegerField(default=CALL_URL.SMSRU_CALL_API_ID, choices=CALL_URL.TYPES,
+                                        verbose_name='URL звонка провайдера')
+    call_api_id = models.CharField(default='1234567890', blank=True, max_length=255,
+                                  verbose_name='API ID оператора связи')
+    call_login = models.CharField(default='', blank=True, max_length=255,
+                                 verbose_name='Логин пользователя оператора связи')
+    call_password = models.CharField(default='', blank=True, max_length=255,
+                                    verbose_name='Пароль для api СМС провайдера')
     telegram_api_key = models.CharField(default='000000000:AAAAAAAAAA-AAAAAAAA-_AAAAAAAAAAAAAA', blank=True,
                                         max_length=255, verbose_name='Telegram API Key')
     telegram_bot_name = models.CharField(default='', blank=True, help_text='Например, MySuperBot',
@@ -82,6 +101,7 @@ class NotifyConfig(SingletonModel):
                                       default='Viber bot')
     is_email_enabled = models.BooleanField(default=True, verbose_name='Разрешить отправку Email')
     is_sms_enabled = models.BooleanField(default=True, verbose_name='Разрешить отправку SMS')
+    is_call_enabled = models.BooleanField(default=True, verbose_name='Разрешить отправку звонков')
     is_push_enabled = models.BooleanField(default=True, verbose_name='Разрешить отправку PUSH')
     is_telegram_enabled = models.BooleanField(default=True, verbose_name='Разрешить отправку Telegram')
     is_viber_enabled = models.BooleanField(default=True, verbose_name='Разрешить отправку Viber')
