@@ -158,14 +158,19 @@ AUTH_USER_MODEL = 'user.User'
 
 # notify events
 REGISTRATION_EVENT = 1
-FEEDBACK_EVENT = 2
-EXAMPLE_EVENT_1 = 3
-EXAMPLE_EVENT_2 = 4
-TEST_EVENT_2 = 5
+REGISTRATION_CALL_CODE = 2
+FEEDBACK_EVENT = 3
+EXAMPLE_EVENT_1 = 4
+EXAMPLE_EVENT_2 = 5
+TEST_EVENT_2 = 6
 
 NOTIFY_EVENTS = {
     REGISTRATION_EVENT: {
         'title': 'Register',
+    },
+    REGISTRATION_CALL_CODE: {
+        'title': 'Register call code',
+        'text': 'status: {status}, code: {code}, cost: {cost}, balance: {balance}'
     },
     FEEDBACK_EVENT: {
         'title': 'Feeback',

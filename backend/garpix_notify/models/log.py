@@ -10,5 +10,5 @@ class NotifyErrorLog(models.Model):
         return '{}: {})'.format(self.id, self.created_at.strftime('%d.%m.%Y %h:%M:%s'))
 
     class Meta:
-        verbose_name = 'Ошибка отправки уведомления'
-        verbose_name_plural = 'Ошибки отправки уведомления'
+        verbose_name = 'Лог отправки уведомления'
+        verbose_name_plural = 'Логи отправки уведомления'
