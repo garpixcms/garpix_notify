@@ -1,3 +1,12 @@
+### 5.7.0 (01.06.2022)
+
+- Added support for calls from SMS_RU.
+- Fixing critical bugs
+
+### 5.6.3 (01.06.2022)
+
+- Fixed response from SMS_RU.
+
 ### 5.6.2 (30.05.2022)
 
 - Fixed path to Celery tasks.

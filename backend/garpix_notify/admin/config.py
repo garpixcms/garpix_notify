@@ -16,6 +16,9 @@ class NotifyConfigAdmin(SingletonModelAdmin):
         ('СМС', {
             'fields': ('sms_url_type', 'sms_api_id', 'sms_login', 'sms_password', 'sms_from')
         }),
+        ('Звонки', {
+            'fields': ('call_url_type', 'call_api_id', 'call_login', 'call_password')
+        }),
         ('Telegram', {
             'fields': ('telegram_api_key', 'telegram_bot_name', 'telegram_welcome_text', 'telegram_help_text', 'telegram_bad_command_text',
                        'telegram_success_added_text', 'telegram_failed_added_text')

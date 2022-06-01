@@ -30,7 +30,8 @@ from .smtp import SMTPAccount
 from .template import NotifyTemplate
 from ..mixins import UserNotifyMixin
 from ..utils import receiving_users
-from ..utils.sms_checker import SMSCLient
+from ..utils.sms_checker import SMSClient
+from ..utils.call_code_cheker import CallClient
 
 
 def chunks(s, n):
@@ -62,7 +63,7 @@ except Exception:
 NotifyMixin = import_string(settings.GARPIX_NOTIFY_MIXIN)
 
 
-class Notify(NotifyMixin, UserNotifyMixin, SMSCLient):
+class Notify(NotifyMixin, UserNotifyMixin, SMSClient, CallClient):
     """
     Уведомление
     """
@@ -120,6 +121,8 @@ class Notify(NotifyMixin, UserNotifyMixin, SMSCLient):
             self.send_telegram()
         if self.type == TYPE.VIBER:
             self.send_viber()
+        if self.type == TYPE.CALL:
+            self.send_call_code()
 
         self.save()
 
@@ -128,12 +131,7 @@ class Notify(NotifyMixin, UserNotifyMixin, SMSCLient):
         emails = []
         if self.users_list.all().count() != 0:
             users_list = self.users_list.all()
-            receivers = receiving_users(users_list)
-            # Убираем дубликаты пользователей
-            receivers = list({v['email']: v for v in receivers}.values())
-            for user in receivers:
-                if user['email']:
-                    emails.append(user['email'])
+            emails = (receiving_users(users_list, value='email'))
             if self.email:
                 emails.append(self.email)
         else:
@@ -304,6 +302,7 @@ class Notify(NotifyMixin, UserNotifyMixin, SMSCLient):
     @staticmethod
     def send(event, context, user=None, email=None, phone=None, files=None, data_json=None,  # noqa
              viber_chat_id=None, room_name=None, notify_templates=None, send_at=None, **kwargs):
+
         local_context = context.copy()
 
         if user is not None:

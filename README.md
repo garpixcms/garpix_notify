@@ -104,12 +104,50 @@ NOTIFY_EVENTS = {
 CHOICES_NOTIFY_EVENT = [(k, v['title']) for k, v in NOTIFY_EVENTS.items()]
 
 ```
+#### Step 2. Import default settings in your ``app/settings.py``
+```python
 
-#### Step 2. Go to the admin panel and go to the "Notifications" section - "SMTP accounts"
+    from garpix_notify.settings import *
+```
+or copy from here if you want more customization
+```python
+PERIODIC_SENDING = 60
+EMAIL_MAX_DAY_LIMIT = 240
+EMAIL_MAX_HOUR_LIMIT = 240
+# SMS
+SMS_URL_TYPE = 0
+SMS_API_ID = 1234567890
+SMS_LOGIN = ''
+SMS_PASSWORD = ''
+SMS_FROM = ''
+# TELEGRAM
+TELEGRAM_API_KEY = '000000000:AAAAAAAAAA-AAAAAAAA-_AAAAAAAAAAAAAA'
+TELEGRAM_BOT_NAME = 'MySuperBot'
+TELEGRAM_WELCOME_TEXT = 'Hello'
+TELEGRAM_HELP_TEXT = '/set !help for HELP'
+TELEGRAM_BAD_COMMAND_TEXT = 'Incorrect command format'
+TELEGRAM_SUCCESS_ADDED_TEXT = 'Success'
+TELEGRAM_FAILED_ADDED_TEXT = 'Failed'
+# VIBER
+VIBER_API_KEY = '000000000:AAAAAAAAAA-AAAAAAAA-_AAAAAAAAAAAAAA'
+VIBER_BOT_NAME = 'MySuperViberBot'
+VIBER_WELCOME_TEXT = 'Hello'
+VIBER_SUCCESS_ADDED_TEXT = 'Success'
+VIBER_FAILED_ADDED_TEXT = 'Failed'
+VIBER_TEXT_FOR_NEW_SUB = 'HI!'
+# SETTINGS
+IS_EMAIL_ENABLED = True
+IS_SMS_ENABLED = True
+IS_PUSH_ENABLED = True
+IS_TELEGRAM_ENABLED = True
+IS_VIBER_ENABLED = True
+EMAIL_MALLING = 1    
+```
+#### Step 3. Go to the admin panel and go to the "Notifications" section - "SMTP accounts"
 
 Add an SMTP account to send Email notifications. These will be the senders of Email notifications.
 
-#### Step 3. Also go to "Notifications" - "Categories"
+#### Step 4. Also go to "Notifications" - "Categories"
 
 Create a category that will be used to send emails. Usually one category is enough. The ability to enter several categories
 is necessary to divide them into informational and marketing notifications.
@@ -131,9 +169,9 @@ from garpix_notify.models import Notify
 # That is, we specify the event ID as the first parameter,
 # create variables for the template,
 # third - the user to send it to (it is not necessary to specify his email, phone number, etc.,
-# because this will be determined automatically depending on the type of template)
+# because this will be determined automatically depending on the type of template)   
 
-# Пример
+# Example
 user = request.user  # this will be the recipient of the notification.
 
 Notify.send(settings.REGISTRATION_EVENT, {
@@ -146,9 +184,19 @@ Notify.send(settings.EXAMPLE_EVENT_1, {
     'confirmation_code': 'abcdef12345',
 }, email='example@mail.ru')
 
+# If you need more detailed time settings, add send_at
+
+Notify.send(settings.EXAMPLE_EVENT_1, {
+    'confirmation_code': 'abcdef12345',
+}, email='example@mail.ru', send_at=(datetime.datetime.now() + datetime.timedelta(days=1)))
+
 ```
 
-Do not forget run celery:
+#### Mass email and sms mailing:
+To perform a mass mailing, you need to add user lists to the template.
+Or directly in the notification.
+
+#### Do not forget run celery:
 
 ```
 celery -A app worker --loglevel=info -B
