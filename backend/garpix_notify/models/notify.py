@@ -304,6 +304,7 @@ class Notify(NotifyMixin, UserNotifyMixin, SMSCLient):
     @staticmethod
     def send(event, context, user=None, email=None, phone=None, files=None, data_json=None,  # noqa
              viber_chat_id=None, room_name=None, notify_templates=None, send_at=None, **kwargs):
+
         local_context = context.copy()
 
         if user is not None:

@@ -199,12 +199,11 @@ In the code where it is necessary to work out sending a notification, we perform
    }, email='example@mail.ru')
 
    # If you need more detailed time settings, add send_at
-
-   Notify.send(settings.EXAMPLE_EVENT_1, {
+   Notify(settings.EXAMPLE_EVENT_1, {
        'confirmation_code': 'abcdef12345',
    }, email='example@mail.ru', send_at=(datetime.datetime.now() + datetime.timedelta(days=1)))
 
-Mass email and sms mailing:
+Mass email mailing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 To perform a mass mailing, you need to add user lists to the template.
 Or directly in the notification.
