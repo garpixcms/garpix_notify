@@ -45,12 +45,19 @@ class NotifyConfig(SingletonModel):
     class CALL_URL:
         SMSRU_CALL_API_ID = 0
         SMSRU_CALL_ID = 1
+        SMSCENTRE_ID = 2
+        UCALLER_ID = 3
 
-        SMSRU_CALL_URL = 'https://sms.ru/code/call?'
+        SMSRU_CALL_URL = 'https://sms.ru/code/call'
+        SMSCENTRE_URL = 'https://smsc.ru/sys/send.php'
+        UCALLER_URL = 'https://api.ucaller.ru/v1.0/initCall'
 
         TYPES = (
             (SMSRU_CALL_API_ID, 'sms.ru API'),
             (SMSRU_CALL_ID, 'sms.ru LOGIN'),
+            (SMSCENTRE_ID, 'smsc.ru'),
+            (UCALLER_ID, 'ucaller.ru'),
+
         )
 
     periodic = models.IntegerField(default=60, verbose_name='Периодичность отправки уведомлений (сек.)')
@@ -71,11 +78,11 @@ class NotifyConfig(SingletonModel):
     call_url_type = models.IntegerField(default=CALL_URL.SMSRU_CALL_API_ID, choices=CALL_URL.TYPES,
                                         verbose_name='URL звонка провайдера')
     call_api_id = models.CharField(default='1234567890', blank=True, max_length=255,
-                                  verbose_name='API ID оператора связи')
+                                   verbose_name='API ID оператора связи')
     call_login = models.CharField(default='', blank=True, max_length=255,
-                                 verbose_name='Логин пользователя оператора связи')
+                                  verbose_name='Логин/Индетификатор сервиса оператора связи')
     call_password = models.CharField(default='', blank=True, max_length=255,
-                                    verbose_name='Пароль для api СМС провайдера')
+                                     verbose_name='Пароль/Секретный ключ оператора связи')
     telegram_api_key = models.CharField(default='000000000:AAAAAAAAAA-AAAAAAAA-_AAAAAAAAAAAAAA', blank=True,
                                         max_length=255, verbose_name='Telegram API Key')
     telegram_bot_name = models.CharField(default='', blank=True, help_text='Например, MySuperBot',

@@ -45,13 +45,28 @@ class CallClient:
                     api_id=CALL_API_ID,
                     to=phones,
                 )
-            if CALL_URL_TYPE == NotifyConfig.CALL_URL.SMSRU_CALL_ID:
+            elif CALL_URL_TYPE == NotifyConfig.CALL_URL.SMSRU_CALL_ID:
                 url = '{url}?phone={to}&login={login}&password={password}&json=1'.format(
                     url=NotifyConfig.CALL_URL.SMSRU_CALL_URL,
                     login=CALL_LOGIN,
                     password=CALL_PASSWORD,
                     to=phones,
                 )
+            elif CALL_URL_TYPE == NotifyConfig.CALL_URL.SMSCENTRE_ID:
+                url = '{url}?login={login}&psw={password}&phones={to}&mes=code&call=1&fmt=3'.format(
+                    url=NotifyConfig.CALL_URL.SMSCENTRE_URL,
+                    login=CALL_LOGIN,
+                    password=CALL_PASSWORD,
+                    to=phones,
+                )
+            elif CALL_URL_TYPE == NotifyConfig.CALL_URL.UCALLER_ID:
+                url = '{url}?phone={to}&key={password}&service_id={login}'.format(
+                    url=NotifyConfig.CALL_URL.UCALLER_URL,
+                    login=CALL_LOGIN,
+                    password=CALL_PASSWORD,
+                    to=phones,
+                )
+                print(CALL_LOGIN, CALL_PASSWORD)
             response = requests.get(url)
             response_dict = response.json()
             try:
@@ -67,10 +82,33 @@ class CallClient:
                             f"Статус: {response_dict['status']}, Код статуса: {response_dict['status_code']}, "
                             f"Описание ошибки: {response_dict['status_text']}")
                         self.state = STATE.REJECTED
+
+                elif CALL_URL_TYPE == NotifyConfig.CALL_URL.SMSCENTRE_ID:
+                    if response_dict['error']:
+                        self.to_log(
+                            f"Код статуса: {response_dict['error_code']}, "
+                            f"Описание ошибки: {response_dict['error']}")
+                        self.state = STATE.REJECTED
+                    else:
+                        self.to_log(
+                            f"ID: {response_dict['id']}, Code: {response_dict['code']}, "
+                            f"cnt: {response_dict['cnt']}")
+                        self.state = STATE.DELIVERED
+                        self.sent_at = now()
+                elif CALL_URL_TYPE == NotifyConfig.CALL_URL.UCALLER_ID:
+                    if response_dict['status']:
+                        self.to_log(
+                            f"Status: {response_dict['status']}, Code: {response_dict['code']}, ID: {response_dict['ucaller_id']}, "
+                            f"ID_Request: {response_dict['unique_request_id']}, Phone: {response_dict['phone']}")
+                        self.state = STATE.DELIVERED
+                        self.sent_at = now()
+                    else:
+                        self.to_log(
+                            f"Статус: {response_dict['status']}, Код статуса: {response_dict['code']}, Описание: {response_dict['error']}")
+                        self.state = STATE.REJECTED
             except Exception as e:
                 self.state = STATE.REJECTED
                 self.to_log(str(e))
-
         except Exception as e:  # noqa
             self.state = STATE.REJECTED
             self.to_log(str(e))

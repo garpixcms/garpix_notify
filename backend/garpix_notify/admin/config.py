@@ -7,8 +7,8 @@ from ..models.config import NotifyConfig
 class NotifyConfigAdmin(SingletonModelAdmin):
     fieldsets = (
         (None, {
-            'fields': ('periodic', 'is_email_enabled', 'is_sms_enabled', 'is_push_enabled', 'is_telegram_enabled',
-                       'is_viber_enabled')
+            'fields': ('periodic', 'is_email_enabled', 'is_sms_enabled', 'is_call_enabled', 'is_push_enabled',
+                       'is_telegram_enabled', 'is_viber_enabled')
         }),
         ('Почта', {
             'fields': ('email_max_day_limit', 'email_max_hour_limit', 'email_malling')
