@@ -13,7 +13,6 @@ try:
     CALL_API_ID = config.call_api_id
     CALL_LOGIN = config.call_login
     CALL_PASSWORD = config.call_password
-    CALL_FROM = config.call_from
 except Exception:
     IS_CALL_ENABLED = True
     CALL_URL_TYPE = getattr(settings, 'CALL_URL_TYPE', 0)
@@ -26,7 +25,6 @@ except Exception:
 class CallClient:
 
     def send_call_code(self):  # noqa
-
         if not IS_CALL_ENABLED:
             self.state = STATE.DISABLED
             return
@@ -66,7 +64,6 @@ class CallClient:
                     password=CALL_PASSWORD,
                     to=phones,
                 )
-                print(CALL_LOGIN, CALL_PASSWORD)
             response = requests.get(url)
             response_dict = response.json()
             try:

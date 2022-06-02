@@ -33,3 +33,4 @@ VIBER_TEXT_FOR_NEW_SUB = 'HI!'
 # SETTINGS
 EMAIL_MALLING = 1
 GARPIX_NOTIFY_MIXIN = 'garpix_notify.mixins.notify_mixin.NotifyMixin'
+NOTIFY_USER_WANT_MESSAGE_CHECK = None

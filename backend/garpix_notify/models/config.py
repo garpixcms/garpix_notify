@@ -43,6 +43,9 @@ class NotifyConfig(SingletonModel):
         )
 
     class CALL_URL:
+        """
+        URL Оператора связи
+        """
         SMSRU_CALL_API_ID = 0
         SMSRU_CALL_ID = 1
         SMSCENTRE_ID = 2

@@ -337,6 +337,7 @@ class Notify(NotifyMixin, UserNotifyMixin, SMSClient, CallClient):
             template_email = None
             template_phone = None
             template_viber_chat_id = None
+            template_users_lists = template.user_lists.all()
             if user or phone or email or viber_chat_id:
                 # Формируем список основных и дополнительных получателей письма
                 # Первого получателя заполняем из шаблона, его данные могут быть пустыми - чтобы можно было через
@@ -364,11 +365,21 @@ class Notify(NotifyMixin, UserNotifyMixin, SMSClient, CallClient):
                         template_email = user.email
                         template_phone = user.phone
                         template_viber_chat_id = user.viber_chat_id
-                # Проверка, хочет ли получить сообщение
-                if user_want_message_check is not None and not \
-                        user_want_message_check(event, template.type, template_user):  # noqa
-                    continue
 
+                # Проверка, хочет ли получить сообщение
+                if user_want_message_check is not None:  # noqa
+                    if template_users_lists.count() == 0:
+                        user_check = user_want_message_check(event, template.type, template_user)
+                        if user_check is None:
+                            return None
+                    else:
+                        # Если у нас шаблон со списками, то передаем в функцию и тут формируем новый из тех юзеов,
+                        # которым сообщения нужны
+                        # Если список пустой, то отменяем отправку
+                        template_users_lists = user_want_message_check(
+                            event, template.type, template_user, template_users_lists)
+                        if template_users_lists is None:
+                            return None
                 # Добавляем пользователя в контекст, если его там не передали
                 if template_user is not None:
                     if local_context is not None:
@@ -388,8 +399,7 @@ class Notify(NotifyMixin, UserNotifyMixin, SMSClient, CallClient):
                 notify_send = send_at
             else:
                 notify_send = template.send_at
-            users_lists = template.user_lists.all()
-            if users_lists.count() == 0:
+            if template_users_lists.count() == 0:
                 instance = Notify.objects.create(
                     subject=template.render_subject(local_context),
                     text=template.render_text(local_context),
@@ -428,7 +438,7 @@ class Notify(NotifyMixin, UserNotifyMixin, SMSClient, CallClient):
                     room_name=room_name,
                     **kwargs
                 )
-                instance.users_list.add(*users_lists)
+                instance.users_list.add(*template_users_lists)
                 file_instance = instance.files
                 for f in file_instances:
                     file_instance.add(f)
