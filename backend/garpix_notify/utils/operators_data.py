@@ -33,7 +33,7 @@ operator = {
         'login': CALL_LOGIN,
         'password': CALL_PASSWORD},
     2: {
-        'url': NotifyConfig.CALL_URL.NotifyConfig.CALL_URL.SMSCENTRE_URL,
+        'url': NotifyConfig.CALL_URL.SMSCENTRE_URL,
         'login': CALL_LOGIN,
         'password': CALL_PASSWORD},
     3: {
