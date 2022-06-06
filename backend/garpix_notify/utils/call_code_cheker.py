@@ -17,7 +17,6 @@ except Exception:
 
 class CallClient:
 
-    @property
     def send_call_code(self):  # noqa
         if not IS_CALL_ENABLED:
             self.state = STATE.DISABLED
