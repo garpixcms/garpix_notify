@@ -447,6 +447,16 @@ class Notify(NotifyMixin, UserNotifyMixin, SMSClient, CallClient):
 
         return notification_count
 
+    @staticmethod
+    def call(phone, user=None, msg=None, **kwargs):
+        if msg:
+            if hasattr(settings,
+                       'NOTIFY_CALL_MESSAGE') and settings.NOTIFY_CALL_MESSAGE is not None:
+                send_call_message = import_string(settings.NOTIFY_CALL_MESSAGE)
+                return send_call_message
+
+
+
     class Meta:
         verbose_name = 'Уведомление'
         verbose_name_plural = 'Уведомления'

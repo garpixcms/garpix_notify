@@ -4,7 +4,7 @@ from django.utils.timezone import now
 
 from garpix_notify.models.config import NotifyConfig
 from garpix_notify.models.choices import STATE
-from garpix_notify.utils.receiving import receiving_users
+from .operators_data import url_dict, operator
 
 try:
     config = NotifyConfig.get_solo()
@@ -30,40 +30,9 @@ class CallClient:
             return
 
         try:
-            url = None
-            users_list = self.users_list.all()
-            if users_list.count() == 0:
-                phones = self.phone
-            else:
-                phones = receiving_users(users_list, value='phone')
-                phones = ','.join(phones)
-            if CALL_URL_TYPE == NotifyConfig.CALL_URL.SMSRU_CALL_API_ID:
-                url = '{url}?phone={to}&api_id={api_id}&json=1'.format(
-                    url=NotifyConfig.CALL_URL.SMSRU_CALL_URL,
-                    api_id=CALL_API_ID,
-                    to=phones,
-                )
-            elif CALL_URL_TYPE == NotifyConfig.CALL_URL.SMSRU_CALL_ID:
-                url = '{url}?phone={to}&login={login}&password={password}&json=1'.format(
-                    url=NotifyConfig.CALL_URL.SMSRU_CALL_URL,
-                    login=CALL_LOGIN,
-                    password=CALL_PASSWORD,
-                    to=phones,
-                )
-            elif CALL_URL_TYPE == NotifyConfig.CALL_URL.SMSCENTRE_ID:
-                url = '{url}?login={login}&psw={password}&phones={to}&mes=code&call=1&fmt=3'.format(
-                    url=NotifyConfig.CALL_URL.SMSCENTRE_URL,
-                    login=CALL_LOGIN,
-                    password=CALL_PASSWORD,
-                    to=phones,
-                )
-            elif CALL_URL_TYPE == NotifyConfig.CALL_URL.UCALLER_ID:
-                url = '{url}?phone={to}&key={password}&service_id={login}'.format(
-                    url=NotifyConfig.CALL_URL.UCALLER_URL,
-                    login=CALL_LOGIN,
-                    password=CALL_PASSWORD,
-                    to=phones,
-                )
+            phone = ''.join(self.phone)
+            url = url_dict[CALL_URL_TYPE].join(**operator[CALL_URL_TYPE], to=phone)
+            print(url)
             response = requests.get(url)
             response_dict = response.json()
             try:
@@ -109,3 +78,4 @@ class CallClient:
         except Exception as e:  # noqa
             self.state = STATE.REJECTED
             self.to_log(str(e))
+
