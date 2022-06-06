@@ -4,22 +4,18 @@ from garpix_notify.models.config import NotifyConfig
 
 try:
     config = NotifyConfig.get_solo()
-    CALL_URL_TYPE = config.call_url_type
     CALL_API_ID = config.call_api_id
     CALL_LOGIN = config.call_login
     CALL_PASSWORD = config.call_password
-    SMS_URL_TYPE = config.sms_url_type
     SMS_API_ID = config.sms_api_id
     SMS_LOGIN = config.sms_login
     SMS_PASSWORD = config.sms_password
     SMS_FROM = config.sms_from
 except Exception:
-    CALL_URL_TYPE = getattr(settings, 'CALL_URL_TYPE', 0)
     CALL_API_ID = getattr(settings, 'CALL_API_ID', 1234567890)
     CALL_LOGIN = getattr(settings, 'CALL_LOGIN', '')
     CALL_PASSWORD = getattr(settings, 'CALL_PASSWORD', '')
     CALL_FROM = getattr(settings, 'CALL_FROM', '')
-    SMS_URL_TYPE = getattr(settings, 'SMS_URL_TYPE', 0)
     SMS_API_ID = getattr(settings, 'SMS_API_ID', 1234567890)
     SMS_LOGIN = getattr(settings, 'SMS_LOGIN', '')
     SMS_PASSWORD = getattr(settings, 'SMS_PASSWORD', '')
@@ -48,7 +44,6 @@ operator_call = {
         'url': NotifyConfig.CALL_URL.UCALLER_URL,
         'login': CALL_LOGIN,
         'password': CALL_PASSWORD}}
-
 
 url_dict_sms = {
     0: '{url}?api_id={api_id}&to={to}&msg={text}&json=1',
@@ -92,3 +87,41 @@ operator_sms = {
         'pwd': SMS_PASSWORD,
         'from_text': SMS_FROM},
 }
+
+
+def response_check(response, operator_type, status):
+
+    if status == "OK":
+        response_processing = {
+            0 or 1: {
+                'Status': response['status'],
+                'Code': response['code'],
+                'Balance': response['balance'],
+                'ID_Call': response['call_id']},
+
+            2: {'Status': response['id'],
+                'Code': response['code'],
+                'ID_Call': response['cnt'],
+                'Balance': None},
+
+            3: {'Status': response['status'],
+                'Code': response['code'],
+                'Balance': response['balance'],
+                'ID_Call': response['unique_request_id']}}
+        return response_processing[operator_type]
+
+    if status == "BAD":
+        response_processing = {
+            0 or 1: {
+                'Status': response['status'],
+                'Status_code': response['status_code'],
+                'Status_text': response['status_text']},
+            2: {'Status': response['status'],
+                'Status_code': response['error_code'],
+                'Status_text': response['error']},
+            3: {'Status': response['status'],
+                'Status_code': response['code'],
+                'Status_text': response['error']}}
+        return response_processing[operator_type]
+
+    return None
