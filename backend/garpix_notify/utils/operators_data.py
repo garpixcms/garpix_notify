@@ -94,34 +94,34 @@ def response_check(response, operator_type, status):
     if status == "OK":
         response_processing = {
             0 or 1: {
-                'Status': response['status'],
-                'Code': response['code'],
-                'Balance': response['balance'],
-                'ID_Call': response['call_id']},
+                'Status': response.get('status'),
+                'Code': response.get('code'),
+                'Balance': response.get('balance'),
+                'ID_Call': response.get('call_id')},
 
-            2: {'Status': response['id'],
-                'Code': response['code'],
-                'ID_Call': response['cnt'],
-                'Balance': None},
+            2: {'Status': response.get('id'),
+                'Code': response.get('code'),
+                'ID_Call': response.get('cnt'),
+                'Balance': response.get('balance')},
 
-            3: {'Status': response['status'],
-                'Code': response['code'],
-                'Balance': response['balance'],
-                'ID_Call': response['unique_request_id']}}
+            3: {'Status': response.get('status'),
+                'Code': response.get('code'),
+                'Balance': response.get('balance'),
+                'ID_Call': response.get('unique_request_id')}}
         return response_processing[operator_type]
 
     if status == "BAD":
         response_processing = {
             0 or 1: {
-                'Status': response['status'],
-                'Status_code': response['status_code'],
-                'Status_text': response['status_text']},
-            2: {'Status': response['status'],
-                'Status_code': response['error_code'],
-                'Status_text': response['error']},
-            3: {'Status': response['status'],
-                'Status_code': response['code'],
-                'Status_text': response['error']}}
+                'Status': response.get('status'),
+                'Status_code': response.get('status_code'),
+                'Status_text': response.get('status_text')},
+            2: {'Status': response.get('status'),
+                'Status_code': response.get('error_code'),
+                'Status_text': response.get('error')},
+            3: {'Status': response.get('status'),
+                'Status_code': response.get('code'),
+                'Status_text': response.get('error')}}
         return response_processing[operator_type]
 
     return None
