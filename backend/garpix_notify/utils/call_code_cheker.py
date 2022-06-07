@@ -4,22 +4,15 @@ from django.utils.timezone import now
 
 from garpix_notify.models.config import NotifyConfig
 from garpix_notify.models.choices import STATE
-from .operators_data import url_dict, operator
+from .operators_data import url_dict_call, operator_call, response_check
 
 try:
     config = NotifyConfig.get_solo()
     IS_CALL_ENABLED = config.is_call_enabled
     CALL_URL_TYPE = config.call_url_type
-    CALL_API_ID = config.call_api_id
-    CALL_LOGIN = config.call_login
-    CALL_PASSWORD = config.call_password
 except Exception:
     IS_CALL_ENABLED = True
     CALL_URL_TYPE = getattr(settings, 'CALL_URL_TYPE', 0)
-    CALL_API_ID = getattr(settings, 'CALL_API_ID', 1234567890)
-    CALL_LOGIN = getattr(settings, 'CALL_LOGIN', '')
-    CALL_PASSWORD = getattr(settings, 'CALL_PASSWORD', '')
-    CALL_FROM = getattr(settings, 'CALL_FROM', '')
 
 
 class CallClient:
@@ -30,48 +23,32 @@ class CallClient:
             return
 
         try:
-            phone = ''.join(self.phone)
-            url = url_dict[CALL_URL_TYPE].join(**operator[CALL_URL_TYPE], to=phone)
-            print(url)
-            response = requests.get(url)
-            response_dict = response.json()
+            phone = f'{self.phone}'
+            value = None
+            url = url_dict_call[CALL_URL_TYPE].format(**operator_call[CALL_URL_TYPE], to=phone)
+            response_url = requests.get(url)
+            response_dict = response_url.json()
             try:
                 if CALL_URL_TYPE == NotifyConfig.CALL_URL.SMSRU_CALL_ID or CALL_URL_TYPE == NotifyConfig.CALL_URL.SMSRU_CALL_API_ID:
                     if response_dict['status'] == 'OK':
-                        self.to_log(
-                            f"Status: {response_dict['status']}, Code: {response_dict['code']}, "
-                            f"Баланс: {response_dict['balance']}, ID Звонка: {response_dict['call_id']}")
-                        self.state = STATE.DELIVERED
-                        self.sent_at = now()
+                        value = "OK"
                     else:
-                        self.to_log(
-                            f"Статус: {response_dict['status']}, Код статуса: {response_dict['status_code']}, "
-                            f"Описание ошибки: {response_dict['status_text']}")
-                        self.state = STATE.REJECTED
+                        value = "BAD"
 
                 elif CALL_URL_TYPE == NotifyConfig.CALL_URL.SMSCENTRE_ID:
                     if response_dict['error']:
-                        self.to_log(
-                            f"Код статуса: {response_dict['error_code']}, "
-                            f"Описание ошибки: {response_dict['error']}")
-                        self.state = STATE.REJECTED
+                        value = "BAD"
                     else:
-                        self.to_log(
-                            f"ID: {response_dict['id']}, Code: {response_dict['code']}, "
-                            f"cnt: {response_dict['cnt']}")
-                        self.state = STATE.DELIVERED
-                        self.sent_at = now()
+                        value = "OK"
+
                 elif CALL_URL_TYPE == NotifyConfig.CALL_URL.UCALLER_ID:
                     if response_dict['status']:
-                        self.to_log(
-                            f"Status: {response_dict['status']}, Code: {response_dict['code']}, ID: {response_dict['ucaller_id']}, "
-                            f"ID_Request: {response_dict['unique_request_id']}, Phone: {response_dict['phone']}")
-                        self.state = STATE.DELIVERED
-                        self.sent_at = now()
+                        value = "OK"
                     else:
-                        self.to_log(
-                            f"Статус: {response_dict['status']}, Код статуса: {response_dict['code']}, Описание: {response_dict['error']}")
-                        self.state = STATE.REJECTED
+                        value = "BAD"
+
+                response = response_check(response=response_dict, operator_type=CALL_URL_TYPE, status=value)
+                self.save_to_log(response=response, value=value)
             except Exception as e:
                 self.state = STATE.REJECTED
                 self.to_log(str(e))
@@ -79,3 +56,13 @@ class CallClient:
             self.state = STATE.REJECTED
             self.to_log(str(e))
 
+    def save_to_log(self, response, value):
+        if value == "OK":
+            self.to_log('Status: {Status}, Code: {Code}, Balance: {Balance}, ID_Call: {ID_Call}'.format(**response))
+            self.state = STATE.DELIVERED
+            self.sent_at = now()
+        elif value == "BAD":
+            self.to_log('Status:{Status} Status_code:{Status_code} Status_text:{Status_text}'.format(**response))
+            self.state = STATE.REJECTED
+        else:
+            return None
