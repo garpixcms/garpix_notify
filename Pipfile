@@ -21,10 +21,10 @@ viberbot = "*"
 django-uuslug = "*"
 pillow = "*"
 redis = "*"
-channels = "==3.0.3"
-channels-redis = "==3.3.1"
-asgiref = "==3.2.10"
 mistune = "==0.8.4"
+channels = "==3.0.3"
+channels-redis = "==3.4.0"
+asgiref = "==3.2.10"
 
 [dev-packages]
 

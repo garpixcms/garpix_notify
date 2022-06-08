@@ -78,7 +78,7 @@ class CallClient:
     @staticmethod
     def call(phone, user=None, url=None, **kwargs):
         if user is not None:
-            phone = user.phone if not phone else phone
+            phone = user.phone if user.phone else phone
         # Для некоторых операторов из представленного списка, мы можем сгенерировать код на нашей стороне
         # Для этого можем передать в функцию кастомную ссылку и дополнительные параметры
         if url is not None:

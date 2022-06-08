@@ -1,11 +1,15 @@
+from django.conf import settings
 from django.utils import timezone
-from app.celery import app as celery_app
+from django.utils.module_loading import import_string
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
 from garpix_notify.models.choices import STATE, TYPE
 from garpix_notify.models.config import NotifyConfig
 from garpix_notify.models.notify import Notify
+
+
+celery_app = import_string(settings.GARPIX_NOTIFY_CELERY_SETTINGS)
 
 
 @celery_app.task

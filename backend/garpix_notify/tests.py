@@ -75,12 +75,11 @@ class PreBuildTestCase(TestCase):
         self.assertEqual(template_email.event, self.data_template_email['event'])
         self.assertEqual(template_email.category.id, category.id)
         # Создание пробного письма
-        Notify.send(self.PASS_TEST_EVENT, {
+        notify = Notify.send(self.PASS_TEST_EVENT, {
             'sometext': self.sometext,
             'user': user,
         }, user=user)
-        self.assertEqual(Notify.objects.all().count(), 1)
-        notify = Notify.objects.all().first()
+        self.assertEqual(notify.event, template_email.event)
         self.assertEqual(notify.subject, self.data_compiled_email['subject'])
         self.assertEqual(notify.text, self.data_compiled_email['text'])
         self.assertEqual(notify.html, self.data_compiled_email['html'])
@@ -144,15 +143,14 @@ class PreBuildTestCase(TestCase):
         self.assertEqual(template_email.category.id, category.id)
 
         # Создание пробного письма
-        Notify.send(self.PASS_TEST_EVENT_1, {
+        notify = Notify.send(self.PASS_TEST_EVENT_1, {
             'sometext': self.sometext,
             'user': user,
         }, user=user)
 
-        self.assertEqual(Notify.objects.all().count(), 2)
+        self.assertEqual(notify.event, template_email.event)
 
         # notify
-        notify = Notify.objects.get(user=user)
         self.assertEqual(notify.subject, self.data_compiled_email_1['subject'])
         self.assertEqual(notify.text, self.data_compiled_email_1['text'])
         self.assertEqual(notify.html, self.data_compiled_email_1['html'])
@@ -214,15 +212,14 @@ class PreBuildTestCase(TestCase):
         self.assertEqual(template_viber.category.id, category.id)
 
         # Создание уведомления
-        Notify.send(self.PASS_TEST_EVENT_2, {
+        notify = Notify.send(self.PASS_TEST_EVENT_2, {
             'sometext': self.sometext,
             'user': user,
         }, user=user)
 
-        self.assertEqual(Notify.objects.all().count(), 3)
+        self.assertEqual(notify.event, template_viber.event)
 
         # notify
-        notify = Notify.objects.get(user=user)
         self.assertEqual(notify.subject, self.data_compiled_viber['subject'])
         self.assertEqual(notify.text, self.data_compiled_viber['text'])
         self.assertEqual(notify.html, self.data_compiled_viber['html'])

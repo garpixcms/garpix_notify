@@ -51,11 +51,21 @@ try:
     VIBER_BOT_NAME = config.viber_bot_name
     IS_EMAIL_ENABLED = config.is_email_enabled
     EMAIL_MALLING = config.email_malling
+    TELEGRAM_PARSE_MODE = config.telegram_parse_mode
+    TELEGRAM_DISABLE_NOTIFICATION = config.telegram_disable_notification
+    TELEGRAM_DISABLE_PAGE_PREVIEW = config.telegram_disable_web_page_preview
+    TELEGRAM_SENDING_WITHOUT_REPLY = config.telegram_allow_sending_without_reply
+    TELEGRAM_TIMEOUT = config.telegram_timeout
 except Exception:
     IS_PUSH_ENABLED = True
     IS_TELEGRAM_ENABLED = True
     IS_VIBER_ENABLED = True
     IS_EMAIL_ENABLED = True
+    TELEGRAM_PARSE_MODE = getattr(settings, 'TELEGRAM_PARSE_MODE', None)
+    TELEGRAM_DISABLE_NOTIFICATION = getattr(settings, 'TELEGRAM_DISABLE_NOTIFICATION', False)
+    TELEGRAM_DISABLE_PAGE_PREVIEW = getattr(settings, 'TELEGRAM_DISABLE_PAGE_PREVIEW', False)
+    TELEGRAM_SENDING_WITHOUT_REPLY = getattr(settings, 'TELEGRAM_SENDING_WITHOUT_REPLY', False)
+    TELEGRAM_TIMEOUT = getattr(settings, 'TELEGRAM_TIMEOUT', None)
     TELEGRAM_API_KEY = getattr(settings, 'TELEGRAM_API_KEY', '000000000:AAAAAAAAAA-AAAAAAAA-_AAAAAAAAAAAAAA')
     VIBER_API_KEY = getattr(settings, 'VIBER_API_KEY', '000000000:AAAAAAAAAA-AAAAAAAA-_AAAAAAAAAAAAAA')
     VIBER_BOT_NAME = getattr(settings, 'VIBER_BOT_NAME', 'MySuperBot')
@@ -185,7 +195,7 @@ class Notify(NotifyMixin, UserNotifyMixin, SMSClient, CallClient):
     def send_telegram(self):
         import telegram
         bot = telegram.Bot(token=TELEGRAM_API_KEY)
-
+        parse_mode = TELEGRAM_PARSE_MODE if TELEGRAM_PARSE_MODE != '' else None
         if not IS_TELEGRAM_ENABLED:
             self.state = STATE.DISABLED
             return
@@ -193,7 +203,13 @@ class Notify(NotifyMixin, UserNotifyMixin, SMSClient, CallClient):
         try:
             result = False
             for chunk in chunks(str(self.text), 4096):
-                result = bot.sendMessage(chat_id=self.telegram_chat_id, text=chunk, disable_web_page_preview=True)
+                result = bot.sendMessage(chat_id=self.telegram_chat_id,
+                                         text=chunk,
+                                         parse_mode=parse_mode,
+                                         disable_web_page_preview=TELEGRAM_DISABLE_PAGE_PREVIEW,
+                                         disable_notification=TELEGRAM_DISABLE_NOTIFICATION,
+                                         timeout=TELEGRAM_TIMEOUT,
+                                         allow_sending_without_reply=TELEGRAM_SENDING_WITHOUT_REPLY)
             if result:
                 self.state = STATE.DELIVERED
                 self.sent_at = now()
@@ -266,19 +282,14 @@ class Notify(NotifyMixin, UserNotifyMixin, SMSClient, CallClient):
             return
         try:
             result = False
-            # из шаблона получаем выбраные списки пользователей для рассылки
-            for user_lists_in_template in NotifyTemplate.objects.all().prefetch_related('user_lists'):
-                # проверяем добавлены ли списки пользователей для рассылки в шаблон
-                if user_lists_in_template.user_lists.all().exists():
-                    # перебираем списки пользователей для рассылки
-                    for participants_in_user_lists in user_lists_in_template.user_lists.all():
-                        # перебираем участников списка пользователей
-                        for participant in participants_in_user_lists.participants.all():
-                            result = viber.send_messages(to=participant.user.viber_chat_id,
-                                                         messages=[TextMessage(text=self.text)])
+            if self.users_list.all().exists():
+                participants = receiving_users(self.users_list.all(), value='viber_chat_id')
+                if participants:
+                    for participant in participants:
+                        result = viber.send_messages(to=participant, messages=[TextMessage(text=self.text)])
                 # если не добавлены, сообщение приходит пользователю(получателю) или тому, кто указан в коде
-                else:
-                    result = viber.send_messages(to=self.viber_chat_id, messages=[TextMessage(text=self.text)])
+            else:
+                result = viber.send_messages(to=self.viber_chat_id, messages=[TextMessage(text=self.text)])
             if result:
                 self.state = STATE.DELIVERED
                 self.sent_at = now()
@@ -305,7 +316,8 @@ class Notify(NotifyMixin, UserNotifyMixin, SMSClient, CallClient):
     def send(event, context, user=None, email=None, phone=None, files=None, data_json=None,  # noqa
              viber_chat_id=None, room_name=None, notify_templates=None, send_at=None, **kwargs):
 
-        notification_count = 0
+        instance = None
+        # Сначала забираем те данные, которые передали с методом
         notify_user = user if user else None
         notify_email = email if email else None
         notify_phone = phone if phone else None
@@ -338,9 +350,8 @@ class Notify(NotifyMixin, UserNotifyMixin, SMSClient, CallClient):
 
             notify_users_lists = template.user_lists.all()
 
-            # Формируем список основных и дополнительных получателей письма
-            # Первого получателя заполняем из шаблона, его данные могут быть пустыми - чтобы можно было через
-            # код отправить уведомление
+            # Формируем список основных получателей письма
+            # Из шаблона, если методом не было передано данных
             template_user = template.user if template.user else None
             template_email = template.email if template.email else None
             template_phone = template.phone if template.phone else None
@@ -414,9 +425,8 @@ class Notify(NotifyMixin, UserNotifyMixin, SMSClient, CallClient):
             for f in file_instances:
                 file_instance.add(f)
             instance.save()
-            notification_count += 1
 
-        return notification_count
+        return instance
 
     class Meta:
         verbose_name = 'Уведомление'
