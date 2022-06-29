@@ -120,6 +120,11 @@ SMS_API_ID = 1234567890
 SMS_LOGIN = ''
 SMS_PASSWORD = ''
 SMS_FROM = ''
+# CALL
+CALL_URL_TYPE = 0
+CALL_API_ID = 1234567890
+CALL_LOGIN = ''
+CALL_PASSWORD = ''
 # TELEGRAM
 TELEGRAM_API_KEY = '000000000:AAAAAAAAAA-AAAAAAAA-_AAAAAAAAAAAAAA'
 TELEGRAM_BOT_NAME = 'MySuperBot'
@@ -136,12 +141,10 @@ VIBER_SUCCESS_ADDED_TEXT = 'Success'
 VIBER_FAILED_ADDED_TEXT = 'Failed'
 VIBER_TEXT_FOR_NEW_SUB = 'HI!'
 # SETTINGS
-IS_EMAIL_ENABLED = True
-IS_SMS_ENABLED = True
-IS_PUSH_ENABLED = True
-IS_TELEGRAM_ENABLED = True
-IS_VIBER_ENABLED = True
-EMAIL_MALLING = 1    
+EMAIL_MALLING = 1
+GARPIX_NOTIFY_MIXIN = 'garpix_notify.mixins.notify_mixin.NotifyMixin'
+NOTIFY_USER_WANT_MESSAGE_CHECK = None
+NOTIFY_CALL_CODE_CHECK = None
 ```
 #### Step 3. Go to the admin panel and go to the "Notifications" section - "SMTP accounts"
 
@@ -189,6 +192,11 @@ Notify.send(settings.EXAMPLE_EVENT_1, {
 Notify.send(settings.EXAMPLE_EVENT_1, {
     'confirmation_code': 'abcdef12345',
 }, email='example@mail.ru', send_at=(datetime.datetime.now() + datetime.timedelta(days=1)))
+
+# If you need to send a code by phone call
+Notify.send(settings.EXAMPLE_EVENT_2, phone='79998881122')
+# or if you need to get the code directly
+Notify.call(phone=79998881122)
 
 ```
 

@@ -30,3 +30,26 @@ class STATE:
         (WAIT, 'В ожидании'),
         (DISABLED, 'Не отправлено (отправка запрещена настройками)'),
     )
+
+
+class EMAIL_MALLING:
+    CC = 0
+    BCC = 1
+    TYPES = (
+        (CC, 'Обычная рассылка'),
+        (BCC, 'Скрытая рассылка'),
+    )
+
+
+class PARSE_MODE_TELEGRAM:
+    """ Выбор метода парсинга телеграмм сообщений"""
+
+    EMPTY = ''
+    HTML = 'HTML'
+    MARKDOWN = 'Markdown'
+
+    TYPES = (
+        (EMPTY, 'Без форматирования'),
+        (HTML, 'HTML'),
+        (MARKDOWN, 'Markdown'),
+    )

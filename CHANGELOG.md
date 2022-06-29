@@ -1,3 +1,11 @@
+### 5.8.0 (07.06.2022)
+
+- Added the Call method (Notify.call(phone, user, url, **kwargs)),
+- Fix bugs,
+- Fixed work NOTIFY_USER_WANT_MESSAGE_CHECK,
+- New settings for Telegram,
+- Telecom operators added.
+
 ### 5.7.0 (01.06.2022)
 
 - Added support for calls from SMS_RU.

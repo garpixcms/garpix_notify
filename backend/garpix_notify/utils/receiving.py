@@ -9,12 +9,11 @@ def receiving_users(users_list, value=False):
         # Сначала проверям есть ли дополнительные списки получателей
         for participant in user_list.participants.all():
             if participant.user or participant.email:
-                # Если у участника из дополнительного списка ничего не заполнено - ему уведомление не отправляем
                 receivers.append({
                     'user': participant.user,
                     'email': participant.user.email if participant.user else participant.email,
-                    'phone': participant.phone,
-                    'viber_chat_id': participant.viber_chat_id,
+                    'phone': participant.user.phone if participant.user else participant.email,
+                    'viber_chat_id': participant.user.viber_chat_id if participant.user else participant.viber_chat_id
                 })
         # Проверяем рассылку, не отмечена ли массовая рассылка
         if user_list.mail_to_all is False:
@@ -42,7 +41,7 @@ def receiving_users(users_list, value=False):
                         'viber_chat_id': user.viber_chat_id,
                     }
                 )
-        # Убираем дубликаты пользователей для телефонов или емейл
+        # Убираем дубликаты пользователей для переданного значения из функции
         if value:
             receivers = list({v[value]: v for v in receivers}.values())
             receivers_new = []
