@@ -1,3 +1,7 @@
+### 5.9.0 (29.06.2022)
+
+- Django==3.2
+
 ### 5.8.0 (07.06.2022)
 
 - Added the Call method (Notify.call(phone, user, url, **kwargs)),
