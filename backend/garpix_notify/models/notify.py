@@ -32,6 +32,7 @@ from ..mixins import UserNotifyMixin
 from ..utils import receiving_users
 from ..utils.sms_checker import SMSClient
 from ..utils.call_code_cheker import CallClient
+from ..utils.send_data import notify_create
 
 
 def chunks(s, n):
@@ -50,11 +51,21 @@ try:
     VIBER_BOT_NAME = config.viber_bot_name
     IS_EMAIL_ENABLED = config.is_email_enabled
     EMAIL_MALLING = config.email_malling
+    TELEGRAM_PARSE_MODE = config.telegram_parse_mode
+    TELEGRAM_DISABLE_NOTIFICATION = config.telegram_disable_notification
+    TELEGRAM_DISABLE_PAGE_PREVIEW = config.telegram_disable_web_page_preview
+    TELEGRAM_SENDING_WITHOUT_REPLY = config.telegram_allow_sending_without_reply
+    TELEGRAM_TIMEOUT = config.telegram_timeout
 except Exception:
     IS_PUSH_ENABLED = True
     IS_TELEGRAM_ENABLED = True
     IS_VIBER_ENABLED = True
     IS_EMAIL_ENABLED = True
+    TELEGRAM_PARSE_MODE = getattr(settings, 'TELEGRAM_PARSE_MODE', None)
+    TELEGRAM_DISABLE_NOTIFICATION = getattr(settings, 'TELEGRAM_DISABLE_NOTIFICATION', False)
+    TELEGRAM_DISABLE_PAGE_PREVIEW = getattr(settings, 'TELEGRAM_DISABLE_PAGE_PREVIEW', False)
+    TELEGRAM_SENDING_WITHOUT_REPLY = getattr(settings, 'TELEGRAM_SENDING_WITHOUT_REPLY', False)
+    TELEGRAM_TIMEOUT = getattr(settings, 'TELEGRAM_TIMEOUT', None)
     TELEGRAM_API_KEY = getattr(settings, 'TELEGRAM_API_KEY', '000000000:AAAAAAAAAA-AAAAAAAA-_AAAAAAAAAAAAAA')
     VIBER_API_KEY = getattr(settings, 'VIBER_API_KEY', '000000000:AAAAAAAAAA-AAAAAAAA-_AAAAAAAAAAAAAA')
     VIBER_BOT_NAME = getattr(settings, 'VIBER_BOT_NAME', 'MySuperBot')
@@ -79,7 +90,8 @@ class Notify(NotifyMixin, UserNotifyMixin, SMSClient, CallClient):
 
     type = models.IntegerField(choices=TYPE.CHOICES, verbose_name='Тип')
     state = models.IntegerField(choices=STATE.CHOICES, default=STATE.WAIT, verbose_name='Состояние')
-    category = models.ForeignKey(NotifyCategory, on_delete=models.CASCADE, related_name='notifies', verbose_name='Категория')
+    category = models.ForeignKey(NotifyCategory, on_delete=models.CASCADE, related_name='notifies',
+                                 verbose_name='Категория')
     event = models.IntegerField(choices=settings.CHOICES_NOTIFY_EVENT, blank=True, null=True, verbose_name='Событие')
     files = models.ManyToManyField(NotifyFile, verbose_name='Файлы')
 
@@ -183,7 +195,7 @@ class Notify(NotifyMixin, UserNotifyMixin, SMSClient, CallClient):
     def send_telegram(self):
         import telegram
         bot = telegram.Bot(token=TELEGRAM_API_KEY)
-
+        parse_mode = TELEGRAM_PARSE_MODE if TELEGRAM_PARSE_MODE != '' else None
         if not IS_TELEGRAM_ENABLED:
             self.state = STATE.DISABLED
             return
@@ -191,7 +203,13 @@ class Notify(NotifyMixin, UserNotifyMixin, SMSClient, CallClient):
         try:
             result = False
             for chunk in chunks(str(self.text), 4096):
-                result = bot.sendMessage(chat_id=self.telegram_chat_id, text=chunk, disable_web_page_preview=True)
+                result = bot.sendMessage(chat_id=self.telegram_chat_id,
+                                         text=chunk,
+                                         parse_mode=parse_mode,
+                                         disable_web_page_preview=TELEGRAM_DISABLE_PAGE_PREVIEW,
+                                         disable_notification=TELEGRAM_DISABLE_NOTIFICATION,
+                                         timeout=TELEGRAM_TIMEOUT,
+                                         allow_sending_without_reply=TELEGRAM_SENDING_WITHOUT_REPLY)
             if result:
                 self.state = STATE.DELIVERED
                 self.sent_at = now()
@@ -264,19 +282,14 @@ class Notify(NotifyMixin, UserNotifyMixin, SMSClient, CallClient):
             return
         try:
             result = False
-            # из шаблона получаем выбраные списки пользователей для рассылки
-            for user_lists_in_template in NotifyTemplate.objects.all().prefetch_related('user_lists'):
-                # проверяем добавлены ли списки пользователей для рассылки в шаблон
-                if user_lists_in_template.user_lists.all().exists():
-                    # перебираем списки пользователей для рассылки
-                    for participants_in_user_lists in user_lists_in_template.user_lists.all():
-                        # перебираем участников списка пользователей
-                        for participant in participants_in_user_lists.participants.all():
-                            result = viber.send_messages(to=participant.user.viber_chat_id,
-                                                         messages=[TextMessage(text=self.text)])
+            if self.users_list.all().exists():
+                participants = receiving_users(self.users_list.all(), value='viber_chat_id')
+                if participants:
+                    for participant in participants:
+                        result = viber.send_messages(to=participant, messages=[TextMessage(text=self.text)])
                 # если не добавлены, сообщение приходит пользователю(получателю) или тому, кто указан в коде
-                else:
-                    result = viber.send_messages(to=self.viber_chat_id, messages=[TextMessage(text=self.text)])
+            else:
+                result = viber.send_messages(to=self.viber_chat_id, messages=[TextMessage(text=self.text)])
             if result:
                 self.state = STATE.DELIVERED
                 self.sent_at = now()
@@ -303,11 +316,14 @@ class Notify(NotifyMixin, UserNotifyMixin, SMSClient, CallClient):
     def send(event, context, user=None, email=None, phone=None, files=None, data_json=None,  # noqa
              viber_chat_id=None, room_name=None, notify_templates=None, send_at=None, **kwargs):
 
-        local_context = context.copy()
+        instance = None
+        # Сначала забираем те данные, которые передали с методом
+        notify_user = user if user else None
+        notify_email = email if email else None
+        notify_phone = phone if phone else None
+        notify_viber_chat_id = viber_chat_id if viber_chat_id else None
 
-        if user is not None:
-            email = user.email if not email else email
-            phone = user.phone if not phone else phone
+        local_context = context.copy()
 
         user_want_message_check = None
         if hasattr(settings, 'NOTIFY_USER_WANT_MESSAGE_CHECK') and settings.NOTIFY_USER_WANT_MESSAGE_CHECK is not None:
@@ -330,56 +346,64 @@ class Notify(NotifyMixin, UserNotifyMixin, SMSClient, CallClient):
             instance = NotifyFile.objects.create(file=f)
             file_instances.append(instance)
 
-        notification_count = 0
-        receivers = []
         for template in templates:
-            template_user = None
-            template_email = None
-            template_phone = None
-            template_viber_chat_id = None
-            if user or phone or email or viber_chat_id:
-                # Формируем список основных и дополнительных получателей письма
-                # Первого получателя заполняем из шаблона, его данные могут быть пустыми - чтобы можно было через
-                # код отправить уведомление
-                receivers = [{
-                    'user': user,
-                    'email': email,
-                    'phone': phone,
-                    'viber_chat_id': viber_chat_id,
-                }]
-            for recipient in receivers:
-                template_user = recipient['user']
-                template_email = recipient['email']
-                template_phone = recipient['phone']
-                template_viber_chat_id = recipient['viber_chat_id']
-                # Если в шаблоне не указаны получатели, то получатель тот, кого передали в функцию
-                if template_user is None and template_email is None:
-                    template_user = user
-                    template_email = email
-                    template_phone = phone
-                    template_viber_chat_id = viber_chat_id
-                    # Если пользователь заполнен, то перезаписываем поля емейла и номера телефона,
-                    # даже если они были переданы.
-                    if user is not None:
-                        template_email = user.email
-                        template_phone = user.phone
-                        template_viber_chat_id = user.viber_chat_id
-                # Проверка, хочет ли получить сообщение
-                if user_want_message_check is not None and not \
-                        user_want_message_check(event, template.type, template_user):  # noqa
-                    continue
 
+            notify_users_lists = template.user_lists.all()
+
+            # Формируем список основных получателей письма
+            # Из шаблона, если методом не было передано данных
+            template_user = template.user if template.user else None
+            template_email = template.email if template.email else None
+            template_phone = template.phone if template.phone else None
+            template_viber_chat_id = template.viber_chat_id if template.viber_chat_id else None
+
+            # Данные, которые указал пользователь у себя в профиле в приоритете
+            if notify_user:
+                notify_email = notify_user.email if notify_user.email else notify_email
+                notify_phone = notify_user.phone if notify_user.phone else notify_phone
+                notify_viber_chat_id = notify_user.viber_chat_id if notify_user.viber_chat_id else notify_viber_chat_id
+
+            if notify_user is None and template_user:
+                notify_user = template.user if template.user else None
+                notify_email = template.user.email if template.user.email else notify_email
+                notify_phone = template.user.phone if template.user.phone else notify_phone
+                notify_viber_chat_id = template.user.viber_chat_id if template.user.viber_chat_id else notify_viber_chat_id
+
+            if notify_email is None:
+                notify_email = template_email
+
+            if notify_phone is None:
+                notify_phone = template_phone
+
+            if notify_viber_chat_id is None:
+                notify_viber_chat_id = template_viber_chat_id
+
+            # Проверка, хочет ли получить сообщение
+            if user_want_message_check is not None:  # noqa
+                if not notify_users_lists.exists():
+                    user_check = user_want_message_check(event, template.type, notify_user)
+                    if user_check is None:
+                        return None
+                else:
+                    # Если у нас шаблон со списками, то передаем в функцию и тут формируем новый из тех юзеов,
+                    # которым сообщения нужны
+                    # Если список пустой, то отменяем отправку
+                    notify_users_lists = user_want_message_check(
+                        event, template.type, notify_user, notify_users_lists)
+                    if notify_users_lists is None:
+                        return None
                 # Добавляем пользователя в контекст, если его там не передали
-                if template_user is not None:
-                    if local_context is not None:
-                        local_context.update({
-                            'user': template_user,
-                        })
-                    else:
-                        local_context = {
-                            'user': template_user,
-                        }
-                local_context['event_id'] = event
+            if notify_user is not None:
+                if local_context is not None:
+                    local_context.update({
+                        'user': notify_user,
+                    })
+                else:
+                    local_context = {
+                        'user': notify_user,
+                    }
+            local_context['event_id'] = event
+
             # Проверка на наличие списка в шаблоне
             # Если в шаблоне передаются списки пользователей, то отдаем их уведомлениям
             # Если уведомление для одного пользователя, то создаем для одного
@@ -388,54 +412,21 @@ class Notify(NotifyMixin, UserNotifyMixin, SMSClient, CallClient):
                 notify_send = send_at
             else:
                 notify_send = template.send_at
-            users_lists = template.user_lists.all()
-            if users_lists.count() == 0:
-                instance = Notify.objects.create(
-                    subject=template.render_subject(local_context),
-                    text=template.render_text(local_context),
-                    html=template.render_html(local_context),
-                    user=template_user,
-                    email=template_email,
-                    phone=template_phone if template_phone is not None else "",
-                    viber_chat_id=template_viber_chat_id if template_viber_chat_id is not None else "",
-                    type=template.type,
-                    event=template.event,
-                    category=template.category if template.category else None,
-                    data_json=data_json,
-                    send_at=notify_send,
-                    room_name=room_name,
-                    **kwargs
-                )
-                file_instance = instance.files
-                for f in file_instances:
-                    file_instance.add(f)
-                instance.save()
-                notification_count += 1
-            else:
-                instance = Notify.objects.create(
-                    subject=template.render_subject(local_context),
-                    text=template.render_text(local_context),
-                    html=template.render_html(local_context),
-                    user=template_user,
-                    email=template_email,
-                    phone=template_phone if template_phone is not None else "",
-                    viber_chat_id=template_viber_chat_id if template_viber_chat_id is not None else "",
-                    type=template.type,
-                    event=template.event,
-                    category=template.category if template.category else None,
-                    data_json=data_json,
-                    send_at=notify_send,
-                    room_name=room_name,
-                    **kwargs
-                )
-                instance.users_list.add(*users_lists)
-                file_instance = instance.files
-                for f in file_instances:
-                    file_instance.add(f)
-                instance.save()
-                notification_count += 1
+            data_dict = notify_create(template=template, context=local_context, user=notify_user,
+                                      email=notify_email, phone=notify_phone, viber=notify_viber_chat_id,
+                                      json=data_json, time=notify_send, room=room_name)
+            instance = Notify.objects.create(
+                **data_dict,
+                **kwargs
+            )
+            if notify_users_lists.exists():
+                instance.users_list.add(*notify_users_lists)
+            file_instance = instance.files
+            for f in file_instances:
+                file_instance.add(f)
+            instance.save()
 
-        return notification_count
+        return instance
 
     class Meta:
         verbose_name = 'Уведомление'

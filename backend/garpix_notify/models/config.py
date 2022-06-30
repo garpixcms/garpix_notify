@@ -1,20 +1,12 @@
 from django.db import models
 from solo.models import SingletonModel
 
+from garpix_notify.models.choices import EMAIL_MALLING, PARSE_MODE_TELEGRAM
+
 
 class NotifyConfig(SingletonModel):
-    class EMAIL_MALLING:
-        CC = 0
-        BCC = 1
-        TYPES = (
-            (CC, 'Обычная рассылка'),
-            (BCC, 'Скрытая рассылка'),
-        )
-
     class SMS_URL:
-        """
-        URL СМС провайдера
-        """
+        """ URL СМС провайдера """
 
         SMSRU_ID = 0
         WEBSZK_ID = 1
@@ -43,14 +35,22 @@ class NotifyConfig(SingletonModel):
         )
 
     class CALL_URL:
+        """ URL Оператора связи """
         SMSRU_CALL_API_ID = 0
         SMSRU_CALL_ID = 1
+        SMSCENTRE_ID = 2
+        UCALLER_ID = 3
 
-        SMSRU_CALL_URL = 'https://sms.ru/code/call?'
+        SMSRU_CALL_URL = 'https://sms.ru/code/call'
+        SMSCENTRE_URL = 'https://smsc.ru/sys/send.php'
+        UCALLER_URL = 'https://api.ucaller.ru/v1.0/initCall'
 
         TYPES = (
             (SMSRU_CALL_API_ID, 'sms.ru API'),
             (SMSRU_CALL_ID, 'sms.ru LOGIN'),
+            (SMSCENTRE_ID, 'smsc.ru'),
+            (UCALLER_ID, 'ucaller.ru'),
+
         )
 
     periodic = models.IntegerField(default=60, verbose_name='Периодичность отправки уведомлений (сек.)')
@@ -71,11 +71,11 @@ class NotifyConfig(SingletonModel):
     call_url_type = models.IntegerField(default=CALL_URL.SMSRU_CALL_API_ID, choices=CALL_URL.TYPES,
                                         verbose_name='URL звонка провайдера')
     call_api_id = models.CharField(default='1234567890', blank=True, max_length=255,
-                                  verbose_name='API ID оператора связи')
+                                   verbose_name='API ID оператора связи')
     call_login = models.CharField(default='', blank=True, max_length=255,
-                                 verbose_name='Логин пользователя оператора связи')
+                                  verbose_name='Логин/Индетификатор сервиса оператора связи')
     call_password = models.CharField(default='', blank=True, max_length=255,
-                                    verbose_name='Пароль для api СМС провайдера')
+                                     verbose_name='Пароль/Секретный ключ оператора связи')
     telegram_api_key = models.CharField(default='000000000:AAAAAAAAAA-AAAAAAAA-_AAAAAAAAAAAAAA', blank=True,
                                         max_length=255, verbose_name='Telegram API Key')
     telegram_bot_name = models.CharField(default='', blank=True, help_text='Например, MySuperBot',
@@ -95,6 +95,17 @@ class NotifyConfig(SingletonModel):
     telegram_failed_added_text = models.TextField(blank=True,
                                                   default='Ошибка при привязке учетной записи. Пожалуйста, свяжитесь с техподдержкой',
                                                   verbose_name='Telegram - Текст провал, не добавлен код')
+    telegram_parse_mode = models.CharField(default=PARSE_MODE_TELEGRAM.EMPTY, choices=PARSE_MODE_TELEGRAM.TYPES,
+                                           verbose_name='Тип парсера телеграм сообщений', max_length=100, blank=True)
+    telegram_disable_notification = models.BooleanField(verbose_name='Пользователи получат уведомление без звука',
+                                                        default=False)
+    telegram_disable_web_page_preview = models.BooleanField(
+        verbose_name='Отключает предварительный просмотр ссылок в сообщениях',
+        default=False)
+    telegram_allow_sending_without_reply = models.BooleanField(
+        verbose_name='Разрешить, если сообщение должно быть отправлено, даже если ответное сообщение не найдено',
+        default=False)
+    telegram_timeout = models.FloatField(default=None, blank=True, verbose_name="Тайм-аут чтения с сервера", null=True)
     viber_api_key = models.CharField(default='000000000:AAAAAAAAAA-AAAAAAAA-_AAAAAAAAAAAAAA', blank=True,
                                      max_length=255, verbose_name='Viber API Key')
     viber_bot_name = models.CharField(blank=True, max_length=255, verbose_name='Название viber бота',
