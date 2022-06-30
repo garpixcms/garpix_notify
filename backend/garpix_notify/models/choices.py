@@ -53,3 +53,53 @@ class PARSE_MODE_TELEGRAM:
         (HTML, 'HTML'),
         (MARKDOWN, 'Markdown'),
     )
+
+
+class SMS_URL:
+    """ URL СМС провайдера """
+
+    SMSRU_ID = 0
+    WEBSZK_ID = 1
+    IQSMS_ID = 2
+    INFOSMS_ID = 3
+    SMSCENTRE_ID = 4
+    SMS_SENDING_ID = 5
+    SMS_PROSTO_ID = 6
+
+    SMSRU_URL = 'https://sms.ru/sms/send/'
+    WEBSZK_URL = 'http://gateway.api.sc/get/'
+    IQSMS_URL = 'https://api.iqsms.ru/messages/v2/send.json'
+    INFOSMS_URL = 'http://api.infosmska.ru/interfaces/SendMessages.ashx'
+    SMSCENTRE_URL = 'https://smsc.ru/sys/send.php'
+    SMS_SENDING_URL = 'http://lcab.sms-sending.ru/lcabApi/sendSms.php'
+    SMS_PROSTO_URL = 'http://api.sms-prosto.ru/'
+
+    TYPES = (
+        (SMSRU_ID, 'sms.ru'),
+        (WEBSZK_ID, 'web.szk-info.ru'),
+        (IQSMS_ID, 'iqsms.ru'),
+        (INFOSMS_ID, 'infosmska.ru'),
+        (SMSCENTRE_ID, 'smsc.ru'),
+        (SMS_SENDING_ID, 'sms-sending.ru'),
+        (SMS_PROSTO_ID, 'sms-prosto.ru')
+    )
+
+
+class CALL_URL:
+    """ URL Оператора связи """
+    SMSRU_CALL_API_ID = 0
+    SMSRU_CALL_ID = 1
+    SMSCENTRE_ID = 2
+    UCALLER_ID = 3
+
+    SMSRU_CALL_URL = 'https://sms.ru/code/call'
+    SMSCENTRE_URL = 'https://smsc.ru/sys/send.php'
+    UCALLER_URL = 'https://api.ucaller.ru/v1.0/initCall'
+
+    TYPES = (
+        (SMSRU_CALL_API_ID, 'sms.ru API'),
+        (SMSRU_CALL_ID, 'sms.ru LOGIN'),
+        (SMSCENTRE_ID, 'smsc.ru'),
+        (UCALLER_ID, 'ucaller.ru'),
+
+    )
