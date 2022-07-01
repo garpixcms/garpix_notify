@@ -5,7 +5,6 @@ from garpix_notify.models.choices import EMAIL_MALLING, PARSE_MODE_TELEGRAM, SMS
 
 
 class NotifyConfig(SingletonModel):
-
     periodic = models.IntegerField(default=60, verbose_name='Периодичность отправки уведомлений (сек.)')
 
     email_max_day_limit = models.IntegerField(default=240, verbose_name='Дневной лимит отправки писем')
@@ -63,12 +62,19 @@ class NotifyConfig(SingletonModel):
                                      max_length=255, verbose_name='Viber API Key')
     viber_bot_name = models.CharField(blank=True, max_length=255, verbose_name='Название viber бота',
                                       default='Viber bot')
+    whatsapp_sender = models.CharField(max_length=30, blank=True, default='',
+                                       verbose_name='Телефон отправителя WhatsApp')
+    whatsapp_auth_token = models.CharField(default='XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', blank=True,
+                                           max_length=255, verbose_name='WhatsApp Auth Token')
+    whatsapp_account_sid = models.CharField(default='ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', blank=True,
+                                            max_length=255, verbose_name='WhatsApp Account SID')
     is_email_enabled = models.BooleanField(default=True, verbose_name='Разрешить отправку Email')
     is_sms_enabled = models.BooleanField(default=True, verbose_name='Разрешить отправку SMS')
     is_call_enabled = models.BooleanField(default=True, verbose_name='Разрешить отправку звонков')
     is_push_enabled = models.BooleanField(default=True, verbose_name='Разрешить отправку PUSH')
     is_telegram_enabled = models.BooleanField(default=True, verbose_name='Разрешить отправку Telegram')
     is_viber_enabled = models.BooleanField(default=True, verbose_name='Разрешить отправку Viber')
+    is_whatsapp_enabled = models.BooleanField(default=True, verbose_name='Разрешить отправку WhatsApp')
 
     viber_success_added_text = models.TextField(blank=True,
                                                 default='Ваша учетная запись успешно привязана к боту. Вы будете получать уведомления!',

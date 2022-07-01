@@ -4,7 +4,7 @@ from django.utils.timezone import now
 
 from garpix_notify.models.config import NotifyConfig
 from garpix_notify.models.choices import STATE, CALL_URL
-from .send_data import url_dict_call, operator_call, response_check
+from garpix_notify.utils.send_data import url_dict_call, operator_call, response_check
 
 try:
     config = NotifyConfig.get_solo()

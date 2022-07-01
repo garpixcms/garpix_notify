@@ -1,8 +1,9 @@
 from django.conf import settings
-from django.template.defaulttags import now
+from django.utils.timezone import now
 
 from garpix_notify.models.config import NotifyConfig
 from garpix_notify.models.choices import STATE
+
 
 try:
     config = NotifyConfig.get_solo()
