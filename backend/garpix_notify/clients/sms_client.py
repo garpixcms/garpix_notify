@@ -5,7 +5,7 @@ from django.utils.timezone import now
 from garpix_notify.models.config import NotifyConfig
 from garpix_notify.models.choices import STATE, SMS_URL
 from garpix_notify.utils.receiving import ReceivingUsers
-from .send_data import url_dict_sms, operator_sms
+from garpix_notify.utils.send_data import url_dict_sms, operator_sms
 
 try:
     config = NotifyConfig.get_solo()

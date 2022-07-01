@@ -17,7 +17,7 @@ from .log import NotifyErrorLog
 from .template import NotifyTemplate
 from ..mixins import UserNotifyMixin
 from ..utils.send_data import url_dict_call, operator_call, response_check, notify_create, system_notify_create
-from ..utils import SMSClient, EmailClient, CallClient, TelegramClient, ViberClient, PushClient
+from ..clients import SMSClient, EmailClient, CallClient, TelegramClient, ViberClient, PushClient
 
 NotifyMixin = import_string(settings.GARPIX_NOTIFY_MIXIN)
 
