@@ -25,7 +25,10 @@ class ViberClient:
         self.notify = notify
 
     def __send_viber_client(self):
-        text = self.notify
+        if not IS_VIBER_ENABLED:
+            self.notify.state = STATE.DISABLED
+            return
+        text = self.notify.text
         users_list = self.notify.users_list.all()
 
         viber = Api(BotConfiguration(
@@ -33,9 +36,6 @@ class ViberClient:
             avatar='',
             auth_token=VIBER_API_KEY
         ))
-        if not IS_VIBER_ENABLED:
-            self.notify.state = STATE.DISABLED
-            return
         try:
             result = False
             if users_list.exists():

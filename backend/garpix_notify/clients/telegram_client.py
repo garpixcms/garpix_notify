@@ -3,6 +3,8 @@ from django.utils.timezone import now
 
 from garpix_notify.models.config import NotifyConfig
 from garpix_notify.models.choices import STATE
+
+
 try:
     config = NotifyConfig.get_solo()
     IS_TELEGRAM_ENABLED = config.is_telegram_enabled
