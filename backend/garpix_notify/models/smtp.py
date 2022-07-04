@@ -10,7 +10,7 @@ class SMTPAccount(models.Model):
     port = models.IntegerField(default=465, verbose_name='Порт')
     is_use_tls = models.BooleanField(default=False, verbose_name='Использовать TLS?')
     is_use_ssl = models.BooleanField(default=True, verbose_name='Использовать SSL?')
-    sender = models.EmailField(max_length=255, blank=True, default='', verbose_name='Отправитель')
+    sender = models.CharField(max_length=255, blank=True, default='', verbose_name='Отправитель')
     username = models.CharField(max_length=255, blank=True, default='', verbose_name='Имя пользователя')
     password = models.CharField(max_length=255, blank=True, default='', verbose_name='Пароль пользователя')
     timeout = models.IntegerField(default=5000, verbose_name='Таймаут (сек.)')

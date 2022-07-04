@@ -14,7 +14,7 @@ try:
     IS_WHATS_APP_ENABLED = config.is_whatsapp_enabled
     WHATS_APP_AUTH_TOKEN = config.whatsapp_auth_token
     WHATS_APP_ACCOUNT_SID = config.whatsapp_account_sid
-    WHATS_APP_NUMBER_SENDER = config.whats_app_sender
+    WHATS_APP_NUMBER_SENDER = config.whatsapp_sender
 except Exception:
     IS_WHATS_APP_ENABLED = True
     WHATS_APP_AUTH_TOKEN = getattr(settings, 'WHATS_APP_AUTH_TOKEN', None)
@@ -49,8 +49,7 @@ class WhatsAppClient:
             else:
                 result = client.messages.create(body=text_massage, from_=f'whatsapp:{self.number_sender}',
                                                 to=f'whatsapp:{self.notify.phone}')
-            if result:
-                print(result.sid)
+            if result.sid:
                 self.notify.state = STATE.DELIVERED
                 self.notify.sent_at = now()
             else:

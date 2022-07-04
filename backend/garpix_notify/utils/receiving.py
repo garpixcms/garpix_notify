@@ -21,17 +21,17 @@ class ReceivingUsers:
             # Проверяем рассылку, не отмечена ли массовая рассылка
             if user_list.mail_to_all:
                 users = user_model.objects.all()
-                receivers.append(
-                    {
-                        'user': user,
-                        'email': user.email,
-                        'phone': user.phone,
-                        'viber_chat_id': user.viber_chat_id,
-                    } for user in users)
+                receivers.extend(
+                    [{'user': user,
+                      'email': user.email,
+                      'phone': user.phone,
+                      'viber_chat_id': user.viber_chat_id
+                      } for user in users])
 
                 if self.value:
                     return self.__returning_specific_list(receivers)
                 return receivers
+
             # Собираем данные из дополнительного списка получателей, если он есть.
             users_participants = user_list.participants.all()
             if users_participants.exists():
@@ -44,17 +44,17 @@ class ReceivingUsers:
                             'viber_chat_id':
                                 participant.user.viber_chat_id if participant.user else participant.viber_chat_id
                         })
-            group_users = user_model.objects.filter(
-                Q(groups__in=list(
-                    user_list.user_groups.all()
-                )))
 
-            receivers.append(
-                {'user': user,
-                 'email': user.email,
-                 'phone': user.phone,
-                 'viber_chat_id': user.viber_chat_id
-                 } for user in group_users)
+            # Собираем данные из групп, которые входят в список рассылки
+            group_users = user_model.objects.filter(groups__in=user_list.user_groups.all())
+
+            if group_users.exists():
+                receivers.extend(
+                    [{'user': user,
+                      'email': user.email,
+                      'phone': user.phone,
+                      'viber_chat_id': user.viber_chat_id
+                      } for user in group_users])
 
             if self.value:
                 return self.__returning_specific_list(receivers)

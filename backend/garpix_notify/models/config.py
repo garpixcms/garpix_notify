@@ -64,10 +64,10 @@ class NotifyConfig(SingletonModel):
                                       default='Viber bot')
     whatsapp_sender = models.CharField(max_length=30, blank=True, default='',
                                        verbose_name='Телефон отправителя WhatsApp')
-    whatsapp_auth_token = models.CharField(default='ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', blank=True,
+    whatsapp_auth_token = models.CharField(default='XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', blank=True,
                                            max_length=255, verbose_name='WhatsApp Auth Token')
     whatsapp_account_sid = models.CharField(default='ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', blank=True,
-                                            max_length=255, verbose_name='WhatsApp WhatsApp Account SID')
+                                            max_length=255, verbose_name='WhatsApp Account SID')
     is_email_enabled = models.BooleanField(default=True, verbose_name='Разрешить отправку Email')
     is_sms_enabled = models.BooleanField(default=True, verbose_name='Разрешить отправку SMS')
     is_call_enabled = models.BooleanField(default=True, verbose_name='Разрешить отправку звонков')
