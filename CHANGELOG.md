@@ -1,3 +1,9 @@
+### 5.10.0 (04.07.2022)
+
+- asgiref==3.3.4,
+- Added support for WhatsApp (Twilio),
+- Fix bugs.
+
 ### 5.9.0 (29.06.2022)
 
 - Django==3.2

@@ -8,7 +8,7 @@ class NotifyConfigAdmin(SingletonModelAdmin):
     fieldsets = (
         (None, {
             'fields': ('periodic', 'is_email_enabled', 'is_sms_enabled', 'is_call_enabled', 'is_push_enabled',
-                       'is_telegram_enabled', 'is_viber_enabled')
+                       'is_telegram_enabled', 'is_viber_enabled', 'is_whatsapp_enabled')
         }),
         ('Почта', {
             'fields': ('email_max_day_limit', 'email_max_hour_limit', 'email_malling')
@@ -28,7 +28,10 @@ class NotifyConfigAdmin(SingletonModelAdmin):
         ('Viber', {
             'fields': ('viber_api_key', 'viber_bot_name', 'viber_success_added_text',
                        'viber_failed_added_text', 'viber_text_for_new_sub', 'viber_welcome_text')
-        })
+        }),
+        ('WhatsApp (Twilio)', {
+            'fields': ('whatsapp_sender', 'whatsapp_auth_token', 'whatsapp_account_sid')
+        }),
     )
 
     class Media:

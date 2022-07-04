@@ -1,58 +1,10 @@
 from django.db import models
 from solo.models import SingletonModel
 
-from garpix_notify.models.choices import EMAIL_MALLING, PARSE_MODE_TELEGRAM
+from garpix_notify.models.choices import EMAIL_MALLING, PARSE_MODE_TELEGRAM, SMS_URL, CALL_URL
 
 
 class NotifyConfig(SingletonModel):
-    class SMS_URL:
-        """ URL СМС провайдера """
-
-        SMSRU_ID = 0
-        WEBSZK_ID = 1
-        IQSMS_ID = 2
-        INFOSMS_ID = 3
-        SMSCENTRE_ID = 4
-        SMS_SENDING_ID = 5
-        SMS_PROSTO_ID = 6
-
-        SMSRU_URL = 'https://sms.ru/sms/send/'
-        WEBSZK_URL = 'http://gateway.api.sc/get/'
-        IQSMS_URL = 'https://api.iqsms.ru/messages/v2/send.json'
-        INFOSMS_URL = 'http://api.infosmska.ru/interfaces/SendMessages.ashx'
-        SMSCENTRE_URL = 'https://smsc.ru/sys/send.php'
-        SMS_SENDING_URL = 'http://lcab.sms-sending.ru/lcabApi/sendSms.php'
-        SMS_PROSTO_URL = 'http://api.sms-prosto.ru/'
-
-        TYPES = (
-            (SMSRU_ID, 'sms.ru'),
-            (WEBSZK_ID, 'web.szk-info.ru'),
-            (IQSMS_ID, 'iqsms.ru'),
-            (INFOSMS_ID, 'infosmska.ru'),
-            (SMSCENTRE_ID, 'smsc.ru'),
-            (SMS_SENDING_ID, 'sms-sending.ru'),
-            (SMS_PROSTO_ID, 'sms-prosto.ru')
-        )
-
-    class CALL_URL:
-        """ URL Оператора связи """
-        SMSRU_CALL_API_ID = 0
-        SMSRU_CALL_ID = 1
-        SMSCENTRE_ID = 2
-        UCALLER_ID = 3
-
-        SMSRU_CALL_URL = 'https://sms.ru/code/call'
-        SMSCENTRE_URL = 'https://smsc.ru/sys/send.php'
-        UCALLER_URL = 'https://api.ucaller.ru/v1.0/initCall'
-
-        TYPES = (
-            (SMSRU_CALL_API_ID, 'sms.ru API'),
-            (SMSRU_CALL_ID, 'sms.ru LOGIN'),
-            (SMSCENTRE_ID, 'smsc.ru'),
-            (UCALLER_ID, 'ucaller.ru'),
-
-        )
-
     periodic = models.IntegerField(default=60, verbose_name='Периодичность отправки уведомлений (сек.)')
 
     email_max_day_limit = models.IntegerField(default=240, verbose_name='Дневной лимит отправки писем')
@@ -110,12 +62,19 @@ class NotifyConfig(SingletonModel):
                                      max_length=255, verbose_name='Viber API Key')
     viber_bot_name = models.CharField(blank=True, max_length=255, verbose_name='Название viber бота',
                                       default='Viber bot')
+    whatsapp_sender = models.CharField(max_length=30, blank=True, default='',
+                                       verbose_name='Телефон отправителя WhatsApp')
+    whatsapp_auth_token = models.CharField(default='XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', blank=True,
+                                           max_length=255, verbose_name='WhatsApp Auth Token')
+    whatsapp_account_sid = models.CharField(default='ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', blank=True,
+                                            max_length=255, verbose_name='WhatsApp Account SID')
     is_email_enabled = models.BooleanField(default=True, verbose_name='Разрешить отправку Email')
     is_sms_enabled = models.BooleanField(default=True, verbose_name='Разрешить отправку SMS')
     is_call_enabled = models.BooleanField(default=True, verbose_name='Разрешить отправку звонков')
     is_push_enabled = models.BooleanField(default=True, verbose_name='Разрешить отправку PUSH')
     is_telegram_enabled = models.BooleanField(default=True, verbose_name='Разрешить отправку Telegram')
     is_viber_enabled = models.BooleanField(default=True, verbose_name='Разрешить отправку Viber')
+    is_whatsapp_enabled = models.BooleanField(default=True, verbose_name='Разрешить отправку WhatsApp')
 
     viber_success_added_text = models.TextField(blank=True,
                                                 default='Ваша учетная запись успешно привязана к боту. Вы будете получать уведомления!',

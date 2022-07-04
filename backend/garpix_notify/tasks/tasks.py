@@ -40,7 +40,8 @@ def send_system_notifications(notify_pk):
                 'id': notify_pk,
                 'type': 'send_notify',
                 'event': instance.event,
-                'message': instance.html
+                'message': instance.html,
+                'json_data': instance.data_json,
             }
         )
         instance.state = STATE.DELIVERED
