@@ -7,27 +7,27 @@ from garpix_notify.models.choices import STATE, SMS_URL
 from garpix_notify.utils.receiving import ReceivingUsers
 from garpix_notify.utils.send_data import url_dict_sms, operator_sms
 
-try:
-    config = NotifyConfig.get_solo()
-    IS_SMS_ENABLED = config.is_sms_enabled
-    SMS_URL_TYPE = config.sms_url_type
-except Exception:
-    IS_SMS_ENABLED = True
-    SMS_URL_TYPE = getattr(settings, 'SMS_URL_TYPE', 0)
-
 
 class SMSClient:
 
     def __init__(self, notify):
         self.notify = notify
+        try:
+            self.config = NotifyConfig.get_solo()
+            self.IS_SMS_ENABLED = self.config.is_sms_enabled
+            self.SMS_URL_TYPE = self.config.sms_url_type
+        except Exception:
+            self.IS_SMS_ENABLED = getattr(settings, 'IS_SMS_ENABLED', True)
+            self.SMS_URL_TYPE = getattr(settings, 'SMS_URL_TYPE', 0)
 
-    SMS_URL_TYPE = SMS_URL_TYPE
 
     def __client_sms(self):  # noqa
 
-        if not IS_SMS_ENABLED:
+        if not self.IS_SMS_ENABLED:
             self.notify.state = STATE.DISABLED
+            self.notify.to_log('Not sent (sending is prohibited by settings)')
             return
+
         try:
             users_list = self.notify.users_list.all()
             if not users_list.exists():

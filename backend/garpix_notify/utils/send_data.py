@@ -96,7 +96,7 @@ operator_sms = {
 
 
 def response_check(response, operator_type, status):
-    if status == "OK":
+    if status == 0:
         response_processing = {
             0 or 1: {
                 'Status': response.get('status'),
@@ -115,7 +115,7 @@ def response_check(response, operator_type, status):
                 'ID_Call': response.get('unique_request_id')}}
         return response_processing[operator_type]
 
-    if status == "BAD":
+    if status == 1:
         response_processing = {
             0 or 1: {
                 'Status': response.get('status'),
