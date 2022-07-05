@@ -3,24 +3,29 @@ from django.conf import settings
 from garpix_notify.models.choices import CALL_URL, SMS_URL
 from garpix_notify.models.config import NotifyConfig
 
+
 try:
     config = NotifyConfig.get_solo()
-    CALL_API_ID = config.call_api_id
-    CALL_LOGIN = config.call_login
-    CALL_PASSWORD = config.call_password
     SMS_API_ID = config.sms_api_id
     SMS_LOGIN = config.sms_login
     SMS_PASSWORD = config.sms_password
     SMS_FROM = config.sms_from
 except Exception:
-    CALL_API_ID = getattr(settings, 'CALL_API_ID', 1234567890)
-    CALL_LOGIN = getattr(settings, 'CALL_LOGIN', '')
-    CALL_PASSWORD = getattr(settings, 'CALL_PASSWORD', '')
-    CALL_FROM = getattr(settings, 'CALL_FROM', '')
     SMS_API_ID = getattr(settings, 'SMS_API_ID', 1234567890)
     SMS_LOGIN = getattr(settings, 'SMS_LOGIN', '')
     SMS_PASSWORD = getattr(settings, 'SMS_PASSWORD', '')
     SMS_FROM = getattr(settings, 'SMS_FROM', '')
+
+try:
+    config = NotifyConfig.get_solo()
+    CALL_API_ID = config.call_api_id
+    CALL_LOGIN = config.call_login
+    CALL_PASSWORD = config.call_password
+except Exception:
+    CALL_API_ID = getattr(settings, 'CALL_API_ID', 1234567890)
+    CALL_LOGIN = getattr(settings, 'CALL_LOGIN', '')
+    CALL_PASSWORD = getattr(settings, 'CALL_PASSWORD', '')
+    CALL_FROM = getattr(settings, 'CALL_FROM', '')
 
 url_dict_call = {
     0: '{url}?phone={to}&api_id={api_id}&json=1',
@@ -91,7 +96,7 @@ operator_sms = {
 
 
 def response_check(response, operator_type, status):
-    if status == "OK":
+    if status == 0:
         response_processing = {
             0 or 1: {
                 'Status': response.get('status'),
@@ -110,7 +115,7 @@ def response_check(response, operator_type, status):
                 'ID_Call': response.get('unique_request_id')}}
         return response_processing[operator_type]
 
-    if status == "BAD":
+    if status == 1:
         response_processing = {
             0 or 1: {
                 'Status': response.get('status'),

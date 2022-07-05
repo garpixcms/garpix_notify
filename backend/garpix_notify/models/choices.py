@@ -6,6 +6,7 @@ class TYPE:
     VIBER = 4
     SYSTEM = 5
     CALL = 6
+    WHATSAPP = 7
 
     CHOICES = (
         (EMAIL, 'E-mail'),
@@ -15,6 +16,7 @@ class TYPE:
         (VIBER, 'Viber'),
         (SYSTEM, 'System'),
         (CALL, 'Call'),
+        (WHATSAPP, 'WhatsApp')
     )
 
 

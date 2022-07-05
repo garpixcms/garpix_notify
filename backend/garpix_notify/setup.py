@@ -8,7 +8,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='garpix_notify',
-    version='5.9.0',
+    version='5.10.1',
     description='',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -45,6 +45,7 @@ setup(
         'redis >= 3.5.3',
         'channels == 3.0.4',
         'channels-redis == 3.4.0',
-        'asgiref == 3.3.2',
+        'asgiref >= 3.3.4',
+        'twilio == 7.10.0',
     ],
 )

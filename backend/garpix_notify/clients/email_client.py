@@ -16,28 +16,22 @@ from garpix_notify.models.smtp import SMTPAccount
 from garpix_notify.models.choices import STATE, EMAIL_MALLING
 from garpix_notify.utils import ReceivingUsers
 
-try:
-    config = NotifyConfig.get_solo()
-    IS_EMAIL_ENABLED = config.is_email_enabled
-    EMAIL_MALLING_TYPE = config.email_malling
-except Exception:
-    IS_EMAIL_ENABLED = True
-    EMAIL_MALLING_TYPE = getattr(settings, 'EMAIL_MALLING', EMAIL_MALLING.BCC)
-
 
 class EmailClient:
 
     def __init__(self, notify):
         self.notify = notify
+        try:
+            self.config = NotifyConfig.get_solo()
+            self.IS_EMAIL_ENABLED = self.config.is_email_enabled
+            self.EMAIL_MALLING_TYPE = self.config.email_malling
+        except Exception:
+            self.IS_EMAIL_ENABLED = getattr(settings, 'IS_EMAIL_ENABLED', True)
+            self.EMAIL_MALLING_TYPE = getattr(settings, 'EMAIL_MALLING', EMAIL_MALLING.BCC)
 
     def __get_valid_smtp_account(self) -> Optional[SMTPAccount]:
-        if not IS_EMAIL_ENABLED:
-            self.state = STATE.DISABLED
-            return
-
         account = SMTPAccount.get_free_smtp()
         if account is None or not account.is_active:
-            print('No SMTPAccount')
             return
 
         if self.notify.sender_email is None:
@@ -48,7 +42,7 @@ class EmailClient:
     def __render_body(self, mail_from, layout, emails):
         msg = MIMEMultipart('alternative')
         if len(emails) > 1:
-            if EMAIL_MALLING_TYPE == EMAIL_MALLING.BCC:
+            if self.EMAIL_MALLING_TYPE == EMAIL_MALLING.BCC:
                 msg['BCC'] = ', '.join(emails)
             else:
                 msg['СС'] = ', '.join(emails)
@@ -80,9 +74,21 @@ class EmailClient:
         return msg
 
     def __send_email_client(self):
+        if not self.IS_EMAIL_ENABLED:
+            self.notify.state = STATE.DISABLED
+            self.notify.to_log('Not sent (sending is prohibited by settings)')
+            return
+
         emails = []
         account = self.__get_valid_smtp_account()
+
+        if account is None:
+            self.notify.state = STATE.DISABLED
+            self.notify.to_log('No SMTPAccount')
+            return
+
         users_list = self.notify.users_list.all()
+
         if users_list.exists():
             emails = (ReceivingUsers.run_receiving_users(users_list, value='email'))
             if self.notify.email:

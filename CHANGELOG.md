@@ -1,3 +1,16 @@
+### 5.10.1 (05.07.2022)
+
+- Fixed a critical bug, the ban on sending email did not work,
+- Corrected Readme,
+- Now the asgiref library is installed correctly.
+
+### 5.10.0 (04.07.2022)
+
+- Updated asgiref library to version 3.3.4,
+- Added support for WhatsApp (Twilio),
+- System notifications no longer need a template,
+- Fixed a bug with the formation of a list of recipients.
+
 ### 5.9.0 (29.06.2022)
 
 - Django==3.2

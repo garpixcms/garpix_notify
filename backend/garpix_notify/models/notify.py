@@ -17,7 +17,7 @@ from .log import NotifyErrorLog
 from .template import NotifyTemplate
 from ..mixins import UserNotifyMixin
 from ..utils.send_data import url_dict_call, operator_call, response_check, notify_create, system_notify_create
-from ..clients import SMSClient, EmailClient, CallClient, TelegramClient, ViberClient, PushClient
+from ..clients import SMSClient, EmailClient, CallClient, TelegramClient, ViberClient, PushClient, WhatsAppClient
 
 NotifyMixin = import_string(settings.GARPIX_NOTIFY_MIXIN)
 
@@ -83,6 +83,8 @@ class Notify(NotifyMixin, UserNotifyMixin):
             ViberClient.send_viber(self)
         if self.type == TYPE.CALL:
             CallClient.send_call(self)
+        if self.type == TYPE.WHATSAPP:
+            WhatsAppClient.send_whatsapp(self)
 
         self.save()
 

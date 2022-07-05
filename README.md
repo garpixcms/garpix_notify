@@ -133,6 +133,11 @@ TELEGRAM_HELP_TEXT = '/set !help for HELP'
 TELEGRAM_BAD_COMMAND_TEXT = 'Incorrect command format'
 TELEGRAM_SUCCESS_ADDED_TEXT = 'Success'
 TELEGRAM_FAILED_ADDED_TEXT = 'Failed'
+TELEGRAM_PARSE_MODE = None
+TELEGRAM_DISABLE_NOTIFICATION = False
+TELEGRAM_DISABLE_PAGE_PREVIEW = False
+TELEGRAM_SENDING_WITHOUT_REPLY = False
+TELEGRAM_TIMEOUT = None
 # VIBER
 VIBER_API_KEY = '000000000:AAAAAAAAAA-AAAAAAAA-_AAAAAAAAAAAAAA'
 VIBER_BOT_NAME = 'MySuperViberBot'
@@ -140,11 +145,17 @@ VIBER_WELCOME_TEXT = 'Hello'
 VIBER_SUCCESS_ADDED_TEXT = 'Success'
 VIBER_FAILED_ADDED_TEXT = 'Failed'
 VIBER_TEXT_FOR_NEW_SUB = 'HI!'
+# WHATSAPP
+IS_WHATS_APP_ENABLED = True
+WHATS_APP_AUTH_TOKEN = None
+WHATS_APP_ACCOUNT_SID = None
+WHATS_APP_NUMBER_SENDER = None
 # SETTINGS
 EMAIL_MALLING = 1
 GARPIX_NOTIFY_MIXIN = 'garpix_notify.mixins.notify_mixin.NotifyMixin'
 NOTIFY_USER_WANT_MESSAGE_CHECK = None
 NOTIFY_CALL_CODE_CHECK = None
+GARPIX_NOTIFY_CELERY_SETTINGS = 'app.celery.app'
 ```
 #### Step 3. Go to the admin panel and go to the "Notifications" section - "SMTP accounts"
 
@@ -194,9 +205,15 @@ Notify.send(settings.EXAMPLE_EVENT_1, {
 }, email='example@mail.ru', send_at=(datetime.datetime.now() + datetime.timedelta(days=1)))
 
 # If you need to send a code by phone call
-Notify.send(settings.EXAMPLE_EVENT_2, phone='79998881122')
+Notify.send(settings.EXAMPLE_EVENT_2, phone='79998881122', context={})
+
 # or if you need to get the code directly
 Notify.call(phone=79998881122)
+
+# If you need to send a system message without creating a template, you must specify the system=True
+Notify.send(settings.EXAMPLE_EVENT_1, {
+    'confirmation_code': 'abcdef12345',
+}, user=user, system=True)
 
 ```
 
