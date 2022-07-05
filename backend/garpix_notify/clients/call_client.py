@@ -9,9 +9,10 @@ from garpix_notify.utils.send_data import url_dict_call, operator_call, response
 
 
 class CallClient:
-    class ChoiceValue(enum.StrEnum):
-        OK = 'OK'
-        BAD = "BAD"
+
+    class ChoiceValue(enum.Enum):
+        OK = 0
+        BAD = 1
 
     def __init__(self, notify):
         self.notify = notify
@@ -26,7 +27,7 @@ class CallClient:
     def _value_checker(self, response_dict):
         value = None
         if self.CALL_URL_TYPE in [CALL_URL.SMSRU_CALL_ID, CALL_URL.SMSRU_CALL_API_ID]:
-            if response_dict['status'] == self.ChoiceValue.OK.value:
+            if response_dict['status'] == "OK":
                 value = self.ChoiceValue.OK.value
             else:
                 value = self.ChoiceValue.BAD.value
@@ -66,12 +67,12 @@ class CallClient:
             self.notify.to_log(str(e))
 
     def __save_to_log(self, response, value):
-        if value == self.ChoiceValue.OK:
+        if value == self.ChoiceValue.OK.value:
             self.notify.to_log(
                 'Status: {Status}, Code: {Code}, Balance: {Balance}, ID_Call: {ID_Call}'.format(**response))
             self.notify.state = STATE.DELIVERED
             self.notify.sent_at = now()
-        elif value == self.ChoiceValue.BAD:
+        elif value == self.ChoiceValue.BAD.value:
             self.notify.to_log(
                 'Status: {Status}, Status_code: {Status_code}, Status_text: {Status_text}'.format(**response))
             self.notify.state = STATE.REJECTED

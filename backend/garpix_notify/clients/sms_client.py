@@ -9,14 +9,9 @@ from garpix_notify.utils.send_data import url_dict_sms, operator_sms
 
 
 class SMSClient:
-    SMS_URL_TYPE = None
-    IS_SMS_ENABLED = None
 
     def __init__(self, notify):
         self.notify = notify
-        self.__get_config_settings()
-
-    def __get_config_settings(self):
         try:
             self.config = NotifyConfig.get_solo()
             self.IS_SMS_ENABLED = self.config.is_sms_enabled
@@ -24,6 +19,7 @@ class SMSClient:
         except Exception:
             self.IS_SMS_ENABLED = getattr(settings, 'IS_SMS_ENABLED', True)
             self.SMS_URL_TYPE = getattr(settings, 'SMS_URL_TYPE', 0)
+
 
     def __client_sms(self):  # noqa
 

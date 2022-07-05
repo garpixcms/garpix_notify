@@ -46,5 +46,6 @@ setup(
         'channels == 3.0.4',
         'channels-redis == 3.4.0',
         'asgiref >= 3.3.4',
+        'twilio == 7.10.0',
     ],
 )
