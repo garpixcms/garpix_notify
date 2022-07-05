@@ -8,33 +8,34 @@ from garpix_notify.models.config import NotifyConfig
 from garpix_notify.models.choices import STATE
 from garpix_notify.utils import ReceivingUsers
 
-try:
-    config = NotifyConfig.get_solo()
-    IS_VIBER_ENABLED = config.is_viber_enabled
-    VIBER_API_KEY = config.viber_api_key
-    VIBER_BOT_NAME = config.viber_bot_name
-except Exception:
-    IS_VIBER_ENABLED = True
-    VIBER_API_KEY = getattr(settings, 'VIBER_API_KEY', '000000000:AAAAAAAAAA-AAAAAAAA-_AAAAAAAAAAAAAA')
-    VIBER_BOT_NAME = getattr(settings, 'VIBER_BOT_NAME', 'MySuperBot')
-
 
 class ViberClient:
 
     def __init__(self, notify):
         self.notify = notify
+        try:
+            self.config = NotifyConfig.get_solo()
+            self.IS_VIBER_ENABLED = self.config.is_viber_enabled
+            self.VIBER_API_KEY = self.config.viber_api_key
+            self.VIBER_BOT_NAME = self.config.viber_bot_name
+        except Exception:
+            self.IS_VIBER_ENABLED = getattr(settings, 'IS_VIBER_ENABLED', True)
+            self.VIBER_API_KEY = getattr(settings, 'VIBER_API_KEY', '000000000:AAAAAAAAAA-AAAAAAAA-_AAAAAAAAAAAAAA')
+            self.VIBER_BOT_NAME = getattr(settings, 'VIBER_BOT_NAME', 'MySuperBot')
 
     def __send_viber_client(self):
-        if not IS_VIBER_ENABLED:
+        if not self.IS_VIBER_ENABLED:
             self.notify.state = STATE.DISABLED
+            self.notify.to_log('Not sent (sending is prohibited by settings)')
             return
+
         text = self.notify.text
         users_list = self.notify.users_list.all()
 
         viber = Api(BotConfiguration(
-            name=VIBER_BOT_NAME,
+            name=self.VIBER_BOT_NAME,
             avatar='',
-            auth_token=VIBER_API_KEY
+            auth_token=self.VIBER_API_KEY
         ))
         try:
             result = False

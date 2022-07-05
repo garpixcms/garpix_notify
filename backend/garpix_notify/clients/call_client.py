@@ -1,4 +1,5 @@
 import requests
+import enum
 from django.conf import settings
 from django.utils.timezone import now
 
@@ -6,47 +7,49 @@ from garpix_notify.models.config import NotifyConfig
 from garpix_notify.models.choices import STATE, CALL_URL
 from garpix_notify.utils.send_data import url_dict_call, operator_call, response_check
 
-try:
-    config = NotifyConfig.get_solo()
-    IS_CALL_ENABLED = config.is_call_enabled
-    CALL_URL_TYPE = config.call_url_type
-except Exception:
-    IS_CALL_ENABLED = True
-    CALL_URL_TYPE = getattr(settings, 'CALL_URL_TYPE', 0)
-
 
 class CallClient:
+    class ChoiceValue(enum.StrEnum):
+        OK = 'OK'
+        BAD = "BAD"
 
     def __init__(self, notify):
         self.notify = notify
-
-    CALL_URL_TYPE = CALL_URL_TYPE
+        try:
+            self.config = NotifyConfig.get_solo()
+            self.IS_CALL_ENABLED = self.config.is_call_enabled
+            self.CALL_URL_TYPE = self.config.call_url_type
+        except Exception:
+            self.IS_CALL_ENABLED = getattr(settings, 'IS_CALL_ENABLED', True)
+            self.CALL_URL_TYPE = getattr(settings, 'CALL_URL_TYPE', 0)
 
     def _value_checker(self, response_dict):
         value = None
         if self.CALL_URL_TYPE in [CALL_URL.SMSRU_CALL_ID, CALL_URL.SMSRU_CALL_API_ID]:
-            if response_dict['status'] == 'OK':
-                value = "OK"
+            if response_dict['status'] == self.ChoiceValue.OK.value:
+                value = self.ChoiceValue.OK.value
             else:
-                value = "BAD"
+                value = self.ChoiceValue.BAD.value
 
         elif self.CALL_URL_TYPE == CALL_URL.SMSCENTRE_ID:
             if response_dict['error']:
-                value = "BAD"
+                value = self.ChoiceValue.BAD.value
             else:
-                value = "OK"
+                value = self.ChoiceValue.OK.value
 
         elif self.CALL_URL_TYPE == CALL_URL.UCALLER_ID:
             if response_dict['status']:
-                value = "OK"
+                value = self.ChoiceValue.OK.value
             else:
-                value = "BAD"
+                value = self.ChoiceValue.BAD.value
         return value
 
     def __send_call_code(self):  # noqa
-        if not IS_CALL_ENABLED:
+        if not self.IS_CALL_ENABLED:
             self.notify.state = STATE.DISABLED
+            self.notify.to_log('Not sent (sending is prohibited by settings)')
             return
+
         phone = f'{self.notify.phone}'
 
         try:
@@ -57,18 +60,18 @@ class CallClient:
 
             response = response_check(response=response_dict, operator_type=self.CALL_URL_TYPE, status=value)
 
-            self.notify.save_to_log(response=response, value=value)
+            self.__save_to_log(response=response, value=value)
         except Exception as e:
             self.notify.state = STATE.REJECTED
             self.notify.to_log(str(e))
 
-    def save_to_log(self, response, value):
-        if value == "OK":
+    def __save_to_log(self, response, value):
+        if value == self.ChoiceValue.OK:
             self.notify.to_log(
                 'Status: {Status}, Code: {Code}, Balance: {Balance}, ID_Call: {ID_Call}'.format(**response))
             self.notify.state = STATE.DELIVERED
             self.notify.sent_at = now()
-        elif value == "BAD":
+        elif value == self.ChoiceValue.BAD:
             self.notify.to_log(
                 'Status: {Status}, Status_code: {Status_code}, Status_text: {Status_text}'.format(**response))
             self.notify.state = STATE.REJECTED
@@ -81,7 +84,7 @@ class CallClient:
 
     @classmethod
     def get_url_type(cls):
-        return cls.CALL_URL_TYPE
+        return cls(notify=None).CALL_URL_TYPE
 
     @classmethod
     def send_call(cls, notify):

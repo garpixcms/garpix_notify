@@ -1,26 +1,32 @@
 import json
 
+from django.conf import settings
 from django.utils.timezone import now
+
 from garpix_notify.models.config import NotifyConfig
 from garpix_notify.models.fcm import NotifyDevice
 from garpix_notify.models.choices import STATE
 
-try:
-    config = NotifyConfig.get_solo()
-    IS_PUSH_ENABLED = config.is_push_enabled
-except Exception:
-    IS_PUSH_ENABLED = True
-
 
 class PushClient:
+    IS_PUSH_ENABLED = True
 
     def __init__(self, notify):
         self.notify = notify
+        self.__get_config_settings()
+
+    def __get_config_settings(self):
+        try:
+            self.config = NotifyConfig.get_solo()
+            self.IS_PUSH_ENABLED = self.config.is_push_enabled
+        except Exception:
+            self.IS_PUSH_ENABLED = getattr(settings, 'IS_PUSH_ENABLED', True)
 
     def __send_push_client(self):
 
-        if not IS_PUSH_ENABLED:
+        if not self.IS_PUSH_ENABLED:
             self.notify.state = STATE.DISABLED
+            self.notify.to_log('Not sent (sending is prohibited by settings)')
             return
 
         if self.notify.user is None:
