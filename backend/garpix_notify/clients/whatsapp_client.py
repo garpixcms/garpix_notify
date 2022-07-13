@@ -1,5 +1,3 @@
-import os
-
 from django.conf import settings
 from django.utils.timezone import now
 
