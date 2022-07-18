@@ -184,16 +184,16 @@ class Notify(NotifyMixin, UserNotifyMixin):
             if user_want_message_check is not None:  # noqa
                 if not notify_users_lists.exists():
                     user_check = user_want_message_check(event, template.type, notify_user)
-                    if user_check is None:
-                        return None
+                    if not user_check:
+                        continue
                 else:
                     # Если у нас шаблон со списками, то передаем в функцию и тут формируем новый из тех юзеов,
                     # которым сообщения нужны
                     # Если список пустой, то отменяем отправку
                     notify_users_lists = user_want_message_check(
                         event, template.type, notify_user, notify_users_lists)
-                    if notify_users_lists is None:
-                        return None
+                    if not notify_users_lists:
+                        continue
                 # Добавляем пользователя в контекст, если его там не передали
             if notify_user is not None:
                 if local_context is not None:
