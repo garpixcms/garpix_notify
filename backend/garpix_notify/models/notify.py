@@ -180,7 +180,7 @@ class Notify(NotifyMixin, UserNotifyMixin):
             if notify_viber_chat_id is None:
                 notify_viber_chat_id = template_viber_chat_id
 
-            # Проверка, хочет ли получить сообщение
+            # Проверка, хочет ли получить
             if user_want_message_check is not None:  # noqa
                 if not notify_users_lists.exists():
                     user_check = user_want_message_check(event, template.type, notify_user)
