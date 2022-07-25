@@ -213,11 +213,6 @@ Notify.send(settings.EXAMPLE_EVENT_2, phone='79998881122', context={})
 # or if you need to get the code directly
 Notify.call(phone=79998881122)
 
-# If you need to send a system message without creating a template, you must specify the system=True
-Notify.send(settings.EXAMPLE_EVENT_1, {
-    'confirmation_code': 'abcdef12345',
-}, user=user, system=True)
-
 
 ```
 
@@ -225,6 +220,24 @@ Notify.send(settings.EXAMPLE_EVENT_1, {
 To perform a mass mailing, you need to add user lists to the template.
 Or directly in the notification.
 
+#### New system Notifications:
+Now system notifications are placed in an independent model. 
+It is not necessary to create templates for them. 
+Mass mailing is also available.
+
+```python
+from django.conf import settings
+from garpix_notify.models import SystemNotify
+from django.contrib.auth import get_user_model
+
+# 1. Example of use without templates
+User = get_user_model()
+user = User.objects.filter().first()
+SystemNotify.send({'test': 'data'}, user)
+
+# 2. Example of using a template
+SystemNotify.send({'test': 'data'}, event=settings.EXAMPLE_EVENT_2)
+```
 #### Do not forget run celery:
 
 ```

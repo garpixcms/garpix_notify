@@ -7,7 +7,7 @@ class NotifyErrorLog(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
 
     def __str__(self):
-        return '{}: {})'.format(self.id, self.created_at.strftime('%d.%m.%Y %h:%M:%s'))
+        return '{}: {}'.format(self.pk, self.created_at.strftime('%d.%m.%Y %h:%M:%s'))
 
     class Meta:
         verbose_name = 'Лог отправки уведомления'
