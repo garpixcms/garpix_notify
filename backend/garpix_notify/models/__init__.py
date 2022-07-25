@@ -8,3 +8,5 @@ from .template import NotifyTemplate
 from .user_list import NotifyUserList
 from .user_list_participant import NotifyUserListParticipant
 from .log import NotifyErrorLog
+from .system_notify import SystemNotify
+from .system_log import SystemNotifyErrorLog

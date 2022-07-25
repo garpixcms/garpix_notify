@@ -90,10 +90,9 @@ class EmailClient:
         users_list = self.notify.users_list.all()
 
         if users_list.exists():
-            emails = (ReceivingUsers.run_receiving_users(users_list, value='email'))
-            if self.notify.email:
-                emails.append(self.notify.email)
-        else:
+            emails: list = ReceivingUsers.run_receiving_users(users_list, 'email')
+
+        if self.notify.email:
             emails.append(self.notify.email)
 
         try:
