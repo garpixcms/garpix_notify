@@ -1,5 +1,6 @@
 from django.contrib.auth.models import Group
 from django.db import models
+from django.db.models import Manager
 
 
 class NotifyUserList(models.Model):
@@ -7,6 +8,8 @@ class NotifyUserList(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     user_groups = models.ManyToManyField(Group, blank=True, verbose_name='Группы пользователей')
     mail_to_all = models.BooleanField(default=False, verbose_name='Массовая рассылка для всех пользователей сайта')
+
+    objects = Manager()
 
     def __str__(self):
         return self.title
