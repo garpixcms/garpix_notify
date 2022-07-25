@@ -59,7 +59,7 @@ class Notify(NotifyMixin, UserNotifyMixin):
     def get_sender(self):
         pass
 
-    def _send(self):
+    def _send(self):  # noqa
         if self.user:
             self.email = self.user.email
             self.phone = str(self.user.phone)
