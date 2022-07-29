@@ -20,7 +20,6 @@ class SMSClient:
             self.IS_SMS_ENABLED = getattr(settings, 'IS_SMS_ENABLED', True)
             self.SMS_URL_TYPE = getattr(settings, 'SMS_URL_TYPE', 0)
 
-
     def __client_sms(self):  # noqa
 
         if not self.IS_SMS_ENABLED:
@@ -31,10 +30,10 @@ class SMSClient:
         try:
             users_list = self.notify.users_list.all()
             if not users_list.exists():
-                phones = self.notify.phone
+                phones: str = self.notify.phone
             else:
-                phones = ReceivingUsers.run_receiving_users(users_list, value='phone')
-                phones = ','.join(phones)
+                phones_list: list = ReceivingUsers.run_receiving_users(users_list, 'phone')
+                phones = ','.join(phones_list)
             msg = str(self.notify.text.replace(' ', '+'))
             url = url_dict_sms[self.SMS_URL_TYPE].format(**operator_sms[self.SMS_URL_TYPE], to=phones, text=msg)
             response = requests.get(url)

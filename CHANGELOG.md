@@ -1,3 +1,8 @@
+### 5.11.0 (27.07.2022)
+
+- Fixed a bug with the formation of users for mailing,
+- System notifications have been added separately.
+
 ### 5.10.1 (05.07.2022)
 
 - Fixed a critical bug, the ban on sending email did not work,

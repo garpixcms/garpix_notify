@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models import Manager
+
 from .user_list import NotifyUserList
 from django.conf import settings
 from ..mixins import UserNotifyMixin
@@ -12,6 +14,8 @@ class NotifyUserListParticipant(UserNotifyMixin):
                              related_name='user_lists', verbose_name='Пользователь (получатель)')
     email = models.EmailField(max_length=255, blank=True, null=True, verbose_name='Email Получателя',
                               help_text='Используется только в случае отсутствия указанного пользователя')
+
+    objects = Manager()
 
     def __str__(self):
         return f'Участник рассылки {self.pk}'

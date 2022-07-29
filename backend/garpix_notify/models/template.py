@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.db.models import Manager
 from django.template import Template, Context
 
 from .category import NotifyCategory
@@ -30,6 +31,8 @@ class NotifyTemplate(UserNotifyMixin):
     send_at = models.DateTimeField(blank=True, null=True, verbose_name='Время начала отправки')
 
     user_lists = models.ManyToManyField(NotifyUserList, blank=True, verbose_name='Списки пользователей для рассылки')
+
+    objects = Manager()
 
     def render_subject(self, ct):
         template = Template(self.subject)

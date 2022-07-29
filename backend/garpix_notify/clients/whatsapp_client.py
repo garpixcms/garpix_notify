@@ -37,7 +37,7 @@ class WhatsAppClient:
         try:
             result = False
             if users_list.exists():
-                participants = ReceivingUsers.run_receiving_users(users_list, value='phone')
+                participants: list = ReceivingUsers.run_receiving_users(users_list, 'phone')
                 if participants:
                     for participant in participants:
                         result = client.messages.create(body=text_massage,

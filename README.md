@@ -156,6 +156,7 @@ GARPIX_NOTIFY_MIXIN = 'garpix_notify.mixins.notify_mixin.NotifyMixin'
 NOTIFY_USER_WANT_MESSAGE_CHECK = None
 NOTIFY_CALL_CODE_CHECK = None
 GARPIX_NOTIFY_CELERY_SETTINGS = 'app.celery.app'
+
 ```
 #### Step 3. Go to the admin panel and go to the "Notifications" section - "SMTP accounts"
 
@@ -220,6 +221,25 @@ Notify.send(settings.EXAMPLE_EVENT_1, {
 #### Mass email and sms mailing:
 To perform a mass mailing, you need to add user lists to the template.
 Or directly in the notification.
+
+#### New system Notifications:
+Now system notifications are placed in an independent model. 
+It is not necessary to create templates for them. 
+Mass mailing is also available.
+
+```python
+from django.conf import settings
+from garpix_notify.models import SystemNotify
+from django.contrib.auth import get_user_model
+
+# 1. Example of use without templates
+User = get_user_model()
+user = User.objects.filter().first()
+SystemNotify.send({'test': 'data'}, user)
+
+# 2. Example of using a template
+SystemNotify.send({'test': 'data'}, event=settings.EXAMPLE_EVENT_2)
+```
 
 #### Do not forget run celery:
 

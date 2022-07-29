@@ -10,7 +10,7 @@ class ReceivingUsers:
     def __returning_specific_list(self, receivers):
         # Убираем дубликаты пользователей для переданного значения из функции
         receivers_dict = list({v[self.value]: v for v in receivers}.values())
-        receivers_new = [user[self.value] for user in receivers_dict]
+        receivers_new = [user.get(self.value) for user in receivers_dict]
         return receivers_new
 
     def __receiving_users(self):
@@ -45,20 +45,22 @@ class ReceivingUsers:
                         })
 
             # Собираем данные из групп, которые входят в список рассылки
-            group_users = user_model.objects.filter(groups__in=user_list.user_groups.all())
+            user_groups_qs = user_list.user_groups.all()
+            if user_groups_qs.exists():
+                group_users = user_model.objects.prefetch_related('groups').filter(groups__in=user_groups_qs)
 
-            if group_users.exists():
-                receivers.extend(
-                    [{'user': user,
-                      'email': user.email,
-                      'phone': user.phone,
-                      'viber_chat_id': user.viber_chat_id
-                      } for user in group_users])
+                if group_users.exists():
+                    receivers.extend(
+                        [{'user': user,
+                          'email': user.email,
+                          'phone': user.phone,
+                          'viber_chat_id': user.viber_chat_id
+                          } for user in group_users])
 
-            if self.value:
-                return self.__returning_specific_list(receivers)
+        if self.value:
+            return self.__returning_specific_list(receivers)
 
-            return receivers
+        return receivers
 
     @classmethod
     def run_receiving_users(cls, users_list, value=None):
