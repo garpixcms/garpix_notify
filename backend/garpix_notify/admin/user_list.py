@@ -17,4 +17,4 @@ class NotifyUserListAdmin(admin.ModelAdmin):
     ]
     readonly_fields = ('created_at',)
     search_fields = ('title',)
-    filter_horizontal = ('user_groups',)
+    filter_horizontal = ('user_groups', 'users')

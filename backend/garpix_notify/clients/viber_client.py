@@ -40,7 +40,7 @@ class ViberClient:
         try:
             result = False
             if users_list.exists():
-                participants = ReceivingUsers.run_receiving_users(users_list, value='viber_chat_id')
+                participants: list = ReceivingUsers.run_receiving_users(users_list, 'viber_chat_id')
                 if participants:
                     for participant in participants:
                         result = viber.send_messages(to=participant, messages=[TextMessage(text=text)])
