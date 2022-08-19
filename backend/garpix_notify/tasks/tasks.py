@@ -11,6 +11,12 @@ from garpix_notify.models.notify import Notify
 
 celery_app = import_string(settings.GARPIX_NOTIFY_CELERY_SETTINGS)
 
+try:
+    config = NotifyConfig.get_solo()
+    PERIODIC_SENDING = config.periodic
+except Exception:
+    PERIODIC_SENDING = getattr(settings, 'PERIODIC_SENDING', 60)
+
 
 @celery_app.task
 def send_notifications():
@@ -19,10 +25,10 @@ def send_notifications():
     for notify in notifies.iterator():
         if notify.state == STATE.WAIT:
             if notify.send_at is None:
-                notify._send()
+                notify._start_send()
             else:
                 if timezone.now() > notify.send_at:
-                    notify._send()
+                    notify._start_send()
     return
 
 
@@ -55,7 +61,7 @@ def send_system_notifications(notify_pk):
 celery_app.conf.beat_schedule.update({
     'periodic_task': {
         'task': 'garpix_notify.tasks.tasks.send_notifications',
-        'schedule': NotifyConfig.get_solo().periodic,
-    },
+        'schedule': PERIODIC_SENDING,
+    }
 })
 celery_app.conf.timezone = 'UTC'

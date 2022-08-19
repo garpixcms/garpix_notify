@@ -10,22 +10,23 @@ class ReceivingUsers:
     def __returning_specific_list(self, receivers):
         # Убираем дубликаты пользователей для переданного значения из функции
         receivers_dict = list({v[self.value]: v for v in receivers}.values())
-        receivers_new = [user[self.value] for user in receivers_dict]
+        receivers_new = [user.get(self.value) for user in receivers_dict]
         return receivers_new
 
-    def __receiving_users(self):
+    def __receiving_users(self):  # noqa: C901
         user_model = get_user_model()
         receivers = []
         for user_list in self.users_list:
             # Проверяем рассылку, не отмечена ли массовая рассылка
             if user_list.mail_to_all:
                 users = user_model.objects.all()
-                receivers.extend(
-                    [{'user': user,
-                      'email': user.email,
-                      'phone': user.phone,
-                      'viber_chat_id': user.viber_chat_id
-                      } for user in users])
+                receivers.extend([
+                    {'user': user,
+                     'email': user.email,
+                     'phone': user.phone,
+                     'viber_chat_id': user.viber_chat_id
+                     } for user in users
+                ])
 
                 if self.value:
                     return self.__returning_specific_list(receivers)
@@ -45,20 +46,35 @@ class ReceivingUsers:
                         })
 
             # Собираем данные из групп, которые входят в список рассылки
-            group_users = user_model.objects.filter(groups__in=user_list.user_groups.all())
+            user_groups_qs = user_list.user_groups.all()
+            if user_groups_qs.exists():
+                group_users = user_model.objects.prefetch_related('groups').filter(groups__in=user_groups_qs)
 
-            if group_users.exists():
-                receivers.extend(
-                    [{'user': user,
-                      'email': user.email,
-                      'phone': user.phone,
-                      'viber_chat_id': user.viber_chat_id
-                      } for user in group_users])
+                if group_users.exists():
+                    receivers.extend([
+                        {'user': user,
+                         'email': user.email,
+                         'phone': user.phone,
+                         'viber_chat_id': user.viber_chat_id
+                         } for user in group_users
+                    ])
 
-            if self.value:
-                return self.__returning_specific_list(receivers)
+            # Собираем данные по пользователям, если они были переданы
+            users_qs = user_list.users.all()
+            if users_qs.exists():
 
-            return receivers
+                receivers.extend([
+                    {'user': user,
+                     'email': user.email,
+                     'phone': user.phone,
+                     'viber_chat_id': user.viber_chat_id
+                     } for user in users_qs
+                ])
+
+        if self.value:
+            return self.__returning_specific_list(receivers)
+
+        return receivers
 
     @classmethod
     def run_receiving_users(cls, users_list, value=None):
