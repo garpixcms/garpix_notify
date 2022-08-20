@@ -15,7 +15,7 @@ from .category import NotifyCategory
 from .choices import TYPE, STATE
 from .file import NotifyFile
 from .template import NotifyTemplate
-from ..exceptions import TemplatesNotExists
+from ..exceptions import TemplatesNotExists, IsInstanceException
 from ..mixins import UserNotifyMixin
 from ..mixins.notify_method_mixin import NotifyMethodsMixin
 from ..utils.send_data import url_dict_call, operator_call, response_check
@@ -96,6 +96,9 @@ class Notify(NotifyMixin, UserNotifyMixin, NotifyMethodsMixin):
     def send(event: int, context: dict, user: User = None, email: str = None, phone: str = None,  # noqa: C901
              files: list = None, data_json: dict = None, viber_chat_id: str = None, room_name: str = None,
              notify_templates: list = None, send_at: datetime = None, send_now: bool = False, **kwargs) -> list:
+
+        if user and not isinstance(user, User):
+            raise IsInstanceException
 
         instance_list: list = []
         user_want_message_check = None
@@ -239,17 +242,20 @@ class Notify(NotifyMixin, UserNotifyMixin, NotifyMethodsMixin):
         return instance_list
 
     @staticmethod
-    def call(phone, user=None, url=None, **kwargs):
+    def call(phone: str, user: User = None, url: str = None, **kwargs):
         call_url_type = CallClient.get_url_type()
+
+        if user and not isinstance(user, User):
+            raise IsInstanceException
 
         if user is not None:
             phone = user.phone if user.phone else phone
-        # Для некоторых операторов из представленного списка, мы можем сгенерировать код на нашей стороне
-        # Для этого можем передать в функцию кастомную ссылку и дополнительные параметры
+
         if url is not None:
             url = url
         else:
             url = url_dict_call[call_url_type]
+
         main_url = url.format(**operator_call[call_url_type], to=phone, **kwargs)
         response_url = requests.get(main_url)
         response_dict = response_url.json()
