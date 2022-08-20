@@ -243,7 +243,7 @@ class Notify(NotifyMixin, UserNotifyMixin, NotifyMethodsMixin):
 
     @staticmethod
     def call(phone: str, user: User = None, url: str = None, **kwargs):
-        call_url_type = CallClient.get_url_type()
+        call_url_type: int = CallClient.get_url_type()
 
         if user and not isinstance(user, User):
             raise IsInstanceException
