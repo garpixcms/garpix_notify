@@ -7,9 +7,10 @@ class ArgumentsEmptyException(Exception):
 
 class DataTypeException(Exception):
 
-    def __init__(self, field):
+    def __init__(self, field, data_type):
         self.field = field
-        message = f'The data type error: "{self.field}" type is not dict'
+        self.data_type = data_type
+        message = f'The data type error: "{self.field}" type is not {self.data_type}'
         super().__init__(message)
 
 

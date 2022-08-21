@@ -1,12 +1,13 @@
 import json
 
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import models, transaction
-from django.db.models.signals import post_save
 from django.db.models import Manager
+from django.utils import timezone
 from django.utils.module_loading import import_string
-from django.dispatch import receiver
 
 from .template import NotifyTemplate
 from .choices import TYPE, STATE
@@ -44,75 +45,103 @@ class SystemNotify(SystemNotifyMixin, NotifyMethodsMixin):
 
     @staticmethod
     def send(data_json: dict, user: User = None, event: int = None, room_name: str = None,  # noqa: C901
-             title: str = '', **kwargs):
+             title: str = None, templates: list = None, **kwargs):
 
         if user is None and event is None:
             raise ArgumentsEmptyException
 
         if not isinstance(data_json, dict):
-            raise DataTypeException(data_json)
+            raise DataTypeException(data_json, 'dict')
 
         if user and not isinstance(user, User):
             raise IsInstanceException
 
+        if templates and not isinstance(templates, list):
+            raise DataTypeException('templates', 'list')
+
         system_notify_user_list: list = []
         notify_json: dict = data_json
-        template = None
 
         if event:
-            template = (
+            templates = list(
+                NotifyTemplate.objects
+                .filter(event=event, is_active=True, type=TYPE.SYSTEM)
+                .values_list('id', flat=True)
+            )
+
+        if templates:
+            templates_instances = (
                 NotifyTemplate.objects
                 .select_related('user')
                 .prefetch_related('user_lists')
                 .prefetch_related('user_lists__user_groups')
-                .filter(event=event, is_active=True, type=TYPE.SYSTEM)
-                .first()
+                .filter(id__in=templates, is_active=True, type=TYPE.SYSTEM)
             )
+            if templates_instances.exists():
+                for template in templates_instances:
+                    if template.user:
+                        system_notify_user_list.append(template.user)
+                    notify_json: dict = eval(template.text)
 
-        if template:
-            if template.user:
-                system_notify_user_list.append(template.user)
-            notify_json: dict = eval(template.text)
+                    if not isinstance(notify_json, dict):
+                        raise DataTypeException(notify_json, 'dict')
 
-            if not isinstance(notify_json, dict):
-                raise DataTypeException(notify_json)
+                    if template.user_lists.exists():
+                        notify_users_list = template.user_lists.all()
+                        notify_users_list: list = ReceivingUsers.run_receiving_users(notify_users_list, 'user')
+                        system_notify_user_list.extend([
+                            user for user in notify_users_list if user
+                        ])
 
-            if template.user_lists.exists():
-                notify_users_list = template.user_lists.all()
-                notify_users_list: list = ReceivingUsers.run_receiving_users(notify_users_list, 'user')
-                system_notify_user_list.extend([
-                    user for user in notify_users_list if user
-                ])
-
-        notify_json['event_id'] = event
+        if event:
+            notify_json['event_id'] = event
 
         if user:
             system_notify_user_list.append(user)
 
-        for user_notify in system_notify_user_list:
-            user_pk: int = user_notify.pk
-            notify_json['user'] = user_pk
-            room_name: str = room_name if room_name else f'room_{user_pk}'
-            data_json = json.dumps(notify_json)
-            if title == '':
-                title = f'{user_notify} - {room_name}'
+        for notify_user in system_notify_user_list:
 
-            SystemNotify.objects.create(
-                title=title,
-                user=user_notify,
+            user_pk: int = notify_user.pk
+            notify_json['user'] = user_pk
+            data_json = json.dumps(notify_json)
+
+            notify_room_name = f'room_{user_pk}' if not room_name else room_name
+            notify_title = f'{notify_user} - {notify_room_name}' if not title else title
+
+            instance = SystemNotify.objects.create(
+                title=notify_title,
+                user=notify_user,
                 event=event,
-                room_name=room_name,
+                room_name=notify_room_name,
                 data_json=data_json,
                 **kwargs
             )
 
+            if instance:
+                transaction.on_commit(lambda: instance.send_main_system_notifications())
+
+    def send_main_system_notifications(self):
+        try:
+            if self.room_name:
+                group_name = self.room_name
+            else:
+                group_name = f'room_{self.user.id}'
+            async_to_sync(get_channel_layer().group_send)(
+                group_name,
+                {
+                    'id': self.id,
+                    'type': 'system',
+                    'event': self.event,
+                    'data_json': self.data_json,
+                }
+            )
+            self.state = STATE.DELIVERED
+            self.sent_at = timezone.now()
+        except Exception as e:
+            self.state = STATE.REJECTED
+            self.to_log(str(e))
+        self.save()
+
     class Meta:
         verbose_name = 'Ситемное уведомление'
         verbose_name_plural = 'Системные уведомления'
-
-
-@receiver(post_save, sender=SystemNotify)
-def system_post_save(sender, instance, created, **kwargs):
-    from garpix_notify.tasks.tasks import send_main_system_notifications
-    if created:
-        transaction.on_commit(lambda: send_main_system_notifications.delay(instance.pk))

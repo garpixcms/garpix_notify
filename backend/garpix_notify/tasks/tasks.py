@@ -26,10 +26,10 @@ def send_notifications():
     for notify in notifies.iterator():
         if notify.state == STATE.WAIT:
             if notify.send_at is None:
-                notify._send()
+                notify._start_send()
             else:
                 if timezone.now() > notify.send_at:
-                    notify._send()
+                    notify._start_send()
     return
 
 
