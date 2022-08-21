@@ -13,7 +13,7 @@ from .template import NotifyTemplate
 from .choices import TYPE, STATE
 from ..mixins.notify_method_mixin import NotifyMethodsMixin
 from ..utils import ReceivingUsers
-from garpix_notify.exceptions import IsInstanceException, DataTypeException, ArgumentsEmptyException
+from garpix_notify.exceptions import IsInstanceException, DataTypeException, ArgumentsEmptyException, UsersListIsNone
 
 SystemNotifyMixin = import_string(settings.GARPIX_SYSTEM_NOTIFY_MIXIN)
 
@@ -47,7 +47,7 @@ class SystemNotify(SystemNotifyMixin, NotifyMethodsMixin):
     def send(data_json: dict, user: User = None, event: int = None, room_name: str = None,  # noqa: C901
              title: str = None, templates: list = None, **kwargs):
 
-        if user is None and event is None:
+        if user is None and event is None and templates is None:
             raise ArgumentsEmptyException
 
         if not isinstance(data_json, dict):
@@ -62,7 +62,7 @@ class SystemNotify(SystemNotifyMixin, NotifyMethodsMixin):
         system_notify_user_list: list = []
         notify_json: dict = data_json
 
-        if event:
+        if event and templates is None:
             templates = list(
                 NotifyTemplate.objects
                 .filter(event=event, is_active=True, type=TYPE.SYSTEM)
@@ -74,7 +74,6 @@ class SystemNotify(SystemNotifyMixin, NotifyMethodsMixin):
                 NotifyTemplate.objects
                 .select_related('user')
                 .prefetch_related('user_lists')
-                .prefetch_related('user_lists__user_groups')
                 .filter(id__in=templates, is_active=True, type=TYPE.SYSTEM)
             )
             if templates_instances.exists():
@@ -98,6 +97,9 @@ class SystemNotify(SystemNotifyMixin, NotifyMethodsMixin):
 
         if user:
             system_notify_user_list.append(user)
+
+        if not system_notify_user_list:
+            raise UsersListIsNone
 
         for notify_user in system_notify_user_list:
 

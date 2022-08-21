@@ -59,32 +59,6 @@ def send_system_notifications(notify_pk):
     instance.save()
 
 
-@celery_app.task
-def send_main_system_notifications(notify_pk: int):
-    instance = SystemNotify.objects.filter(pk=notify_pk, state=STATE.WAIT).first()
-    if instance:
-        try:
-            if instance.room_name:
-                group_name = instance.room_name
-            else:
-                group_name = f'room_{instance.user.id}'
-            async_to_sync(get_channel_layer().group_send)(
-                group_name,
-                {
-                    'id': notify_pk,
-                    'type': 'system',
-                    'event': instance.event,
-                    'data_json': instance.data_json,
-                }
-            )
-            instance.state = STATE.DELIVERED
-            instance.sent_at = timezone.now()
-        except Exception as e:  # noqa
-            instance.state = STATE.REJECTED
-            instance.to_log(str(e))
-        instance.save()
-
-
 celery_app.conf.beat_schedule.update({
     'periodic_task': {
         'task': 'garpix_notify.tasks.tasks.send_notifications',

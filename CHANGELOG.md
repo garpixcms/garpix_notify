@@ -1,3 +1,7 @@
+### 5.11.1 (21.08.2022)
+
+- Corrected tests for new functionality.
+
 ### 5.11.0 (27.07.2022)
 
 - Fixed a bug with the formation of users for mailing,
