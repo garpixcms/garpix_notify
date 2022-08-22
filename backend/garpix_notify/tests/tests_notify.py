@@ -79,12 +79,12 @@ class PreBuildTestCase(TestCase):
             'sometext': self.sometext,
             'user': user,
         }, user=user)
-        self.assertEqual(notify.event, template_email.event)
-        self.assertEqual(notify.subject, self.data_compiled_email['subject'])
-        self.assertEqual(notify.text, self.data_compiled_email['text'])
-        self.assertEqual(notify.html, self.data_compiled_email['html'])
-        self.assertEqual(notify.type, self.data_compiled_email['type'])
-        self.assertEqual(notify.event, self.data_compiled_email['event'])
+        self.assertEqual(notify[0].event, template_email.event)
+        self.assertEqual(notify[0].subject, self.data_compiled_email['subject'])
+        self.assertEqual(notify[0].text, self.data_compiled_email['text'])
+        self.assertEqual(notify[0].html, self.data_compiled_email['html'])
+        self.assertEqual(notify[0].type, self.data_compiled_email['type'])
+        self.assertEqual(notify[0].event, self.data_compiled_email['event'])
 
     def test_notify_email_user_list(self):
         self.data_template_email_1 = {
@@ -148,15 +148,15 @@ class PreBuildTestCase(TestCase):
             'user': user,
         }, user=user)
 
-        self.assertEqual(notify.event, template_email.event)
+        self.assertEqual(notify[0].event, template_email.event)
 
         # notify
-        self.assertEqual(notify.subject, self.data_compiled_email_1['subject'])
-        self.assertEqual(notify.text, self.data_compiled_email_1['text'])
-        self.assertEqual(notify.html, self.data_compiled_email_1['html'])
-        self.assertEqual(notify.type, self.data_compiled_email_1['type'])
-        self.assertEqual(notify.event, self.data_compiled_email_1['event'])
-        self.assertEqual(notify.email, 'test@garpix.com')
+        self.assertEqual(notify[0].subject, self.data_compiled_email_1['subject'])
+        self.assertEqual(notify[0].text, self.data_compiled_email_1['text'])
+        self.assertEqual(notify[0].html, self.data_compiled_email_1['html'])
+        self.assertEqual(notify[0].type, self.data_compiled_email_1['type'])
+        self.assertEqual(notify[0].event, self.data_compiled_email_1['event'])
+        self.assertEqual(notify[0].email, 'test@garpix.com')
 
     def test_notify_viber(self):
         self.data_template_viber = {
@@ -217,12 +217,12 @@ class PreBuildTestCase(TestCase):
             'user': user,
         }, user=user)
 
-        self.assertEqual(notify.event, template_viber.event)
+        self.assertEqual(notify[0].event, template_viber.event)
 
         # notify
-        self.assertEqual(notify.subject, self.data_compiled_viber['subject'])
-        self.assertEqual(notify.text, self.data_compiled_viber['text'])
-        self.assertEqual(notify.html, self.data_compiled_viber['html'])
-        self.assertEqual(notify.type, self.data_compiled_viber['type'])
-        self.assertEqual(notify.event, self.data_compiled_viber['event'])
-        self.assertEqual(notify.user.viber_chat_id, 'm4FsaRu5kBi8HzSAC0liFQ==')
+        self.assertEqual(notify[0].subject, self.data_compiled_viber['subject'])
+        self.assertEqual(notify[0].text, self.data_compiled_viber['text'])
+        self.assertEqual(notify[0].html, self.data_compiled_viber['html'])
+        self.assertEqual(notify[0].type, self.data_compiled_viber['type'])
+        self.assertEqual(notify[0].event, self.data_compiled_viber['event'])
+        self.assertEqual(notify[0].user.viber_chat_id, 'm4FsaRu5kBi8HzSAC0liFQ==')
