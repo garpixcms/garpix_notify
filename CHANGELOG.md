@@ -1,3 +1,7 @@
+### 5.11.2 (21.08.2022)
+
+- The data_json field in the SystemNotify model is JSONField.
+
 ### 5.11.1 (21.08.2022)
 
 - Corrected tests for new functionality.

@@ -2,18 +2,19 @@ import json
 
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
+
 from django.conf import settings
-from django.contrib.auth import get_user_model
-from django.db import models, transaction
-from django.db.models import Manager
 from django.utils import timezone
+from django.db.models import Manager
+from django.db import models, transaction
+from django.contrib.auth import get_user_model
 from django.utils.module_loading import import_string
 
-from .template import NotifyTemplate
 from .choices import TYPE, STATE
-from ..mixins.notify_method_mixin import NotifyMethodsMixin
 from ..utils import ReceivingUsers
-from garpix_notify.exceptions import IsInstanceException, DataTypeException, ArgumentsEmptyException, UsersListIsNone
+from .template import NotifyTemplate
+from ..mixins.notify_method_mixin import NotifyMethodsMixin
+from ..exceptions import IsInstanceException, DataTypeException, ArgumentsEmptyException, UsersListIsNone
 
 SystemNotifyMixin = import_string(settings.GARPIX_SYSTEM_NOTIFY_MIXIN)
 
@@ -33,7 +34,7 @@ class SystemNotify(SystemNotifyMixin, NotifyMethodsMixin):
     event = models.IntegerField('Событие', choices=settings.CHOICES_NOTIFY_EVENT, blank=True, null=True)
 
     room_name = models.CharField('Название комнаты', max_length=255, null=True, blank=True)
-    data_json = models.TextField('Данные JSON', blank=True, null=True)
+    data_json = models.JSONField('Данные JSON', blank=True, null=True, default=dict)
 
     created_at = models.DateTimeField('Дата создания', auto_now_add=True)
     sent_at = models.DateTimeField('Дата отправки', blank=True, null=True)
@@ -45,7 +46,7 @@ class SystemNotify(SystemNotifyMixin, NotifyMethodsMixin):
 
     @staticmethod
     def send(data_json: dict, user: User = None, event: int = None, room_name: str = None,  # noqa: C901
-             title: str = None, templates: list = None, **kwargs):
+             title: str = None, templates: list = None, notify_type: str = None, **kwargs) -> None:
 
         if user is None and event is None and templates is None:
             raise ArgumentsEmptyException
@@ -58,6 +59,9 @@ class SystemNotify(SystemNotifyMixin, NotifyMethodsMixin):
 
         if templates and not isinstance(templates, list):
             raise DataTypeException('templates', 'list')
+
+        if notify_type is None:
+            notify_type = getattr(settings, 'DEFAULT_SYSTEM_NOTIFY_TYPE', 'system')
 
         system_notify_user_list: list = []
         notify_json: dict = data_json
@@ -78,12 +82,12 @@ class SystemNotify(SystemNotifyMixin, NotifyMethodsMixin):
             )
             if templates_instances.exists():
                 for template in templates_instances:
+
                     if template.user:
                         system_notify_user_list.append(template.user)
-                    notify_json: dict = eval(template.text)
 
-                    if not isinstance(notify_json, dict):
-                        raise DataTypeException(notify_json, 'dict')
+                    if template.subject:
+                        title = template.subject
 
                     if template.user_lists.exists():
                         notify_users_list = template.user_lists.all()
@@ -91,6 +95,8 @@ class SystemNotify(SystemNotifyMixin, NotifyMethodsMixin):
                         system_notify_user_list.extend([
                             user for user in notify_users_list if user
                         ])
+
+        notify_json['type'] = notify_type
 
         if event:
             notify_json['event_id'] = event
@@ -120,22 +126,21 @@ class SystemNotify(SystemNotifyMixin, NotifyMethodsMixin):
             )
 
             if instance:
-                transaction.on_commit(lambda: instance.send_main_system_notifications())
+                transaction.on_commit(lambda: instance.send_notification())
 
-    def send_main_system_notifications(self):
+    def send_notification(self):
         try:
+            data_dict = json.loads(str(self.data_json))
+            data_dict['id'] = self.id
+
             if self.room_name:
                 group_name = self.room_name
             else:
                 group_name = f'room_{self.user.id}'
+
             async_to_sync(get_channel_layer().group_send)(
                 group_name,
-                {
-                    'id': self.id,
-                    'type': 'system',
-                    'event': self.event,
-                    'data_json': self.data_json,
-                }
+                data_dict
             )
             self.state = STATE.DELIVERED
             self.sent_at = timezone.now()

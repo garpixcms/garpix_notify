@@ -3,19 +3,19 @@ from django.contrib.auth import get_user_model
 
 class ReceivingUsers:
 
-    def __init__(self, users_list, value=None):
+    def __init__(self, users_list: list, value: str = None):
         self.users_list = users_list
         self.value = value
 
-    def __returning_specific_list(self, receivers):
+    def __returning_specific_list(self, receivers: list) -> list:
         # Убираем дубликаты пользователей для переданного значения из функции
         receivers_dict = list({v[self.value]: v for v in receivers}.values())
         receivers_new = [user.get(self.value) for user in receivers_dict]
         return receivers_new
 
-    def __receiving_users(self):  # noqa: C901
+    def __receiving_users(self) -> list:  # noqa: C901
         user_model = get_user_model()
-        receivers = []
+        receivers: list = []
         for user_list in self.users_list:
             # Проверяем рассылку, не отмечена ли массовая рассылка
             if user_list.mail_to_all:
@@ -62,13 +62,13 @@ class ReceivingUsers:
             # Собираем данные по пользователям, если они были переданы
             users_qs = user_list.users.all()
             if users_qs.exists():
-
                 receivers.extend([
-                    {'user': user,
-                     'email': user.email,
-                     'phone': user.phone,
-                     'viber_chat_id': user.viber_chat_id
-                     } for user in users_qs
+                    {
+                        'user': user,
+                        'email': user.email,
+                        'phone': user.phone,
+                        'viber_chat_id': user.viber_chat_id
+                    } for user in users_qs
                 ])
 
         if self.value:
@@ -77,5 +77,5 @@ class ReceivingUsers:
         return receivers
 
     @classmethod
-    def run_receiving_users(cls, users_list, value=None):
+    def run_receiving_users(cls, users_list: list, value: str = None) -> list:
         return cls(users_list, value).__receiving_users()
