@@ -1,3 +1,9 @@
+### 5.11.3 (24.08.2022)
+
+SystemNotify:
+- Fixed a bug with a JSONField with Cyrillic,
+- More correct generation of data for sending.
+
 ### 5.11.2 (21.08.2022)
 
 - The data_json field in the SystemNotify model is JSONField.

@@ -156,6 +156,7 @@ GARPIX_NOTIFY_MIXIN = 'garpix_notify.mixins.notify_mixin.NotifyMixin'
 NOTIFY_USER_WANT_MESSAGE_CHECK = None
 NOTIFY_CALL_CODE_CHECK = None
 GARPIX_NOTIFY_CELERY_SETTINGS = 'app.celery.app'
+DEFAULT_SYSTEM_NOTIFY_TYPE = 'system'
 
 ```
 #### Step 3. Go to the admin panel and go to the "Notifications" section - "SMTP accounts"
