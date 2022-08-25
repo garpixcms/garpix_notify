@@ -27,10 +27,12 @@ class PushClient:
                 message = 'Not sent (sending is prohibited by settings)'
                 self.notify.state = STATE.DISABLED
             self.notify.to_log(message)
-            return
+            return False
+        return True
 
     def __send_push_client(self):
-        self.__access_verification()
+        if not self.__access_verification():
+            return 
 
         devices = NotifyDevice.objects.filter(active=True, user=self.notify.user).distinct('device_id')
 
