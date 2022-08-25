@@ -1,4 +1,5 @@
 import json
+from copy import copy
 
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
@@ -111,7 +112,6 @@ class SystemNotify(SystemNotifyMixin, NotifyMethodsMixin):
 
             user_pk: int = notify_user.pk
             notify_json['user'] = user_pk
-            data_json = json.dumps(notify_json)
 
             notify_room_name = f'room_{user_pk}' if not room_name else room_name
             notify_title = f'{notify_user} - {notify_room_name}' if not title else title
@@ -121,7 +121,7 @@ class SystemNotify(SystemNotifyMixin, NotifyMethodsMixin):
                 user=notify_user,
                 event=event,
                 room_name=notify_room_name,
-                data_json=data_json,
+                data_json=notify_json,
                 **kwargs
             )
 
@@ -130,8 +130,11 @@ class SystemNotify(SystemNotifyMixin, NotifyMethodsMixin):
 
     def send_notification(self):
         try:
-            data_dict = json.loads(str(self.data_json))
-            data_dict['id'] = self.id
+            notify_dict = copy(self.data_json)
+            if isinstance(notify_dict, str):
+                notify_dict = json.loads(notify_dict)
+
+            notify_dict['id'] = self.id
 
             if self.room_name:
                 group_name = self.room_name
@@ -140,14 +143,14 @@ class SystemNotify(SystemNotifyMixin, NotifyMethodsMixin):
 
             async_to_sync(get_channel_layer().group_send)(
                 group_name,
-                data_dict
+                notify_dict
             )
             self.state = STATE.DELIVERED
             self.sent_at = timezone.now()
         except Exception as e:
             self.state = STATE.REJECTED
             self.to_log(str(e))
-        self.save()
+        self.save(update_fields=['state', 'sent_at'])
 
     class Meta:
         verbose_name = 'Ситемное уведомление'
