@@ -1,7 +1,22 @@
+### 5.11.3 (24.08.2022)
+
+SystemNotify:
+- Fixed a bug with a JSONField with Cyrillic,
+- More correct generation of data for sending.
+
+### 5.11.2 (21.08.2022)
+
+- The data_json field in the SystemNotify model is JSONField.
+
+### 5.11.1 (21.08.2022)
+
+- Corrected tests for new functionality.
+
 ### 5.11.0 (27.07.2022)
 
 - Fixed a bug with the formation of users for mailing,
 - The 'Mailing list of users' can now be filled in by users or groups,
+- The message can be sent instantly by passing the send_now parameter,
 - System notifications have been added separately.
 
 ### 5.10.1 (05.07.2022)
