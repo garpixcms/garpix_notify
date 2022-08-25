@@ -1,228 +1,123 @@
 import django
 import os
 
-from django.utils.crypto import get_random_string
-from unittest import TestCase
-
-from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
-
-from garpix_notify.models import Notify
-from garpix_notify.models import NotifyCategory
-from garpix_notify.models import NotifyTemplate
-from garpix_notify.models import NotifyUserList
-from garpix_notify.models import NotifyUserListParticipant
-from garpix_notify.models.choices import TYPE
-
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "app.settings")
 django.setup()
 
+import pytest
 
-class PreBuildTestCase(TestCase):
-    def setUp(self):
-        # нулевой евент, только для теста
+from garpix_notify.models import Notify
+from .utils.generate_data import (
+    generate_users, generate_category, generate_templates, generate_compiled_email, generate_notify_data,
+    generate_viber_user, generate_compiled_viber, generate_templates_viber
+)
+from .utils.common_class import CommonTestClass
+
+# os.environ.setdefault("DJANGO_SETTINGS_MODULE", "app.settings")
+# django.setup()
+
+
+@pytest.mark.django_db
+class TestNotify(CommonTestClass):
+
+    @pytest.fixture
+    def setup(self):
+        # Эвенты для теста
         self.PASS_TEST_EVENT = 0
         self.PASS_TEST_EVENT_1 = 1
         self.PASS_TEST_EVENT_2 = 2
-        # тестовый пользователь
-        self.data_user = {
-            'username': 'email_test' + get_random_string(length=4),
-            'email': 'test@garpix.com',
-            'password': 'BlaBla123',
-            'first_name': 'Ivan',
-            'last_name': 'Ivanov',
-        }
-        # data
-        self.data_template_email = {
-            'title': 'Тестовый темплейт',
-            'subject': 'Тестовый темплейт {{user.email}}',
-            'text': 'Контент текстовый {{user.email}} - {{sometext}}',
-            'html': 'Контент HTML {{user.email}} - {{sometext}}',
-            'type': TYPE.EMAIL,
-            'event': self.PASS_TEST_EVENT,
-        }
-        self.data_category = {
-            'title': 'Основная категория_' + get_random_string(length=4),
-            'template': '<div>{{text}}</div>',
-        }
-        self.sometext = 'bla bla'
-        self.data_compiled_email = {
-            'subject': f'Тестовый темплейт {self.data_user["email"]}',
-            'text': f'Контент текстовый {self.data_user["email"]} - {self.sometext}',
-            'html': f'Контент HTML {self.data_user["email"]} - {self.sometext}',
-            'type': TYPE.EMAIL,
-            'event': self.PASS_TEST_EVENT,
-        }
-        super().setUp()
+        # Тестовый пользователь
+        self.data_user = generate_users(3)[2]
+        self.data_viber_user = generate_viber_user(2)[1]
+        self.user_1 = self.create_user(self.data_user)
+        self.user_viber = self.create_user(self.data_viber_user)
 
-    def test_notify_email_positive(self):
-        # Создание пользователя
-        User = get_user_model()
-        user = User.objects.create_user(**self.data_user)
-        # Создание категории
-        category = NotifyCategory.objects.create(**self.data_category)
-        category = NotifyCategory.objects.get(pk=category.pk)
-        self.assertEqual(category.title, self.data_category['title'])
-        self.assertEqual(category.template, self.data_category['template'])
-        # Создание шаблона
-        template_email = NotifyTemplate.objects.create(category=category, **self.data_template_email)
-        template_email = NotifyTemplate.objects.get(pk=template_email.pk)
-        self.assertEqual(template_email.title, self.data_template_email['title'])
-        self.assertEqual(template_email.subject, self.data_template_email['subject'])
-        self.assertEqual(template_email.text, self.data_template_email['text'])
-        self.assertEqual(template_email.html, self.data_template_email['html'])
-        self.assertEqual(template_email.type, self.data_template_email['type'])
-        self.assertEqual(template_email.event, self.data_template_email['event'])
-        self.assertEqual(template_email.category.id, category.id)
-        # Создание пробного письма
-        notify = Notify.send(self.PASS_TEST_EVENT, {
-            'sometext': self.sometext,
-            'user': user,
-        }, user=user)
-        self.assertEqual(notify[0].event, template_email.event)
-        self.assertEqual(notify[0].subject, self.data_compiled_email['subject'])
-        self.assertEqual(notify[0].text, self.data_compiled_email['text'])
-        self.assertEqual(notify[0].html, self.data_compiled_email['html'])
-        self.assertEqual(notify[0].type, self.data_compiled_email['type'])
-        self.assertEqual(notify[0].event, self.data_compiled_email['event'])
+        # Общие данные
+        self.user_list = self.create_user_list()
+        self.data_category = generate_category()[0]
+        self.viber_chat_id = 'm4FsaRu5kBi8HzSAC0liFQ=='
+        self.test_data = generate_notify_data(self.user_1)
 
-    def test_notify_email_user_list(self):
-        self.data_template_email_1 = {
-            'title': 'Тестовый темплейт',
-            'subject': 'Тестовый темплейт {{user.email}}',
-            'text': 'Контент текстовый {{user.email}} - {{sometext}}',
-            'html': 'Контент HTML {{user.email}} - {{sometext}}',
-            'type': TYPE.EMAIL,
-            'event': self.PASS_TEST_EVENT_1,
-        }
-        self.data_compiled_email_1 = {
-            'subject': f'Тестовый темплейт {self.data_user["email"]}',
-            'text': f'Контент текстовый {self.data_user["email"]} - {self.sometext}',
-            'html': f'Контент HTML {self.data_user["email"]} - {self.sometext}',
-            'type': TYPE.EMAIL,
-            'event': self.PASS_TEST_EVENT_1
-        }
-        # Создание пользователя
-        User = get_user_model()
-        user = User.objects.create_user(**self.data_user)
-        # Создание списка
-        user_list = NotifyUserList.objects.create(title='userlist_' + get_random_string(length=4))
-        group = Group.objects.create(name='group_' + get_random_string(length=4))
-        user_list.user_groups.add(group)
+        # Генерация данных для создания шаблонов и данных для теста
+        self.data_template_email = generate_templates(self.PASS_TEST_EVENT)[0]
+        self.data_compiled_email = generate_compiled_email(self.data_user, self.PASS_TEST_EVENT)[0]
 
-        user_list_participant1 = NotifyUserListParticipant.objects.create(  # noqa
-            user_list=user_list,
-            email='test2@garpix.com',
-        )
-        user_list_participant2 = NotifyUserListParticipant.objects.create(  # noqa
-            user_list=user_list,
-        )
-        user_list_participant3 = NotifyUserListParticipant.objects.create(  # noqa
-            user_list=user_list,
-            email='test3@garpix.com',
-        )
+        self.data_template_email_2 = generate_templates(self.PASS_TEST_EVENT_1)[0]
+        self.data_compiled_email_2 = generate_compiled_email(self.data_user, self.PASS_TEST_EVENT_1)[0]
 
-        # Создание категории
-        category = NotifyCategory.objects.create(**self.data_category)
-        category = NotifyCategory.objects.get(pk=category.pk)
-        self.assertEqual(category.title, self.data_category['title'])
-        self.assertEqual(category.template, self.data_category['template'])
+        self.data_template_viber = generate_templates_viber(self.PASS_TEST_EVENT_2)[0]
+        self.data_compiled_viber = generate_compiled_viber(self.viber_chat_id, self.PASS_TEST_EVENT_2)[0]
 
-        # Создание шаблона
-        template_email = NotifyTemplate.objects.create(category=category, **self.data_template_email_1)
-        template_email = NotifyTemplate.objects.get(pk=template_email.pk)
-        template_email.user_lists.add(user_list)
-        template_email.save()
+        # Создание шаблонов/категорий
+        self.category_1 = self.create_category(self.data_category)
+        self.template_1 = self.create_template(self.data_template_email, self.category_1)
+        self.template_2 = self.create_template(self.data_template_email_2, self.category_1, self.user_list)
+        self.template_viber = self.create_template(self.data_template_viber, self.category_1, self.user_list)
 
-        self.assertEqual(template_email.title, self.data_template_email_1['title'])
-        self.assertEqual(template_email.subject, self.data_template_email_1['subject'])
-        self.assertEqual(template_email.text, self.data_template_email_1['text'])
-        self.assertEqual(template_email.html, self.data_template_email_1['html'])
-        self.assertEqual(template_email.type, self.data_template_email_1['type'])
-        self.assertEqual(template_email.event, self.data_template_email_1['event'])
-        self.assertEqual(template_email.category.id, category.id)
 
-        # Создание пробного письма
-        notify = Notify.send(self.PASS_TEST_EVENT_1, {
-            'sometext': self.sometext,
-            'user': user,
-        }, user=user)
+    def test_notify_email_positive(self, setup):
+        # Сверяем корректно ли создались объекты
+        assert self.category_1.title == self.data_category['title']
+        assert self.category_1.template == self.data_category['template']
+        assert self.template_1.title == self.data_template_email['title']
+        assert self.template_1.subject, self.data_template_email['subject']
+        assert self.template_1.text == self.data_template_email['text']
+        assert self.template_1.html == self.data_template_email['html']
+        assert self.template_1.type == self.data_template_email['type']
+        assert self.template_1.event == self.data_template_email['event']
 
-        self.assertEqual(notify[0].event, template_email.event)
+        # Создаем письмо
+        notify = Notify.send(event=self.PASS_TEST_EVENT, context=self.test_data, user=self.user_1)
 
-        # notify
-        self.assertEqual(notify[0].subject, self.data_compiled_email_1['subject'])
-        self.assertEqual(notify[0].text, self.data_compiled_email_1['text'])
-        self.assertEqual(notify[0].html, self.data_compiled_email_1['html'])
-        self.assertEqual(notify[0].type, self.data_compiled_email_1['type'])
-        self.assertEqual(notify[0].event, self.data_compiled_email_1['event'])
-        self.assertEqual(notify[0].email, 'test@garpix.com')
+        # Сверяем с шаблоном и ожидаемым результатом
+        assert notify[0].event == self.template_1.event
+        assert notify[0].subject == self.data_compiled_email['subject']
+        assert notify[0].text == self.data_compiled_email['text']
+        assert notify[0].html == self.data_compiled_email['html']
+        assert notify[0].type == self.data_compiled_email['type']
+        assert notify[0].event == self.data_compiled_email['event']
+
+    def test_notify_email_user_list(self, setup):
+        # Сверяем корректно ли создались объекты
+        assert self.template_2.title == self.data_template_email_2['title']
+        assert self.template_2.subject, self.data_template_email_2['subject']
+        assert self.template_2.text == self.data_template_email_2['text']
+        assert self.template_2.html == self.data_template_email_2['html']
+        assert self.template_2.type == self.data_template_email_2['type']
+        assert self.template_2.event == self.data_template_email_2['event']
+        assert self.template_2.category.id == self.category_1.id
+
+        # Создаем письмо
+        notify = Notify.send(event=self.PASS_TEST_EVENT_1, context=self.test_data, user=self.user_1)
+
+        # Сверяем с шаблоном и ожидаемым результатом
+        assert notify[0].event == self.template_1.event
+        assert notify[0].email == self.user_1.email
+        assert notify[0].subject == self.data_compiled_email_2['subject']
+        assert notify[0].text == self.data_compiled_email_2['text']
+        assert notify[0].html == self.data_compiled_email_2['html']
+        assert notify[0].type == self.data_compiled_email_2['type']
+        assert notify[0].event == self.data_compiled_email_2['event']
 
     def test_notify_viber(self):
-        self.data_template_viber = {
-            'title': 'Тестовый темплейт',
-            'subject': 'Тестовый темплейт {{user.viber_chat_id}}',
-            'text': 'Контент текстовый {{user.viber_chat_id}} - {{sometext}}',
-            'html': 'Контент HTML {{user.viber_chat_id}} - {{sometext}}',
-            'type': TYPE.VIBER,
-            'event': self.PASS_TEST_EVENT_2,
-        }
-        self.data_viber_user = {
-            'username': 'viber_' + get_random_string(length=5),
-            'viber_secret_key': '111',
-            'viber_chat_id': 'm4FsaRu5kBi8HzSAC0liFQ==',
-            'password': 'BlaBla123',
-            'first_name': 'IvanViber',
-            'last_name': 'IvanovViber',
-        }
-        self.data_compiled_viber = {
-            'subject': f'Тестовый темплейт {self.data_viber_user["viber_chat_id"]}',
-            'text': f'Контент текстовый {self.data_viber_user["viber_chat_id"]} - {self.sometext}',
-            'html': f'Контент HTML {self.data_viber_user["viber_chat_id"]} - {self.sometext}',
-            'type': TYPE.VIBER,
-            'event': self.PASS_TEST_EVENT_2,
-        }
-        # Создание пользователя
-        User = get_user_model()
-        user = User.objects.create_user(**self.data_viber_user)
-        # Создание списка
-        user_list = NotifyUserList.objects.create(title='viber_' + get_random_string(length=4))
-        user_list_participant1 = NotifyUserListParticipant.objects.create(  # noqa
-            user_list=user_list,
-        )
-        # Создание категории
-        category = NotifyCategory.objects.create(**self.data_category)
-        category = NotifyCategory.objects.get(pk=category.pk)
+        # Сверяем корректно ли создались объекты
+        assert self.template_viber.title == self.data_template_viber['title']
+        assert self.template_viber.subject, self.data_template_viber['subject']
+        assert self.template_viber.text == self.data_template_viber['text']
+        assert self.template_viber.html == self.data_template_viber['html']
+        assert self.template_viber.type == self.data_template_viber['type']
+        assert self.template_viber.event == self.data_template_viber['event']
+        assert self.template_viber.category.id == self.category_1.id
 
-        self.assertEqual(category.title, self.data_category['title'])
-        self.assertEqual(category.template, self.data_category['template'])
+        # Создаем письмо
+        notify = Notify.send(event=self.PASS_TEST_EVENT_2, context=self.test_data, user=self.user_viber)
 
-        # Создание шаблона
-        template_viber = NotifyTemplate.objects.create(**self.data_template_viber, category=category)
-        template_viber = NotifyTemplate.objects.get(pk=template_viber.pk)
-        template_viber.user_lists.add(user_list)
-        template_viber.save()
-
-        self.assertEqual(template_viber.title, self.data_template_viber['title'])
-        self.assertEqual(template_viber.subject, self.data_template_viber['subject'])
-        self.assertEqual(template_viber.text, self.data_template_viber['text'])
-        self.assertEqual(template_viber.html, self.data_template_viber['html'])
-        self.assertEqual(template_viber.type, self.data_template_viber['type'])
-        self.assertEqual(template_viber.event, self.data_template_viber['event'])
-        self.assertEqual(template_viber.category.id, category.id)
-
-        # Создание уведомления
-        notify = Notify.send(self.PASS_TEST_EVENT_2, {
-            'sometext': self.sometext,
-            'user': user,
-        }, user=user)
-
-        self.assertEqual(notify[0].event, template_viber.event)
-
-        # notify
-        self.assertEqual(notify[0].subject, self.data_compiled_viber['subject'])
-        self.assertEqual(notify[0].text, self.data_compiled_viber['text'])
-        self.assertEqual(notify[0].html, self.data_compiled_viber['html'])
-        self.assertEqual(notify[0].type, self.data_compiled_viber['type'])
-        self.assertEqual(notify[0].event, self.data_compiled_viber['event'])
-        self.assertEqual(notify[0].user.viber_chat_id, 'm4FsaRu5kBi8HzSAC0liFQ==')
+        # Сверяем с шаблоном и ожидаемым результатом
+        assert notify[0].event == self.template_1.event
+        assert notify[0].email == self.user_1.email
+        assert notify[0].subject == self.data_compiled_viber['subject']
+        assert notify[0].text == self.data_compiled_viber['text']
+        assert notify[0].html == self.data_compiled_viber['html']
+        assert notify[0].type == self.data_compiled_viber['type']
+        assert notify[0].event == self.data_compiled_viber['event']
+        assert notify[0].user.viber_chat_id == self.viber_chat_id
