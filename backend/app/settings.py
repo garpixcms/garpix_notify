@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     'user',
     'garpix_notify',
     'app',
-    'garpix_qa',
+    'eqator',
     'channels',
 ]
 
@@ -257,3 +257,5 @@ if DEBUG_TOOLBAR:
         'debug_toolbar.panels.redirects.RedirectsPanel',
         'debug_toolbar.panels.profiling.ProfilingPanel',
     ]
+
+TEST_COVERAGE_RATE = 50
