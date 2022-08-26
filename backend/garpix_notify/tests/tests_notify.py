@@ -1,9 +1,3 @@
-import django
-import os
-
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "app.settings")
-django.setup()
-
 import pytest
 
 from garpix_notify.models import Notify
@@ -12,9 +6,6 @@ from .utils.generate_data import (
     generate_viber_user, generate_compiled_viber, generate_templates_viber
 )
 from .utils.common_class import CommonTestClass
-
-# os.environ.setdefault("DJANGO_SETTINGS_MODULE", "app.settings")
-# django.setup()
 
 
 @pytest.mark.django_db
@@ -54,7 +45,6 @@ class TestNotify(CommonTestClass):
         self.template_2 = self.create_template(self.data_template_email_2, self.category_1, self.user_list)
         self.template_viber = self.create_template(self.data_template_viber, self.category_1, self.user_list)
 
-
     def test_notify_email_positive(self, setup):
         # Сверяем корректно ли создались объекты
         assert self.category_1.title == self.data_category['title']
@@ -91,7 +81,7 @@ class TestNotify(CommonTestClass):
         notify = Notify.send(event=self.PASS_TEST_EVENT_1, context=self.test_data, user=self.user_1)
 
         # Сверяем с шаблоном и ожидаемым результатом
-        assert notify[0].event == self.template_1.event
+        assert notify[0].event == self.template_2.event
         assert notify[0].email == self.user_1.email
         assert notify[0].subject == self.data_compiled_email_2['subject']
         assert notify[0].text == self.data_compiled_email_2['text']
@@ -99,7 +89,7 @@ class TestNotify(CommonTestClass):
         assert notify[0].type == self.data_compiled_email_2['type']
         assert notify[0].event == self.data_compiled_email_2['event']
 
-    def test_notify_viber(self):
+    def test_notify_viber(self, setup):
         # Сверяем корректно ли создались объекты
         assert self.template_viber.title == self.data_template_viber['title']
         assert self.template_viber.subject, self.data_template_viber['subject']
@@ -113,8 +103,8 @@ class TestNotify(CommonTestClass):
         notify = Notify.send(event=self.PASS_TEST_EVENT_2, context=self.test_data, user=self.user_viber)
 
         # Сверяем с шаблоном и ожидаемым результатом
-        assert notify[0].event == self.template_1.event
-        assert notify[0].email == self.user_1.email
+        assert notify[0].event == self.template_viber.event
+        assert notify[0].email == self.user_viber.email
         assert notify[0].subject == self.data_compiled_viber['subject']
         assert notify[0].text == self.data_compiled_viber['text']
         assert notify[0].html == self.data_compiled_viber['html']
