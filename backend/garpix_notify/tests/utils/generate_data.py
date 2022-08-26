@@ -81,7 +81,33 @@ def generate_compiled_viber(viber_chat_id: str, event: int) -> list:
 
 def generate_notify_data(user) -> dict:
     test_data = {
-            'sometext': some_text,
-            'user': user
-        }
+        'sometext': some_text,
+        'user': user
+    }
     return test_data
+
+
+def generate_system_notify_data() -> dict:
+    return {f"{get_random_string(length=4)}": f"{get_random_string(length=7)}"}
+
+
+def generate_system_template_data(value: dict, event: int) -> list:
+    return [{
+        'title': 'Тестовый системный темплейт',
+        'subject': 'Тестовый темплейт',
+        'text': value,
+        'html': value,
+        'type': TYPE.SYSTEM,
+        'event': event,
+    }]
+
+
+def generate_compiled_system(value: dict, event: int, user) -> list:
+    value['type'] = 'system'
+    value['user'] = user.pk
+    return [{
+        "title": 'Тестовый темплейт',
+        "data_json": value,
+        "type": TYPE.SYSTEM,
+        "event": event,
+    }]

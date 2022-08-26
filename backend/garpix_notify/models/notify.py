@@ -1,11 +1,13 @@
 import json
 import re
 from datetime import datetime
+from typing import Optional
 
 import requests
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import models, transaction
+from django.db.models import Manager
 from django.utils.module_loading import import_string
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -18,7 +20,7 @@ from .template import NotifyTemplate
 from ..exceptions import TemplatesNotExists, IsInstanceException
 from ..mixins import UserNotifyMixin
 from ..mixins.notify_method_mixin import NotifyMethodsMixin
-from ..utils.send_data import url_dict_call, operator_call, response_check
+from ..utils.send_data import SendData
 from ..clients import SMSClient, EmailClient, CallClient, TelegramClient, ViberClient, PushClient, WhatsAppClient
 
 NotifyMixin = import_string(settings.GARPIX_NOTIFY_MIXIN)
@@ -56,6 +58,8 @@ class Notify(NotifyMixin, UserNotifyMixin, NotifyMethodsMixin):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     send_at = models.DateTimeField(blank=True, null=True, verbose_name='Время начала отправки')
     sent_at = models.DateTimeField(blank=True, null=True, verbose_name='Дата отправки')
+
+    objects = Manager()
 
     def __str__(self):
         return self.subject if self.subject and self.subject != '' else f'Уведомление № {self.id}'
@@ -95,13 +99,13 @@ class Notify(NotifyMixin, UserNotifyMixin, NotifyMethodsMixin):
     @staticmethod
     def send(event: int, context: dict, user: User = None, email: str = None, phone: str = None,  # noqa: C901
              files: list = None, data_json: dict = None, viber_chat_id: str = None, room_name: str = None,
-             notify_templates: list = None, send_at: datetime = None, send_now: bool = False, **kwargs) -> list:
+             notify_templates: list = None, send_at: datetime = None, send_now: bool = False,
+             user_want_message_check: bool = False, **kwargs) -> list:
 
         if user and not isinstance(user, User):
             raise IsInstanceException
 
         instance_list: list = []
-        user_want_message_check = None
 
         # Сначала забираем те данные, которые передали с методом
         notify_user = user if user else None
@@ -110,11 +114,7 @@ class Notify(NotifyMixin, UserNotifyMixin, NotifyMethodsMixin):
         notify_viber_chat_id = viber_chat_id if viber_chat_id else None
 
         local_context = context.copy()
-
-        if hasattr(settings, 'NOTIFY_USER_WANT_MESSAGE_CHECK') and settings.NOTIFY_USER_WANT_MESSAGE_CHECK is not None:
-            user_want_message_check = import_string(settings.NOTIFY_USER_WANT_MESSAGE_CHECK)
-
-        data_json = json.dumps(data_json) if data_json is not None else None
+        data_json = json.dumps(data_json) if data_json else None
 
         if notify_templates:
             templates = (
@@ -179,20 +179,23 @@ class Notify(NotifyMixin, UserNotifyMixin, NotifyMethodsMixin):
                 notify_viber_chat_id = template_viber_chat_id
 
             # Проверка, хочет ли пользователь получить сообщение
-            if user_want_message_check is not None:  # noqa
+            if user_want_message_check and hasattr(
+                    settings, 'NOTIFY_USER_WANT_MESSAGE_CHECK') and settings.NOTIFY_USER_WANT_MESSAGE_CHECK is not None:
+
+                user_want_message = import_string(settings.NOTIFY_USER_WANT_MESSAGE_CHECK)
+
                 if not notify_users_lists.exists():
-                    user_check = user_want_message_check(event, template.type, notify_user)
+                    user_check = user_want_message(event, template.type, notify_user)
                     if not user_check:
                         continue
                 else:
-                    # Если у нас шаблон со списками, то передаем в функцию и тут формируем новый из тех пользователей,
-                    # которым сообщения нужны
+                    # Если у нас шаблон со списками, то формируем новый из переданных пользователей,
                     # Если список пустой, то отменяем отправку
-                    notify_users_lists = user_want_message_check(
-                        event, template.type, notify_user, notify_users_lists)
+                    notify_users_lists = user_want_message(event, template.type, notify_user, notify_users_lists)
                     if not notify_users_lists:
                         continue
-            # Добавляем пользователя в контекст, если его там не передали
+
+            # Передаем пользователя в контекст
             if notify_user is not None:
                 if local_context is not None:
                     local_context.update({
@@ -204,14 +207,11 @@ class Notify(NotifyMixin, UserNotifyMixin, NotifyMethodsMixin):
                     }
             local_context['event_id'] = event
 
-            # Проверка на наличие списка в шаблоне
-            # Если в шаблоне передаются списки пользователей, то отдаем их уведомлениям
-            # Если уведомление для одного пользователя, то создаем для одного
-            # Также идет проверка на время оправки
             if send_at is not None:
                 notify_send = send_at
             else:
                 notify_send = template.send_at
+
             instance = Notify.objects.create(
                 subject=template.render_subject(local_context),
                 text=template.render_text(local_context),
@@ -242,7 +242,7 @@ class Notify(NotifyMixin, UserNotifyMixin, NotifyMethodsMixin):
         return instance_list
 
     @staticmethod
-    def call(phone: str, user: User = None, url: str = None, **kwargs):
+    def call(phone: str, user: User = None, url: str = None, **kwargs) -> Optional[str]:
         call_url_type: int = CallClient.get_url_type()
 
         if user and not isinstance(user, User):
@@ -254,18 +254,16 @@ class Notify(NotifyMixin, UserNotifyMixin, NotifyMethodsMixin):
         if url is not None:
             url = url
         else:
-            url = url_dict_call[call_url_type]
+            url = SendData.call_url(call_url_type)
 
-        main_url = url.format(**operator_call[call_url_type], to=phone, **kwargs)
+        main_url = url.format(to=phone, **kwargs)
         response_url = requests.get(main_url)
-        response_dict = response_url.json()
-        value = CallClient.get_value_checker(response_dict)
+        response_dict: dict = response_url.json()
+        value, response = CallClient.get_value_checker(response_dict)
 
-        response = response_check(response=response_dict, operator_type=call_url_type, status=value)
         if value == "OK":
             return '{Code}'.format(**response)
-        else:
-            return None
+        return None
 
     class Meta:
         verbose_name = 'Уведомление'

@@ -1,132 +1,59 @@
+from typing import Optional
 from django.conf import settings
 
 from garpix_notify.models.choices import CALL_URL, SMS_URL
 from garpix_notify.models.config import NotifyConfig
 
 
-try:
-    config = NotifyConfig.get_solo()
-    SMS_API_ID = config.sms_api_id
-    SMS_LOGIN = config.sms_login
-    SMS_PASSWORD = config.sms_password
-    SMS_FROM = config.sms_from
-except Exception:
-    SMS_API_ID = getattr(settings, 'SMS_API_ID', 1234567890)
-    SMS_LOGIN = getattr(settings, 'SMS_LOGIN', '')
-    SMS_PASSWORD = getattr(settings, 'SMS_PASSWORD', '')
-    SMS_FROM = getattr(settings, 'SMS_FROM', '')
+class SendData:
 
-try:
-    config = NotifyConfig.get_solo()
-    CALL_API_ID = config.call_api_id
-    CALL_LOGIN = config.call_login
-    CALL_PASSWORD = config.call_password
-except Exception:
-    CALL_API_ID = getattr(settings, 'CALL_API_ID', 1234567890)
-    CALL_LOGIN = getattr(settings, 'CALL_LOGIN', '')
-    CALL_PASSWORD = getattr(settings, 'CALL_PASSWORD', '')
-    CALL_FROM = getattr(settings, 'CALL_FROM', '')
+    def __init__(self):
+        try:
+            self.config = NotifyConfig.get_solo()
+            self.SMS_API_ID = self.config.sms_api_id
+            self.SMS_LOGIN = self.config.sms_login
+            self.SMS_PASSWORD = self.config.sms_password
+            self.SMS_FROM = self.config.sms_from
+        except Exception: # noqa
+            self.SMS_API_ID = getattr(settings, 'SMS_API_ID', 1234567890)
+            self.SMS_LOGIN = getattr(settings, 'SMS_LOGIN', '')
+            self.SMS_PASSWORD = getattr(settings, 'SMS_PASSWORD', '')
+            self.SMS_FROM = getattr(settings, 'SMS_FROM', '')
+        try:
+            self.CALL_API_ID = self.config.call_api_id
+            self.CALL_LOGIN = self.config.call_login
+            self.CALL_PASSWORD = self.config.call_password
+        except Exception: # noqa
+            self.CALL_API_ID = getattr(settings, 'CALL_API_ID', 1234567890)
+            self.CALL_LOGIN = getattr(settings, 'CALL_LOGIN', '')
+            self.CALL_PASSWORD = getattr(settings, 'CALL_PASSWORD', '')
+            self.CALL_FROM = getattr(settings, 'CALL_FROM', '')
 
-url_dict_call = {
-    0: '{url}?phone={to}&api_id={api_id}&json=1',
-    1: '{url}?phone={to}&login={login}&password={password}&json=1',
-    2: '{url}?login={login}&psw={password}&phones={to}&mes=code&call=1&fmt=3',
-    3: '{url}?phone={to}&key={password}&service_id={login}',
-}
+    def __get_call_url(self, key: int) -> Optional[str]:
+        url_dict_call = {
+            0: (f'{CALL_URL.SMSRU_CALL_URL}?api_id={self.CALL_API_ID}' + '&phone={to}&json=1'),
+            1: (f'{CALL_URL.SMSRU_CALL_URL}?login={self.CALL_LOGIN}&password={self.CALL_PASSWORD}' + '&phone={to}&json=1'),
+            2: (f'{CALL_URL.SMSCENTRE_URL}?login={self.CALL_LOGIN}&psw={self.CALL_PASSWORD}' + '&phones={to}&mes=code&call=1&fmt=3'),
+            3: (f'{CALL_URL.UCALLER_URL}?key={self.CALL_PASSWORD}&service_id={self.CALL_LOGIN}' + '&phone={to}'),
+        }
+        return url_dict_call.get(key)
 
-operator_call = {
-    0: {
-        'url': CALL_URL.SMSRU_CALL_URL,
-        'api_id': CALL_API_ID},
-    1: {
-        'url': CALL_URL.SMSRU_CALL_URL,
-        'login': CALL_LOGIN,
-        'password': CALL_PASSWORD},
-    2: {
-        'url': CALL_URL.SMSCENTRE_URL,
-        'login': CALL_LOGIN,
-        'password': CALL_PASSWORD},
-    3: {
-        'url': CALL_URL.UCALLER_URL,
-        'login': CALL_LOGIN,
-        'password': CALL_PASSWORD}}
+    def __get_sms_url(self, key: int) -> Optional[str]:
+        url_dict_sms = {
+            0: (f'{SMS_URL.SMSRU_URL}?api_id={self.SMS_API_ID}' + '&to={to}&msg={text}&json=1'),
+            1: (f'{SMS_URL.INFOSMS_URL}?login={self.SMS_LOGIN}&pwd={self.SMS_PASSWORD}&sender={self.SMS_FROM}' + '&phones={to}&message={text}'),
+            2: (f'{SMS_URL.IQSMS_URL}?login={self.SMS_LOGIN}&password={self.SMS_PASSWORD}' + '&phone={to}&text={text}'),
+            3: (f'{SMS_URL.SMSCENTRE_URL}?login={self.SMS_LOGIN}&psw={self.SMS_PASSWORD}' + '&phones={to}&mes={text}'),
+            4: (f'{SMS_URL.SMS_SENDING_URL}?login={self.SMS_LOGIN}&password={self.SMS_PASSWORD}' + '&txt={text}&to={to}'),
+            5: (f'{SMS_URL.SMS_PROSTO_URL}?login={self.SMS_LOGIN}&password={self.SMS_PASSWORD}&method=push_msg&format=json&sender_name={self.SMS_FROM}' + 'text={text}&phone={to}&key={api_id}'),
+            6: (f'{SMS_URL.WEBSZK_URL}?user={self.SMS_LOGIN}&pwd={self.SMS_PASSWORD}&sadr={self.SMS_FROM}' + '&text={text}&dadr={to}'),
+        }
+        return url_dict_sms.get(key)
 
-url_dict_sms = {
-    0: '{url}?api_id={api_id}&to={to}&msg={text}&json=1',
-    1: '{url}?login={user}&pwd={pwd}&phones={to}&message={text}&sender={from_text}',
-    2: '{url}?login={user}&password={pwd}&phone={to}&text={text}',
-    3: '{url}?login={user}&psw={pwd}&phones={to}&mes={text}',
-    4: '{url}?login={user}&password={pwd}&txt={text}&to={to}',
-    5: '{url}?method=push_msg&format=json&key={api_id}&text={text}&phone={to}&sender_name={from_text}',
-    6: '{url}?user={user}&pwd={pwd}&sadr={from_text}&text={text}&dadr={to}',
-}
+    @classmethod
+    def call_url(cls, url_type: int) -> Optional[str]:
+        return cls().__get_call_url(url_type)
 
-operator_sms = {
-    0: {
-        'url': SMS_URL.SMSRU_URL,
-        'api_id': CALL_API_ID},
-    1: {
-        'url': SMS_URL.INFOSMS_URL,
-        'user': SMS_LOGIN,
-        'pwd': SMS_PASSWORD,
-        'from_text': SMS_FROM},
-    2: {
-        'url': SMS_URL.IQSMS_URL,
-        'user': SMS_LOGIN,
-        'pwd': SMS_PASSWORD},
-    3: {
-        'url': SMS_URL.SMSCENTRE_URL,
-        'user': SMS_LOGIN,
-        'pwd': SMS_PASSWORD},
-    4: {
-        'url': SMS_URL.SMS_SENDING_URL,
-        'user': SMS_LOGIN,
-        'pwd': SMS_PASSWORD},
-    5: {
-        'url': SMS_URL.SMS_PROSTO_URL,
-        'user': SMS_LOGIN,
-        'pwd': SMS_PASSWORD,
-        'from_text': SMS_FROM},
-    6: {
-        'url': SMS_URL.WEBSZK_URL,
-        'user': SMS_LOGIN,
-        'pwd': SMS_PASSWORD,
-        'from_text': SMS_FROM},
-}
-
-
-def response_check(response, operator_type, status):
-    if status == 0:
-        response_processing = {
-            0 or 1: {
-                'Status': response.get('status'),
-                'Code': response.get('code'),
-                'Balance': response.get('balance'),
-                'ID_Call': response.get('call_id')},
-
-            2: {'Status': response.get('id'),
-                'Code': response.get('code'),
-                'ID_Call': response.get('cnt'),
-                'Balance': response.get('balance')},
-
-            3: {'Status': response.get('status'),
-                'Code': response.get('code'),
-                'Balance': response.get('balance'),
-                'ID_Call': response.get('unique_request_id')}}
-        return response_processing[operator_type]
-
-    if status == 1:
-        response_processing = {
-            0 or 1: {
-                'Status': response.get('status'),
-                'Status_code': response.get('status_code'),
-                'Status_text': response.get('status_text')},
-            2: {'Status': response.get('status'),
-                'Status_code': response.get('error_code'),
-                'Status_text': response.get('error')},
-            3: {'Status': response.get('status'),
-                'Status_code': response.get('code'),
-                'Status_text': response.get('error')}}
-        return response_processing[operator_type]
-
-    return None
+    @classmethod
+    def sms_url(cls, url_type: int) -> Optional[str]:
+        return cls().__get_sms_url(url_type)

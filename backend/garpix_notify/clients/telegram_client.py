@@ -18,7 +18,7 @@ class TelegramClient:
             self.TELEGRAM_DISABLE_PAGE_PREVIEW = self.config.telegram_disable_web_page_preview
             self.TELEGRAM_SENDING_WITHOUT_REPLY = self.config.telegram_allow_sending_without_reply
             self.TELEGRAM_TIMEOUT = self.config.telegram_timeout
-        except Exception:
+        except Exception:   # noqa
             self.IS_TELEGRAM_ENABLED = True
             self.TELEGRAM_PARSE_MODE = getattr(settings, 'TELEGRAM_PARSE_MODE', None)
             self.TELEGRAM_DISABLE_NOTIFICATION = getattr(settings, 'TELEGRAM_DISABLE_NOTIFICATION', False)
@@ -34,12 +34,14 @@ class TelegramClient:
 
     def __send_telegram_client(self):
         import telegram
-        bot = telegram.Bot(token=self.TELEGRAM_API_KEY)
-        parse_mode = self.TELEGRAM_PARSE_MODE if self.TELEGRAM_PARSE_MODE != '' else None
+
         if not self.IS_TELEGRAM_ENABLED:
             self.notify.state = STATE.DISABLED
             self.notify.to_log('Not sent (sending is prohibited by settings)')
             return
+
+        bot = telegram.Bot(token=self.TELEGRAM_API_KEY)
+        parse_mode = self.TELEGRAM_PARSE_MODE if self.TELEGRAM_PARSE_MODE != '' else None
 
         try:
             result = False
