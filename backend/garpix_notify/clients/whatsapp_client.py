@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.db import DatabaseError
 from django.utils.timezone import now
 
 from twilio.rest import Client
@@ -18,7 +19,7 @@ class WhatsAppClient:
             self.WHATS_APP_AUTH_TOKEN = self.config.whatsapp_auth_token
             self.WHATS_APP_ACCOUNT_SID = self.config.whatsapp_account_sid
             self.WHATS_APP_NUMBER_SENDER = self.config.whatsapp_sender
-        except Exception:   # noqa
+        except DatabaseError:
             self.IS_WHATS_APP_ENABLED = getattr(settings, 'IS_WHATS_APP_ENABLED', True)
             self.WHATS_APP_AUTH_TOKEN = getattr(settings, 'WHATS_APP_AUTH_TOKEN', None)
             self.WHATS_APP_ACCOUNT_SID = getattr(settings, 'WHATS_APP_ACCOUNT_SID', None)

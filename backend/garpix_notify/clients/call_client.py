@@ -3,6 +3,7 @@ import enum
 
 from typing import Optional, Tuple
 from django.conf import settings
+from django.db import DatabaseError
 from django.utils.timezone import now
 
 from garpix_notify.models.config import NotifyConfig
@@ -22,7 +23,7 @@ class CallClient:
             self.config = NotifyConfig.get_solo()
             self.IS_CALL_ENABLED = self.config.is_call_enabled
             self.CALL_URL_TYPE = self.config.call_url_type
-        except Exception:  # noqa
+        except DatabaseError:
             self.IS_CALL_ENABLED = getattr(settings, 'IS_CALL_ENABLED', True)
             self.CALL_URL_TYPE = getattr(settings, 'CALL_URL_TYPE', 0)
 

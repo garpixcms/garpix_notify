@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.db import DatabaseError
 from django.utils.timezone import now
 
 from garpix_notify.models.config import NotifyConfig
@@ -18,7 +19,7 @@ class TelegramClient:
             self.TELEGRAM_DISABLE_PAGE_PREVIEW = self.config.telegram_disable_web_page_preview
             self.TELEGRAM_SENDING_WITHOUT_REPLY = self.config.telegram_allow_sending_without_reply
             self.TELEGRAM_TIMEOUT = self.config.telegram_timeout
-        except Exception:   # noqa
+        except DatabaseError:
             self.IS_TELEGRAM_ENABLED = True
             self.TELEGRAM_PARSE_MODE = getattr(settings, 'TELEGRAM_PARSE_MODE', None)
             self.TELEGRAM_DISABLE_NOTIFICATION = getattr(settings, 'TELEGRAM_DISABLE_NOTIFICATION', False)

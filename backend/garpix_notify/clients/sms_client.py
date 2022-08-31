@@ -1,5 +1,6 @@
 import requests
 from django.conf import settings
+from django.db import DatabaseError
 from django.utils.timezone import now
 
 from garpix_notify.models.config import NotifyConfig
@@ -16,7 +17,7 @@ class SMSClient:
             self.config = NotifyConfig.get_solo()
             self.IS_SMS_ENABLED = self.config.is_sms_enabled
             self.SMS_URL_TYPE = self.config.sms_url_type
-        except Exception:   # noqa
+        except DatabaseError:
             self.IS_SMS_ENABLED = getattr(settings, 'IS_SMS_ENABLED', True)
             self.SMS_URL_TYPE = getattr(settings, 'SMS_URL_TYPE', 0)
 

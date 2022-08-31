@@ -6,6 +6,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 
 from django.conf import settings
+from django.db import DatabaseError
 from django.utils.timezone import now
 from django.utils.safestring import mark_safe
 from django.template import Template, Context
@@ -26,7 +27,7 @@ class EmailClient:
             self.config = NotifyConfig.get_solo()
             self.IS_EMAIL_ENABLED = self.config.is_email_enabled
             self.EMAIL_MALLING_TYPE = self.config.email_malling
-        except Exception:   # noqa
+        except DatabaseError:
             self.IS_EMAIL_ENABLED = getattr(settings, 'IS_EMAIL_ENABLED', True)
             self.EMAIL_MALLING_TYPE = getattr(settings, 'EMAIL_MALLING', EMAIL_MALLING.BCC)
 
