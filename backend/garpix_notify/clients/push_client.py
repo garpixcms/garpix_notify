@@ -46,7 +46,7 @@ class PushClient:
             devices.send_message(title=self.notify.subject, body=self.notify.text, data=data_json)
             self.notify.state = STATE.DELIVERED
             self.notify.sent_at = now()
-        except Exception as e:  # noqa
+        except Exception as e:
             self.notify.state = STATE.REJECTED
             self.notify.to_log(str(e))
 
