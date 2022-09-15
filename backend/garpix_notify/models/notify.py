@@ -67,8 +67,8 @@ class Notify(NotifyMixin, UserNotifyMixin, NotifyMethodsMixin):
             self.telegram_chat_id = self.user.telegram_chat_id if self.user.telegram_chat_id else self.telegram_chat_id
             self.viber_chat_id = self.user.viber_chat_id if self.user.viber_chat_id else self.viber_chat_id
 
-        # if self.phone is not None:
-        #     self.phone = re.sub("[^0-9]", "", self.phone)
+        if self.phone is not None:
+            self.phone = re.sub("[^0-9]", "", self.phone)
 
     def _start_send(self):  # noqa
 
