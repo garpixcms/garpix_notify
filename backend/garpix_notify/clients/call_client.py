@@ -53,15 +53,15 @@ class CallClient:
 
         phone = f'{self.notify.phone}'
 
-        call_data_service = SendDataService()
+        send_data_service = SendDataService()
 
         try:
-            url = call_data_service.url_dict_call[self.CALL_URL_TYPE].format(**call_data_service.operator_call[self.CALL_URL_TYPE], to=phone)
+            url = send_data_service.url_dict_call[self.CALL_URL_TYPE].format(**send_data_service.operator_call[self.CALL_URL_TYPE], to=phone)
             response_url = requests.get(url)
             response_dict = response_url.json()
             value = self._value_checker(response_dict)
 
-            response = call_data_service.response_check(response=response_dict, operator_type=self.CALL_URL_TYPE, status=value)
+            response = send_data_service.response_check(response=response_dict, operator_type=self.CALL_URL_TYPE, status=value)
 
             self.__save_to_log(response=response, value=value)
         except Exception as e:
