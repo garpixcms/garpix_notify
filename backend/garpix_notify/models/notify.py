@@ -18,7 +18,7 @@ from .template import NotifyTemplate
 from ..exceptions import TemplatesNotExists, IsInstanceException
 from ..mixins import UserNotifyMixin
 from ..mixins.notify_method_mixin import NotifyMethodsMixin
-from ..utils.send_data import url_dict_call, operator_call, response_check
+from ..utils.send_data import SendDataService
 from ..clients import SMSClient, EmailClient, CallClient, TelegramClient, ViberClient, PushClient, WhatsAppClient
 
 NotifyMixin = import_string(settings.GARPIX_NOTIFY_MIXIN)
@@ -63,7 +63,7 @@ class Notify(NotifyMixin, UserNotifyMixin, NotifyMethodsMixin):
     def _get_sender(self):
         if self.user:
             self.email = self.user.email if self.user.email else self.email
-            self.phone = self.user.phone if self.user.phone else self.phone
+            self.phone = str(self.user.phone) if self.user.phone else str(self.phone)
             self.telegram_chat_id = self.user.telegram_chat_id if self.user.telegram_chat_id else self.telegram_chat_id
             self.viber_chat_id = self.user.viber_chat_id if self.user.viber_chat_id else self.viber_chat_id
 
@@ -245,6 +245,8 @@ class Notify(NotifyMixin, UserNotifyMixin, NotifyMethodsMixin):
     def call(phone: str, user: User = None, url: str = None, **kwargs):
         call_url_type: int = CallClient.get_url_type()
 
+        send_data_service = SendDataService()
+
         if user and not isinstance(user, User):
             raise IsInstanceException
 
@@ -254,14 +256,14 @@ class Notify(NotifyMixin, UserNotifyMixin, NotifyMethodsMixin):
         if url is not None:
             url = url
         else:
-            url = url_dict_call[call_url_type]
+            url = send_data_service.url_dict_call[call_url_type]
 
-        main_url = url.format(**operator_call[call_url_type], to=phone, **kwargs)
+        main_url = url.format(**send_data_service.operator_call[call_url_type], to=phone, **kwargs)
         response_url = requests.get(main_url)
         response_dict = response_url.json()
         value = CallClient.get_value_checker(response_dict)
 
-        response = response_check(response=response_dict, operator_type=call_url_type, status=value)
+        response = send_data_service.response_check(response=response_dict, operator_type=call_url_type, status=value)
         if value == "OK":
             return '{Code}'.format(**response)
         else:

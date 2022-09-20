@@ -1,3 +1,7 @@
+### 5.11.4 (19.09.2022)
+
+- Fixed bugs with phone field and sms client config
+
 ### 5.11.3 (24.08.2022)
 
 SystemNotify:
