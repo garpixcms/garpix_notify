@@ -5,7 +5,7 @@ from django.utils.timezone import now
 from garpix_notify.models.config import NotifyConfig
 from garpix_notify.models.choices import STATE, SMS_URL
 from garpix_notify.utils.receiving import ReceivingUsers
-from garpix_notify.utils.send_data import url_dict_sms, operator_sms
+from garpix_notify.utils.send_data import SendDataService
 
 
 class SMSClient:
@@ -28,6 +28,7 @@ class SMSClient:
             return
 
         try:
+            send_data_service = SendDataService()
             users_list = self.notify.users_list.all()
             if not users_list.exists():
                 phones: str = self.notify.phone
@@ -35,7 +36,8 @@ class SMSClient:
                 phones_list: list = ReceivingUsers.run_receiving_users(users_list, 'phone')
                 phones = ','.join(phones_list)
             msg = str(self.notify.text.replace(' ', '+'))
-            url = url_dict_sms[self.SMS_URL_TYPE].format(**operator_sms[self.SMS_URL_TYPE], to=phones, text=msg)
+            url = send_data_service.url_dict_sms[self.SMS_URL_TYPE].format(
+                **send_data_service.operator_sms[self.SMS_URL_TYPE], to=phones, text=msg)
             response = requests.get(url)
             response_dict = response.json()
             try:
