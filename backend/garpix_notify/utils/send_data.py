@@ -27,7 +27,6 @@ class SendDataService:
             CALL_API_ID = getattr(settings, 'CALL_API_ID', 1234567890)
             CALL_LOGIN = getattr(settings, 'CALL_LOGIN', '')
             CALL_PASSWORD = getattr(settings, 'CALL_PASSWORD', '')
-            CALL_FROM = getattr(settings, 'CALL_FROM', '')
 
         self.url_dict_call = {
             0: '{url}?phone={to}&api_id={api_id}&json=1',
