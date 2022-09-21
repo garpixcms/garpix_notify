@@ -40,7 +40,7 @@ class EmailClient:
         return account
 
     def __render_body(self, mail_from, layout, emails):
-        msg = MIMEMultipart('alternative')
+        msg = MIMEMultipart('mixed')
         if len(emails) > 1:
             if self.EMAIL_MALLING_TYPE == EMAIL_MALLING.BCC:
                 msg['BCC'] = ', '.join(emails)
