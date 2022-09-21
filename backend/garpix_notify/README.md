@@ -47,13 +47,14 @@ MIGRATION_MODULES = {
 }
 ```
 
-Add mixin to settings:
+Add mixins to settings if you need to add extra functionality to Notify models:
 
 ```python
 
 # settings.py
    
-GARPIX_NOTIFY_MIXIN = 'app.models.notify_mixin.NotifyMixin'
+GARPIX_NOTIFY_MIXIN = 'app.models.notify_mixin.NotifyMixin'  
+GARPIX_SYSTEM_NOTIFY_MIXIN = 'app.models.notify_mixin.SystemNotifyMixin'  
 ```
 
 Create your custom user model and add `AUTH_USER_MODEL` to `app/settings.py`:

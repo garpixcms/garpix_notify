@@ -21,7 +21,7 @@ from ..mixins.notify_method_mixin import NotifyMethodsMixin
 from ..utils.send_data import SendDataService
 from ..clients import SMSClient, EmailClient, CallClient, TelegramClient, ViberClient, PushClient, WhatsAppClient
 
-NotifyMixin = import_string(settings.GARPIX_NOTIFY_MIXIN)
+NotifyMixin = import_string(getattr(settings, 'GARPIX_NOTIFY_MIXIN', 'garpix_notify.mixins.notify_mixin.NotifyMixin'))
 
 User = get_user_model()
 

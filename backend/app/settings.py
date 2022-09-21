@@ -235,6 +235,7 @@ CHANNEL_LAYERS = {
 }
 
 GARPIX_NOTIFY_MIXIN = 'garpix_notify.mixins.notify_mixin.NotifyMixin'
+GARPIX_SYSTEM_NOTIFY_MIXIN = 'garpix_notify.mixins.notify_mixin.NotifyMixin'
 
 DEBUG_TOOLBAR = os.getenv('DEBUG_TOOLBAR', False)
 
