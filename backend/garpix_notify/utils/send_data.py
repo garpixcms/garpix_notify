@@ -5,7 +5,9 @@ from garpix_notify.models.config import NotifyConfig
 
 
 class SendDataService:
-    def __int__(self):
+
+    def __init__(self):
+
         try:
             config = NotifyConfig.get_solo()
             SMS_API_ID = config.sms_api_id
@@ -94,6 +96,8 @@ class SendDataService:
                 'pwd': SMS_PASSWORD,
                 'from_text': SMS_FROM},
         }
+
+        print(self.url_dict_sms)
 
     @staticmethod
     def response_check(response, operator_type, status):
