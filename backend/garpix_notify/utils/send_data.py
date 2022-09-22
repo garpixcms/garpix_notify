@@ -97,8 +97,6 @@ class SendDataService:
                 'from_text': SMS_FROM},
         }
 
-        print(self.url_dict_sms)
-
     @staticmethod
     def response_check(response, operator_type, status):
         if status == 0:
