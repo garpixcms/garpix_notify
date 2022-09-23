@@ -5,7 +5,9 @@ from garpix_notify.models.config import NotifyConfig
 
 
 class SendDataService:
-    def __int__(self):
+
+    def __init__(self):
+
         try:
             config = NotifyConfig.get_solo()
             SMS_API_ID = config.sms_api_id

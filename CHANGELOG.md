@@ -1,3 +1,7 @@
+### 5.11.6 (22.09.2022)
+
+- Fixed bug with sms client config
+
 ### 5.11.5 (21.09.2022)
 
 - Default mixins to Notify models added
