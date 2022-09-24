@@ -9,12 +9,13 @@ from django.utils import timezone
 from django.db.models import Manager
 from django.db import models, transaction
 from django.contrib.auth import get_user_model
+from django.utils.html import format_html
 from django.utils.module_loading import import_string
 
+from .system_log import SystemNotifyErrorLog
 from .choices import TYPE, STATE
 from ..utils import ReceivingUsers
 from .template import NotifyTemplate
-from ..mixins.notify_method_mixin import NotifyMethodsMixin
 from ..exceptions import IsInstanceException, DataTypeException, ArgumentsEmptyException, UsersListIsNone
 
 SystemNotifyMixin = import_string(getattr(settings, 'GARPIX_SYSTEM_NOTIFY_MIXIN', 'garpix_notify.mixins.notify_mixin.NotifyMixin'))
@@ -22,7 +23,7 @@ SystemNotifyMixin = import_string(getattr(settings, 'GARPIX_SYSTEM_NOTIFY_MIXIN'
 User = get_user_model()
 
 
-class SystemNotify(SystemNotifyMixin, NotifyMethodsMixin):
+class SystemNotify(SystemNotifyMixin, models.Model):
     """
     Системное уведомление
     """
@@ -30,11 +31,11 @@ class SystemNotify(SystemNotifyMixin, NotifyMethodsMixin):
     user: User = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, on_delete=models.SET_NULL,
                                    related_name='system_notifies', verbose_name='Пользователь (получатель)')
 
-    type = models.IntegerField('Тип', default=TYPE.SYSTEM, choices=TYPE.CHOICES, blank=True)
     state = models.IntegerField('Состояние', choices=STATE.CHOICES, default=STATE.WAIT)
     event = models.IntegerField('Событие', choices=settings.CHOICES_NOTIFY_EVENT, blank=True, null=True)
-
     room_name = models.CharField('Название комнаты', max_length=255, null=True, blank=True)
+
+    type = models.IntegerField('Тип', default=TYPE.SYSTEM, choices=TYPE.CHOICES, blank=True)
     data_json = models.JSONField('Данные JSON', blank=True, null=True, default=dict)
 
     created_at = models.DateTimeField('Дата создания', auto_now_add=True)
@@ -151,6 +152,23 @@ class SystemNotify(SystemNotifyMixin, NotifyMethodsMixin):
             self.state = STATE.REJECTED
             self.to_log(str(e))
         self.save(update_fields=['state', 'sent_at'])
+
+    def to_log(self, error_text) -> None:
+        log: SystemNotifyErrorLog = SystemNotifyErrorLog(notify=self, error=error_text)
+        log.save()
+
+    def get_format_state(self):
+        if self.state == STATE.WAIT:
+            return format_html('<span style="color:orange;">В ожидании</span>')
+        elif self.state == STATE.DELIVERED:
+            return format_html('<span style="color:green;">Отправлено</span>')
+        elif self.state == STATE.REJECTED:
+            return format_html('<span style="color:red;">Отклонено</span>')
+        elif self.state == STATE.DISABLED:
+            return format_html('<span style="color:red;">Отправка запрещена</span>')
+        return format_html('<span style="color:black;">Неизвестный статус</span>')
+
+    get_format_state.short_description = 'Статус'
 
     class Meta:
         verbose_name = 'Ситемное уведомление'

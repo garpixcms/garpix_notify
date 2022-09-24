@@ -1,9 +1,9 @@
 from typing import Optional
 from django.conf import settings
+from django.db import DatabaseError, ProgrammingError
 
 from garpix_notify.models.choices import CALL_URL, SMS_URL
 from garpix_notify.models.config import NotifyConfig
-
 
 
 class SendData:
@@ -15,7 +15,7 @@ class SendData:
             self.SMS_LOGIN = self.config.sms_login
             self.SMS_PASSWORD = self.config.sms_password
             self.SMS_FROM = self.config.sms_from
-        except Exception: # noqa
+        except (DatabaseError, ProgrammingError):
             self.SMS_API_ID = getattr(settings, 'SMS_API_ID', 1234567890)
             self.SMS_LOGIN = getattr(settings, 'SMS_LOGIN', '')
             self.SMS_PASSWORD = getattr(settings, 'SMS_PASSWORD', '')
@@ -24,7 +24,7 @@ class SendData:
             self.CALL_API_ID = self.config.call_api_id
             self.CALL_LOGIN = self.config.call_login
             self.CALL_PASSWORD = self.config.call_password
-        except Exception: # noqa
+        except (DatabaseError, ProgrammingError):
             self.CALL_API_ID = getattr(settings, 'CALL_API_ID', 1234567890)
             self.CALL_LOGIN = getattr(settings, 'CALL_LOGIN', '')
             self.CALL_PASSWORD = getattr(settings, 'CALL_PASSWORD', '')

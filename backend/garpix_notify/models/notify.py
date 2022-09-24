@@ -1,17 +1,19 @@
 import json
 import re
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 import requests
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import models, transaction
 from django.db.models import Manager
+from django.utils.html import format_html
 from django.utils.module_loading import import_string
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+from .log import NotifyErrorLog
 from .user_list import NotifyUserList
 from .category import NotifyCategory
 from .choices import TYPE, STATE
@@ -19,7 +21,6 @@ from .file import NotifyFile
 from .template import NotifyTemplate
 from ..exceptions import TemplatesNotExists, IsInstanceException
 from ..mixins import UserNotifyMixin
-from ..mixins.notify_method_mixin import NotifyMethodsMixin
 from ..utils.send_data import SendData
 
 from ..clients import SMSClient, EmailClient, CallClient, TelegramClient, ViberClient, PushClient, WhatsAppClient
@@ -29,7 +30,7 @@ NotifyMixin = import_string(getattr(settings, 'GARPIX_NOTIFY_MIXIN', 'garpix_not
 User = get_user_model()
 
 
-class Notify(NotifyMixin, UserNotifyMixin, NotifyMethodsMixin):
+class Notify(NotifyMixin, UserNotifyMixin):
     """
     Уведомление
     """
@@ -43,22 +44,23 @@ class Notify(NotifyMixin, UserNotifyMixin, NotifyMethodsMixin):
                               help_text='Используется только в случае отсутствия указанного пользователя')
     sender_email = models.EmailField(max_length=255, blank=True, null=True, verbose_name='Email Отправителя')
 
+    state = models.IntegerField('Состояние', choices=STATE.CHOICES, default=STATE.WAIT)
+    event = models.IntegerField('Событие', choices=settings.CHOICES_NOTIFY_EVENT, blank=True, null=True)
+    room_name = models.CharField('Название комнаты', max_length=255, null=True, blank=True)
     type = models.IntegerField(choices=TYPE.CHOICES, verbose_name='Тип')
-    state = models.IntegerField(choices=STATE.CHOICES, default=STATE.WAIT, verbose_name='Состояние')
     category = models.ForeignKey(NotifyCategory, on_delete=models.CASCADE, related_name='notifies',
                                  verbose_name='Категория')
-    event = models.IntegerField(choices=settings.CHOICES_NOTIFY_EVENT, blank=True, null=True, verbose_name='Событие')
+
     files = models.ManyToManyField(NotifyFile, verbose_name='Файлы')
 
     is_read = models.BooleanField(default=False, verbose_name='Прочитано')
     data_json = models.TextField(blank=True, null=True, verbose_name='Данные пуш-уведомления (JSON)')
-    room_name = models.CharField(max_length=255, null=True, blank=True, verbose_name='Название комнаты')
 
     users_list = models.ManyToManyField(NotifyUserList, blank=True, verbose_name='Списки пользователей для рассылки')
 
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     send_at = models.DateTimeField(blank=True, null=True, verbose_name='Время начала отправки')
-    sent_at = models.DateTimeField(blank=True, null=True, verbose_name='Дата отправки')
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
+    sent_at = models.DateTimeField('Дата отправки', blank=True, null=True)
 
     objects = Manager()
 
@@ -75,7 +77,7 @@ class Notify(NotifyMixin, UserNotifyMixin, NotifyMethodsMixin):
         if self.phone is not None:
             self.phone = re.sub("[^0-9]", "", self.phone)
 
-    def _start_send(self):  # noqa
+    def start_send(self):  # noqa
 
         # Если передан пользователь, то перезаписываем данные (если они есть у пользователя)
         self._get_sender()
@@ -101,10 +103,10 @@ class Notify(NotifyMixin, UserNotifyMixin, NotifyMethodsMixin):
     def send(event: int, context: dict, user: User = None, email: str = None, phone: str = None,  # noqa: C901
              files: list = None, data_json: dict = None, viber_chat_id: str = None, room_name: str = None,
              notify_templates: list = None, send_at: datetime = None, send_now: bool = False,
-             user_want_message_check: bool = False, **kwargs) -> list:
+             user_want_message_check: bool = False, **kwargs) -> List[Optional['Notify']]:
 
         if user and not isinstance(user, User):
-            raise IsInstanceException
+            raise IsInstanceException()
 
         instance_list: list = []
 
@@ -133,15 +135,11 @@ class Notify(NotifyMixin, UserNotifyMixin, NotifyMethodsMixin):
             )
 
         if not templates.exists():
-            raise TemplatesNotExists
-
-        if files is None:
-            files = []
+            raise TemplatesNotExists()
 
         file_instances = []
-        for f in files:
-            instance = NotifyFile.objects.create(file=f)
-            file_instances.append(instance)
+        if files:
+            file_instances = list(map(lambda file: NotifyFile.objects.create(file=file), files))
 
         for template in templates:
 
@@ -237,7 +235,7 @@ class Notify(NotifyMixin, UserNotifyMixin, NotifyMethodsMixin):
             instance.save()
 
             if send_now:
-                transaction.on_commit(lambda: instance._start_send())  # noqa
+                transaction.on_commit(lambda: instance.start_send())
 
             instance_list.append(instance)
         return instance_list
@@ -246,10 +244,8 @@ class Notify(NotifyMixin, UserNotifyMixin, NotifyMethodsMixin):
     def call(phone: str, user: User = None, url: str = None, **kwargs) -> Optional[str]:
         call_url_type: int = CallClient.get_url_type()
 
-        send_data_service = SendDataService()
-
         if user and not isinstance(user, User):
-            raise IsInstanceException
+            raise IsInstanceException()
 
         if user is not None:
             phone = user.phone if user.phone else phone
@@ -267,6 +263,23 @@ class Notify(NotifyMixin, UserNotifyMixin, NotifyMethodsMixin):
         if value == "OK":
             return '{Code}'.format(**response)
         return None
+
+    def to_log(self, error_text: str) -> None:
+        log: NotifyErrorLog = NotifyErrorLog(notify=self, error=error_text)
+        log.save()
+
+    def get_format_state(self):
+        if self.state == STATE.WAIT:
+            return format_html('<span style="color:orange;">В ожидании</span>')
+        elif self.state == STATE.DELIVERED:
+            return format_html('<span style="color:green;">Отправлено</span>')
+        elif self.state == STATE.REJECTED:
+            return format_html('<span style="color:red;">Отклонено</span>')
+        elif self.state == STATE.DISABLED:
+            return format_html('<span style="color:red;">Отправка запрещена</span>')
+        return format_html('<span style="color:black;">Неизвестный статус</span>')
+
+    get_format_state.short_description = 'Статус'
 
     class Meta:
         verbose_name = 'Уведомление'

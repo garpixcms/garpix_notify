@@ -6,15 +6,15 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 
 from django.conf import settings
-from django.db import DatabaseError
 from django.utils.timezone import now
 from django.utils.safestring import mark_safe
 from django.template import Template, Context
+from django.db import DatabaseError, ProgrammingError
 
+from garpix_notify.models.choices import STATE, EMAIL_MALLING
 from garpix_notify.models.category import NotifyCategory
 from garpix_notify.models.config import NotifyConfig
 from garpix_notify.models.smtp import SMTPAccount
-from garpix_notify.models.choices import STATE, EMAIL_MALLING
 from garpix_notify.utils import ReceivingUsers
 
 
@@ -27,7 +27,7 @@ class EmailClient:
             self.config = NotifyConfig.get_solo()
             self.IS_EMAIL_ENABLED = self.config.is_email_enabled
             self.EMAIL_MALLING_TYPE = self.config.email_malling
-        except DatabaseError:
+        except (DatabaseError, ProgrammingError):
             self.IS_EMAIL_ENABLED = getattr(settings, 'IS_EMAIL_ENABLED', True)
             self.EMAIL_MALLING_TYPE = getattr(settings, 'EMAIL_MALLING', EMAIL_MALLING.BCC)
 
@@ -53,13 +53,14 @@ class EmailClient:
             msg.attach(html)
 
         for fl in self.notify.files.all():
+            file_name = fl.file.name.split('/')[-1]
             with fl.file.open(mode='rb') as f:
                 part = MIMEApplication(
                     f.read(),
-                    Name=fl.file.name.split('/')[-1]
+                    Name=file_name
                 )
 
-            part['Content-Disposition'] = 'attachment; filename="%s"' % fl.file.name.split('/')[-1]
+            part['Content-Disposition'] = 'attachment; filename="%s"' % file_name
 
             msg.attach(part)
 
@@ -82,7 +83,7 @@ class EmailClient:
         if self.notify.sender_email is None:
             self.notify.sender_email = account.sender
 
-        users_list = self.notify.users_list.all()
+        users_list = self.notify.users_list.all().order_by('-mail_to_all')
 
         if users_list.exists():
             self.emails: list = ReceivingUsers.run_receiving_users(users_list, 'email')

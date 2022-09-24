@@ -1,8 +1,8 @@
 import json
 
 from django.conf import settings
-from django.db import DatabaseError
 from django.utils.timezone import now
+from django.db import DatabaseError, ProgrammingError
 
 from garpix_notify.models.config import NotifyConfig
 from garpix_notify.models.fcm import NotifyDevice
@@ -16,7 +16,7 @@ class PushClient:
         try:
             self.config = NotifyConfig.get_solo()
             self.IS_PUSH_ENABLED = self.config.is_push_enabled
-        except DatabaseError:
+        except (DatabaseError, ProgrammingError):
             self.IS_PUSH_ENABLED = getattr(settings, 'IS_PUSH_ENABLED', True)
 
     def __send_push_client(self):

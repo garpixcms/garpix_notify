@@ -1,9 +1,11 @@
+from typing import Optional
+
 from django.contrib.auth import get_user_model
 
 
 class ReceivingUsers:
 
-    def __init__(self, users_list: list, value: str = None):
+    def __init__(self, users_list: list, value: Optional[str] = None):
         self.receivers = []
         self.users_list = users_list
         self.value = value
@@ -13,11 +15,11 @@ class ReceivingUsers:
         return receivers_list
 
     def __forming_data_list(self, queryset) -> list:
-        data_list = list(map(lambda user: {'user': user,
-                                           'email': user.email,
-                                           'phone': user.phone,
-                                           'viber_chat_id': user.viber_chat_id,
-                                           'telegram_chat_id': user.telegram_chat_id}, queryset))
+        data_list = [{'user': user,
+                      'email': user.email,
+                      'phone': user.phone,
+                      'viber_chat_id': user.viber_chat_id,
+                      'telegram_chat_id': user.telegram_chat_id} for user in queryset]
         return data_list
 
     def __receiving_users(self) -> list:  # noqa: C901

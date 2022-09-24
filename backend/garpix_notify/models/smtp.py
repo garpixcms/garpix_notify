@@ -1,8 +1,10 @@
 from django.conf import settings
 from django.db import models
 from django.db.models import Manager
-from django.utils.timezone import now, timedelta
 from django.utils.html import format_html
+from django.utils.timezone import now, timedelta
+from django.db import DatabaseError, ProgrammingError
+
 from .category import NotifyCategory
 from .config import NotifyConfig
 
@@ -10,7 +12,7 @@ try:
     config = NotifyConfig.get_solo()
     EMAIL_MAX_HOUR_LIMIT = config.email_max_hour_limit
     EMAIL_MAX_DAY_LIMIT = config.email_max_day_limit
-except Exception:  # noqa
+except (DatabaseError, ProgrammingError):
     EMAIL_MAX_HOUR_LIMIT = getattr(settings, 'EMAIL_MAX_HOUR_LIMIT', 240)
     EMAIL_MAX_DAY_LIMIT = getattr(settings, 'EMAIL_MAX_DAY_LIMIT', 240)
 

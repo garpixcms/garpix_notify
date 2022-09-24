@@ -1,4 +1,4 @@
-### 5.12.0 (31.08.2022)
+### 5.12.0 (24.09.2022)
 
 - Now you need to specify the parameter user_want_message_check in Notify.send() ,
 - Improved performance, as well as the structure of the application,
