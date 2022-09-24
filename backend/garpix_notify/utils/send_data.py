@@ -5,6 +5,7 @@ from garpix_notify.models.choices import CALL_URL, SMS_URL
 from garpix_notify.models.config import NotifyConfig
 
 
+
 class SendData:
 
     def __init__(self):

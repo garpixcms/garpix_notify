@@ -9,6 +9,8 @@ from django.utils.timezone import now
 from garpix_notify.models.config import NotifyConfig
 from garpix_notify.utils.send_data import SendData
 from garpix_notify.models.choices import STATE, CALL_URL
+from garpix_notify.utils.send_data import SendDataService
+
 
 
 class CallClient:
@@ -98,15 +100,16 @@ class CallClient:
 
         phone = f'{self.notify.phone}'
 
+        send_data_service = SendDataService()
+
         try:
             url = SendData.call_url(self.CALL_URL_TYPE).format(to=phone)
-
             response_url = requests.get(url)
             response_dict = response_url.json()
 
+
             value = self.__value_checker(response_dict)
             response = self.__response_check(response_dict, value)
-
             self.__save_to_log(response, value)
         except Exception as e:
             self.notify.state = STATE.REJECTED

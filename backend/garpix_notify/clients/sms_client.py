@@ -94,6 +94,7 @@ class SMSClient:
             return
 
         try:
+            send_data_service = SendDataService()
             users_list = self.notify.users_list.all()
             if not users_list.exists():
                 phones: str = self.notify.phone
@@ -101,6 +102,7 @@ class SMSClient:
                 phones_list: list = ReceivingUsers.run_receiving_users(users_list, 'phone')
                 phones = ','.join(phones_list)
             msg = str(self.notify.text.replace(' ', '+'))
+
             url = SendData.sms_url(self.SMS_URL_TYPE).format(to=phones, text=msg)
             response = requests.get(url)
             response_dict = response.json()

@@ -17,7 +17,7 @@ from .template import NotifyTemplate
 from ..mixins.notify_method_mixin import NotifyMethodsMixin
 from ..exceptions import IsInstanceException, DataTypeException, ArgumentsEmptyException, UsersListIsNone
 
-SystemNotifyMixin = import_string(settings.GARPIX_SYSTEM_NOTIFY_MIXIN)
+SystemNotifyMixin = import_string(getattr(settings, 'GARPIX_SYSTEM_NOTIFY_MIXIN', 'garpix_notify.mixins.notify_mixin.NotifyMixin'))
 
 User = get_user_model()
 

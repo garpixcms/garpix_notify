@@ -21,9 +21,10 @@ from ..exceptions import TemplatesNotExists, IsInstanceException
 from ..mixins import UserNotifyMixin
 from ..mixins.notify_method_mixin import NotifyMethodsMixin
 from ..utils.send_data import SendData
+
 from ..clients import SMSClient, EmailClient, CallClient, TelegramClient, ViberClient, PushClient, WhatsAppClient
 
-NotifyMixin = import_string(settings.GARPIX_NOTIFY_MIXIN)
+NotifyMixin = import_string(getattr(settings, 'GARPIX_NOTIFY_MIXIN', 'garpix_notify.mixins.notify_mixin.NotifyMixin'))
 
 User = get_user_model()
 
@@ -67,7 +68,7 @@ class Notify(NotifyMixin, UserNotifyMixin, NotifyMethodsMixin):
     def _get_sender(self):
         if self.user:
             self.email = self.user.email if self.user.email else self.email
-            self.phone = self.user.phone if self.user.phone else self.phone
+            self.phone = str(self.user.phone) if self.user.phone else str(self.phone)
             self.telegram_chat_id = self.user.telegram_chat_id if self.user.telegram_chat_id else self.telegram_chat_id
             self.viber_chat_id = self.user.viber_chat_id if self.user.viber_chat_id else self.viber_chat_id
 
@@ -244,6 +245,8 @@ class Notify(NotifyMixin, UserNotifyMixin, NotifyMethodsMixin):
     @staticmethod
     def call(phone: str, user: User = None, url: str = None, **kwargs) -> Optional[str]:
         call_url_type: int = CallClient.get_url_type()
+
+        send_data_service = SendDataService()
 
         if user and not isinstance(user, User):
             raise IsInstanceException

@@ -32,7 +32,7 @@ class EmailClient:
             self.EMAIL_MALLING_TYPE = getattr(settings, 'EMAIL_MALLING', EMAIL_MALLING.BCC)
 
     def __render_body(self, mail_from: str, layout: NotifyCategory, emails: list) -> MIMEMultipart:
-        msg = MIMEMultipart('alternative')
+        msg = MIMEMultipart('mixed')
         if len(emails) > 1:
             if self.EMAIL_MALLING_TYPE == EMAIL_MALLING.BCC:
                 msg['BCC'] = ', '.join(emails)
