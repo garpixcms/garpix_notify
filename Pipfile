@@ -26,7 +26,6 @@ channels-redis = "==3.4.0"
 asgiref = "==3.3.4"
 twilio = "==7.10.0"
 django-debug-toolbar = "==3.5.0"
-eqator = ">=2.2.0"
 pytest-django = "==4.5.2"
 pytest = "==7.1.2"
 
