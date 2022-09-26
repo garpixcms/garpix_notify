@@ -1,3 +1,6 @@
+### 5.12.1 (26.09.2022)
+- Returned NotifyMethodsMixin.
+
 ### 5.12.0 (24.09.2022)
 
 - Now you need to specify the parameter user_want_message_check in Notify.send() ,
