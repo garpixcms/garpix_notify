@@ -20,7 +20,7 @@ from .choices import TYPE, STATE
 from .file import NotifyFile
 from .template import NotifyTemplate
 from ..exceptions import TemplatesNotExists, IsInstanceException
-from ..mixins import UserNotifyMixin, NotifyMethodsMixin
+from ..mixins import UserNotifyMixin
 from ..utils.send_data import SendData
 
 from ..clients import SMSClient, EmailClient, CallClient, TelegramClient, ViberClient, PushClient, WhatsAppClient
@@ -30,7 +30,7 @@ NotifyMixin = import_string(getattr(settings, 'GARPIX_NOTIFY_MIXIN', 'garpix_not
 User = get_user_model()
 
 
-class Notify(NotifyMixin, UserNotifyMixin, NotifyMethodsMixin):
+class Notify(NotifyMixin, UserNotifyMixin):
     """
     Уведомление
     """

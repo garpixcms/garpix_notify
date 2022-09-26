@@ -3,6 +3,7 @@
 from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
+import garpix_notify.mixins.notify_method_mixin
 
 
 class Migration(migrations.Migration):
@@ -46,5 +47,6 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Лог отправки системного уведомления',
                 'verbose_name_plural': 'Логи отправки системных уведомлений',
             },
+            bases=(models.Model, garpix_notify.mixins.notify_method_mixin.NotifyMethodsMixin),
         ),
     ]

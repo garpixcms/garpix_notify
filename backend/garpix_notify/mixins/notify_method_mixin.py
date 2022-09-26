@@ -1,7 +1,3 @@
-from django.db import models
-
-
-class NotifyMethodsMixin(models.Model):
-
-    class Meta:
-        abstract = True
+class NotifyMethodsMixin:
+    # TODO Выпилить этот костыль
+    pass
