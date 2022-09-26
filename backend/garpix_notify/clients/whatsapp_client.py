@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.utils.timezone import now
+from django.db import DatabaseError, ProgrammingError
 
 from twilio.rest import Client
 
@@ -18,7 +19,7 @@ class WhatsAppClient:
             self.WHATS_APP_AUTH_TOKEN = self.config.whatsapp_auth_token
             self.WHATS_APP_ACCOUNT_SID = self.config.whatsapp_account_sid
             self.WHATS_APP_NUMBER_SENDER = self.config.whatsapp_sender
-        except Exception:
+        except (DatabaseError, ProgrammingError):
             self.IS_WHATS_APP_ENABLED = getattr(settings, 'IS_WHATS_APP_ENABLED', True)
             self.WHATS_APP_AUTH_TOKEN = getattr(settings, 'WHATS_APP_AUTH_TOKEN', None)
             self.WHATS_APP_ACCOUNT_SID = getattr(settings, 'WHATS_APP_ACCOUNT_SID', None)
@@ -32,10 +33,11 @@ class WhatsAppClient:
 
         client = Client(self.WHATS_APP_ACCOUNT_SID, self.WHATS_APP_AUTH_TOKEN)
         text_massage = self.notify.text
-        users_list = self.notify.users_list.all()
+        users_list = self.notify.users_list.all().order_by('-mail_to_all')
+
+        result = False
 
         try:
-            result = False
             if users_list.exists():
                 participants: list = ReceivingUsers.run_receiving_users(users_list, 'phone')
                 if participants:
@@ -53,7 +55,7 @@ class WhatsAppClient:
             else:
                 self.notify.state = STATE.REJECTED
                 self.notify.to_log('REJECTED WITH DATA, please test it.')
-        except Exception as e:  # noqa
+        except Exception as e:
             self.notify.state = STATE.REJECTED
             self.notify.to_log(str(e))
 

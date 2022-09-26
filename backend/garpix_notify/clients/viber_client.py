@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.utils.timezone import now
+from django.db import DatabaseError, ProgrammingError
 
 from viberbot import Api, BotConfiguration
 from viberbot.api.messages import TextMessage
@@ -18,7 +19,7 @@ class ViberClient:
             self.IS_VIBER_ENABLED = self.config.is_viber_enabled
             self.VIBER_API_KEY = self.config.viber_api_key
             self.VIBER_BOT_NAME = self.config.viber_bot_name
-        except Exception:
+        except (DatabaseError, ProgrammingError):
             self.IS_VIBER_ENABLED = getattr(settings, 'IS_VIBER_ENABLED', True)
             self.VIBER_API_KEY = getattr(settings, 'VIBER_API_KEY', '000000000:AAAAAAAAAA-AAAAAAAA-_AAAAAAAAAAAAAA')
             self.VIBER_BOT_NAME = getattr(settings, 'VIBER_BOT_NAME', 'MySuperBot')
@@ -30,7 +31,7 @@ class ViberClient:
             return
 
         text = self.notify.text
-        users_list = self.notify.users_list.all()
+        users_list = self.notify.users_list.all().order_by('-mail_to_all')
 
         viber = Api(BotConfiguration(
             name=self.VIBER_BOT_NAME,
@@ -53,7 +54,7 @@ class ViberClient:
             else:
                 self.notify.state = STATE.REJECTED
                 self.notify.to_log('REJECTED WITH DATA, please test it.')
-        except Exception as e:  # noqa
+        except Exception as e:
             self.notify.state = STATE.REJECTED
             self.notify.to_log(str(e))
 

@@ -1,3 +1,10 @@
+### 5.12.0 (24.09.2022)
+
+- Now you need to specify the parameter user_want_message_check in Notify.send() ,
+- Improved performance, as well as the structure of the application,
+- Minor bugs fixed,
+- Redesigned tests.
+
 ### 5.11.6 (22.09.2022)
 
 - Fixed bug with sms client config
@@ -9,6 +16,7 @@
 ### 5.11.4 (19.09.2022)
 
 - Fixed bugs with phone field and sms client config
+
 
 ### 5.11.3 (24.08.2022)
 

@@ -3,7 +3,6 @@
 from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
-import garpix_notify.mixins.notify_method_mixin
 
 
 class Migration(migrations.Migration):
@@ -34,7 +33,6 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Ситемное уведомление',
                 'verbose_name_plural': 'Системные уведомления',
             },
-            bases=(models.Model, garpix_notify.mixins.notify_method_mixin.NotifyMethodsMixin),
         ),
         migrations.CreateModel(
             name='SystemNotifyErrorLog',

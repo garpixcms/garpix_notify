@@ -1,8 +1,20 @@
+from django.conf import settings
 from django.db import models
-from django.utils.timezone import now, timedelta
+from django.db.models import Manager
 from django.utils.html import format_html
+from django.utils.timezone import now, timedelta
+from django.db import DatabaseError, ProgrammingError
+
 from .category import NotifyCategory
 from .config import NotifyConfig
+
+try:
+    config = NotifyConfig.get_solo()
+    EMAIL_MAX_HOUR_LIMIT = config.email_max_hour_limit
+    EMAIL_MAX_DAY_LIMIT = config.email_max_day_limit
+except (DatabaseError, ProgrammingError):
+    EMAIL_MAX_HOUR_LIMIT = getattr(settings, 'EMAIL_MAX_HOUR_LIMIT', 240)
+    EMAIL_MAX_DAY_LIMIT = getattr(settings, 'EMAIL_MAX_DAY_LIMIT', 240)
 
 
 class SMTPAccount(models.Model):
@@ -24,47 +36,54 @@ class SMTPAccount(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
 
+    objects = Manager()
+
     @classmethod
     def get_free_smtp(cls):
         """
         Проверяет и отдает один аккаунт SMTP, с которого можно отправить письмо
         """
-        config = NotifyConfig.objects.get()
+        account_smtp = None
 
         hour_limit = now() - timedelta(hours=1)
         day_limit = now() - timedelta(days=1)
 
         accounts = cls.objects.filter(is_active=True).distinct()
 
-        for account in accounts:
+        if accounts.exists():
 
-            if account.email_hour_used_date < hour_limit:
-                account.email_hour_used_date = now()
-                account.email_hour_used_times = 0
-            elif account.email_hour_used_times > config.email_max_hour_limit:
-                continue
+            for account in accounts:
 
-            if account.email_day_used_date < day_limit:
-                account.email_day_used_date = now()
-                account.email_day_used_times = 0
-            elif account.email_day_used_times > config.email_max_day_limit:
-                continue
+                if account.email_hour_used_date < hour_limit:
+                    account.email_hour_used_date = now()
+                    account.email_hour_used_times = 0
+                elif account.email_hour_used_times > EMAIL_MAX_HOUR_LIMIT:
+                    continue
 
-            account.email_hour_used_times += 1
-            account.email_day_used_times += 1
-            account.save()
-            return account
+                if account.email_day_used_date < day_limit:
+                    account.email_day_used_date = now()
+                    account.email_day_used_times = 0
+                elif account.email_day_used_times > EMAIL_MAX_DAY_LIMIT:
+                    continue
+
+                account.email_hour_used_times += 1
+                account.email_day_used_times += 1
+                account.save()
+                account_smtp = account
+                break
+
+        return account_smtp
 
     def is_worked_now(self):
-        config = NotifyConfig.objects.get()
+
         hour_limit = now() - timedelta(hours=1)
         day_limit = now() - timedelta(days=1)
 
-        if self.email_day_used_times >= config.email_max_day_limit and self.email_day_used_date > day_limit:
+        if self.email_day_used_times >= EMAIL_MAX_DAY_LIMIT and self.email_day_used_date > day_limit:
             return format_html('<span style="color:red;">Превышен суточный лимит</span>')
         elif not self.is_active:
             return format_html('<span style="color:red;">Отключен</span>')
-        elif self.email_hour_used_times >= config.email_max_hour_limit and self.email_hour_used_date > hour_limit:
+        elif self.email_hour_used_times >= EMAIL_MAX_HOUR_LIMIT and self.email_hour_used_date > hour_limit:
             return format_html('<span style="color:orange;">Превышен часовой лимит</span>')
         else:
             return format_html('<span style="color:green;">Включен</span>')

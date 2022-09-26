@@ -18,4 +18,4 @@ def example_send_notify(request):
         email='example@garpix.com',
         send_at=(datetime.datetime.now() + datetime.timedelta(days=1))
     )
-    return render(request, 'example.html')
+    return render(request, 'example.html', status=201)

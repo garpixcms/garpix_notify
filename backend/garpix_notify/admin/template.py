@@ -55,6 +55,6 @@ class NotifyTemplateAdmin(admin.ModelAdmin):
                 category=obj.category,
             )
             instance.save()
-            instance._start_send()
+            instance.start_send()
             return HttpResponseRedirect(".")
         return super().response_change(request, obj)
