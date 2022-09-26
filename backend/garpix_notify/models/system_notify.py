@@ -14,6 +14,7 @@ from django.utils.module_loading import import_string
 
 from .system_log import SystemNotifyErrorLog
 from .choices import TYPE, STATE
+from ..mixins import NotifyMethodsMixin
 from ..utils import ReceivingUsers
 from .template import NotifyTemplate
 from ..exceptions import IsInstanceException, DataTypeException, ArgumentsEmptyException, UsersListIsNone
@@ -23,7 +24,7 @@ SystemNotifyMixin = import_string(getattr(settings, 'GARPIX_SYSTEM_NOTIFY_MIXIN'
 User = get_user_model()
 
 
-class SystemNotify(SystemNotifyMixin, models.Model):
+class SystemNotify(SystemNotifyMixin, NotifyMethodsMixin, models.Model):
     """
     Системное уведомление
     """
