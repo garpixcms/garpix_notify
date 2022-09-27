@@ -1,4 +1,7 @@
-### 5.12.1-5.12.2 (26.09.2022)
+### 5.12.4 (27.09.2022)
+- An email with html, text and attachments is now formed correctly.
+
+### 5.12.1-5.12.3 (26.09.2022)
 - Returned NotifyMethodsMixin.
 
 ### 5.12.0 (24.09.2022)

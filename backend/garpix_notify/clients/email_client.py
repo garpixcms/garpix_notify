@@ -32,6 +32,7 @@ class EmailClient:
             self.EMAIL_MALLING_TYPE = getattr(settings, 'EMAIL_MALLING', EMAIL_MALLING.BCC)
 
     def __render_body(self, mail_from: str, layout: NotifyCategory, emails: list) -> MIMEMultipart:
+        # =============================== Основная часть письма ===========================================
         msg = MIMEMultipart('mixed')
         if len(emails) > 1:
             if self.EMAIL_MALLING_TYPE == EMAIL_MALLING.BCC:
@@ -40,29 +41,35 @@ class EmailClient:
                 msg['СС'] = ', '.join(emails)
         else:
             msg['To'] = ''.join(emails)
+
         msg['Subject'] = Header(self.notify.subject, 'utf-8')
         msg['From'] = mail_from
 
+        if self.notify.files.exists():
+            for fl in self.notify.files.all():
+                file_name = fl.file.name.split('/')[-1]
+                with fl.file.open(mode='rb') as f:
+                    part = MIMEApplication(
+                        f.read(),
+                        Name=file_name
+                    )
+
+                part['Content-Disposition'] = 'attachment; filename="%s"' % file_name
+
+                msg.attach(part)
+
+        # =============================== Часть письма с текстом ==========================================
+        msg_text = MIMEMultipart('alternative')
         text = MIMEText(self.notify.text, 'plain', 'utf-8')
-        msg.attach(text)
+        msg_text.attach(text)
 
         if self.notify.html:
             template = Template(layout.template)
             context = Context({'text': mark_safe(self.notify.html)})
             html = MIMEText(mark_safe(template.render(context)), 'html', 'utf-8')
-            msg.attach(html)
+            msg_text.attach(html)
 
-        for fl in self.notify.files.all():
-            file_name = fl.file.name.split('/')[-1]
-            with fl.file.open(mode='rb') as f:
-                part = MIMEApplication(
-                    f.read(),
-                    Name=file_name
-                )
-
-            part['Content-Disposition'] = 'attachment; filename="%s"' % file_name
-
-            msg.attach(part)
+        msg.attach(msg_text)
 
         return msg
 
