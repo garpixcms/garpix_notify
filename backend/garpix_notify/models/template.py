@@ -1,3 +1,5 @@
+from typing import Optional, List
+
 from django.db import models
 from django.conf import settings
 from django.db.models import Manager
@@ -33,6 +35,9 @@ class NotifyTemplate(UserNotifyMixin):
     user_lists = models.ManyToManyField(NotifyUserList, blank=True, verbose_name='Списки пользователей для рассылки')
 
     objects = Manager()
+
+    def __str__(self):
+        return self.title
 
     def render_subject(self, ct):
         template = Template(self.subject)
@@ -75,8 +80,21 @@ class NotifyTemplate(UserNotifyMixin):
             data = {}
         return data
 
-    def __str__(self):
-        return self.title
+    @staticmethod
+    def get_blank_events_message() -> Optional[str]:
+        """ Метод возвращает сообщение о том, что есть Ивенты без шаблонов. """
+        message: Optional[str] = None
+        events = settings.NOTIFY_EVENTS.keys()
+        notify_templates_events = NotifyTemplate.objects.filter(is_active=True).values_list('event', flat=True)
+        events_without_templates: List[Optional[int]] = [
+            settings.NOTIFY_EVENTS.get(event_id) for event_id in events if event_id not in notify_templates_events
+        ]
+        if events_without_templates:
+            names_events_without_templates: str = ', '.join(
+                map(lambda event: event.get('title'), events_without_templates)
+            )
+            message = 'Не найдено активных шаблонов для ивентов: ' + names_events_without_templates
+        return message
 
     class Meta:
         verbose_name = 'Шаблон'
