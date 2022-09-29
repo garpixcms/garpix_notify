@@ -1,4 +1,4 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from ..models.template import NotifyTemplate
 from ..models.notify import Notify
 from django.http import HttpResponseRedirect
@@ -37,12 +37,12 @@ class NotifyTemplateAdmin(admin.ModelAdmin):
     def create_mailing(self, request, queryset):
         count = Notify.send(event=None, context={}, notify_templates=queryset)
         self.message_user(request, 'Рассылка создана, кол-во сообщений: {}'.format(count))
+
     create_mailing.short_description = "Сделать рассылку"
 
     def response_change(self, request, obj):
         from ..models.notify import Notify
         if obj.user_lists and "_send_now" in request.POST:
-
             context = obj.get_test_data()
             template = obj
             instance = Notify.objects.create(
@@ -58,3 +58,9 @@ class NotifyTemplateAdmin(admin.ModelAdmin):
             instance.start_send()
             return HttpResponseRedirect(".")
         return super().response_change(request, obj)
+
+    def get_changelist(self, request, **kwargs):
+        events_message = NotifyTemplate.get_blank_events_message()
+        if events_message:
+            self.message_user(request, events_message, level=messages.WARNING)
+        return super().get_changelist(request, **kwargs)

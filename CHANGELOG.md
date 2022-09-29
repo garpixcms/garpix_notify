@@ -1,3 +1,7 @@
+### 5.12.5 (28.09.2022)
+- Added a warning in the admin panel that there are events without templates,
+- Removed the exception that no templates were found from the send method.
+
 ### 5.12.4 (27.09.2022)
 - An email with html, text and attachments is now formed correctly.
 

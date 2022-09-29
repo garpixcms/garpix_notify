@@ -19,7 +19,7 @@ from .category import NotifyCategory
 from .choices import TYPE, STATE
 from .file import NotifyFile
 from .template import NotifyTemplate
-from ..exceptions import TemplatesNotExists, IsInstanceException
+from ..exceptions import IsInstanceException
 from ..mixins import UserNotifyMixin
 from ..utils.send_data import SendData
 
@@ -75,7 +75,7 @@ class Notify(NotifyMixin, UserNotifyMixin):
             self.viber_chat_id = self.user.viber_chat_id if self.user.viber_chat_id else self.viber_chat_id
 
         if self.phone is not None:
-            self.phone = re.sub("[^0-9]", "", self.phone)
+            self.phone = re.sub(r"\D", "", self.phone)
 
     def start_send(self):  # noqa
 
@@ -133,9 +133,6 @@ class Notify(NotifyMixin, UserNotifyMixin):
                 .prefetch_related('user_lists')
                 .filter(event=event, is_active=True)
             )
-
-        if not templates.exists():
-            raise TemplatesNotExists()
 
         file_instances = []
         if files:
