@@ -1,4 +1,5 @@
 import json
+import os
 import re
 from datetime import datetime
 from typing import Optional, List
@@ -62,6 +63,8 @@ class Notify(NotifyMixin, UserNotifyMixin):
     created_at = models.DateTimeField('Дата создания', auto_now_add=True)
     sent_at = models.DateTimeField('Дата отправки', blank=True, null=True)
 
+    is_delete_after = models.BooleanField(default=False, verbose_name='Удалять после отправки')
+
     objects = Manager()
 
     def __str__(self):
@@ -97,7 +100,17 @@ class Notify(NotifyMixin, UserNotifyMixin):
         elif self.type == TYPE.WHATSAPP:
             WhatsAppClient.send_whatsapp(self)
 
-        self.save()
+        if self.is_delete_after and self.state == STATE.DELIVERED:
+
+            for file in self.files.all():
+                try:
+                    os.remove(f'{settings.MEDIA_ROOT}/{file.file}')
+                except OSError:
+                    pass
+                file.delete()
+            self.delete()
+        else:
+            self.save()
 
     @staticmethod
     def send(event: int, context: dict, user: User = None, email: str = None, phone: str = None,  # noqa: C901
@@ -222,6 +235,7 @@ class Notify(NotifyMixin, UserNotifyMixin):
                 data_json=data_json,
                 send_at=notify_send,
                 room_name=room_name,
+                is_delete_after=template.is_delete_after,
                 **kwargs
             )
             if notify_users_lists.exists():

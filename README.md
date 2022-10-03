@@ -346,11 +346,11 @@ For notifications of the SYSTEM type, a separate non-periodic task is used that 
 
 # Changelog
 
-See [CHANGELOG.md](CHANGELOG.md).
+See [CHANGELOG.md](backend/garpix_notify/CHANGELOG.md).
 
 # Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+See [CONTRIBUTING.md](backend/garpix_notify/CONTRIBUTING.md).
 
 # License
 

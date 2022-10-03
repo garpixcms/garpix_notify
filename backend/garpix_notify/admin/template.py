@@ -11,6 +11,7 @@ class NotifyTemplateAdmin(admin.ModelAdmin):
         'title',
         'is_active',
         'subject',
+        'is_delete_after',
         'get_context_description',
         'text',
         'html',

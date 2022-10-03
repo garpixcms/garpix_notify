@@ -16,6 +16,7 @@ from ..mixins import UserNotifyMixin
 class NotifyTemplate(UserNotifyMixin):
     title = models.CharField(max_length=255, verbose_name='Название для админа')
     subject = models.CharField(max_length=255, default='', blank=True, verbose_name='Заголовок')
+    is_delete_after = models.BooleanField(default=False, verbose_name='Удалять после отправки')
     text = models.TextField(verbose_name='Текст')
     html = RichTextUploadingField(verbose_name='HTML')
 
