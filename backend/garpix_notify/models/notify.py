@@ -107,7 +107,7 @@ class Notify(NotifyMixin, UserNotifyMixin):
                     os.remove(f'{settings.MEDIA_ROOT}/{file.file}')
                 except OSError:
                     pass
-                file.delete()
+            self.files.all().delete()
             self.delete()
         else:
             self.save()
