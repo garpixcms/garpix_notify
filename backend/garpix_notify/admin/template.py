@@ -1,8 +1,7 @@
 from django.contrib import admin, messages
 
-from ..models import SystemNotify
+from ..models import SystemNotify, Notify
 from ..models.template import NotifyTemplate
-from ..models.notify import Notify
 from django.http import HttpResponseRedirect
 
 
@@ -44,30 +43,32 @@ class NotifyTemplateAdmin(admin.ModelAdmin):
     create_mailing.short_description = "Сделать рассылку"
 
     def response_change(self, request, obj):
-        from ..models.notify import Notify
-        if obj.user_lists and "_send_now" in request.POST or "_send_now_system" in request.POST:
-            context = obj.get_test_data()
-            template = obj
-            if "_send_now" in request.POST:
-                instance = Notify.objects.create(
-                    subject=obj.render_subject(template.subject),
-                    text=obj.render_text(context),
-                    html=obj.render_html(context),
-                    user=obj.user,
-                    email=obj.email,
-                    type=obj.type,
-                    category=obj.category,
-                )
-                instance.start_send()
-            else:
-                instance = SystemNotify.objects.create(
-                    title=template.subject if template.subject or template.subject != '' else template.title,
-                    event=template.event,
-                    user=obj.user if obj.user else request.user,
-                    data_json=context,
-                    room_name=f'room_{request.user.id}'
-                )
-                instance.send_notification()
+        context = obj.get_test_data()
+        template = obj
+        user = obj.user if obj.user else request.user
+        if obj.user_lists and "_send_now" in request.POST:
+            instance = Notify.objects.create(
+                subject=obj.render_subject(template.subject),
+                text=obj.render_text(context),
+                html=obj.render_html(context),
+                user=user,
+                email=obj.email,
+                type=obj.type,
+                category=obj.category,
+            )
+            instance.start_send()
+            self.message_user(request, 'Тестовое уведомление отправлено', level=messages.SUCCESS)
+            return HttpResponseRedirect(".")
+        elif "_send_now_system" in request.POST:
+            instance = SystemNotify.objects.create(
+                title=template.subject if template.subject or template.subject != '' else template.title,
+                event=template.event,
+                user=user,
+                data_json=context,
+                room_name=f'room_{user}'
+            )
+            instance.send_notification()
+            self.message_user(request, 'Тестовое уведомление отправлено', level=messages.SUCCESS)
             return HttpResponseRedirect(".")
 
         return super().response_change(request, obj)
