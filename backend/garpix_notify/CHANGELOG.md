@@ -1,3 +1,6 @@
+### 5.13.0 (03.10.2022)
+- Added `Delete after send` checkbox to notify template (deletes notify and it's files).
+
 ### 5.12.5 (28.09.2022)
 - Added a warning in the admin panel that there are events without templates,
 - Removed the exception that no templates were found from the send method.
