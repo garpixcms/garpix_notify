@@ -65,7 +65,7 @@ class NotifyTemplateAdmin(admin.ModelAdmin):
                 event=template.event,
                 user=user,
                 data_json=context,
-                room_name=f'room_{user}'
+                room_name=f'room_{user.pk}'
             )
             instance.send_notification()
             self.message_user(request, 'Тестовое уведомление отправлено', level=messages.SUCCESS)
