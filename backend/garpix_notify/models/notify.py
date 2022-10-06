@@ -17,7 +17,7 @@ from django.dispatch import receiver
 from .log import NotifyErrorLog
 from .user_list import NotifyUserList
 from .category import NotifyCategory
-from .choices import TYPE, STATE
+from .choices import TYPE, STATE, StatusMessage
 from .file import NotifyFile
 from .template import NotifyTemplate
 from ..exceptions import IsInstanceException
@@ -101,14 +101,7 @@ class Notify(NotifyMixin, UserNotifyMixin):
             WhatsAppClient.send_whatsapp(self)
 
         if self.is_delete_after and self.state == STATE.DELIVERED:
-
-            for file in self.files.all():
-                try:
-                    os.remove(f'{settings.MEDIA_ROOT}/{file.file}')
-                except OSError:
-                    pass
-            self.files.all().delete()
-            self.delete()
+            self._delete_notify()
         else:
             self.save()
 
@@ -280,17 +273,21 @@ class Notify(NotifyMixin, UserNotifyMixin):
         log.save()
 
     def get_format_state(self):
-        if self.state == STATE.WAIT:
-            return format_html('<span style="color:orange;">В ожидании</span>')
-        elif self.state == STATE.DELIVERED:
-            return format_html('<span style="color:green;">Отправлено</span>')
-        elif self.state == STATE.REJECTED:
-            return format_html('<span style="color:red;">Отклонено</span>')
-        elif self.state == STATE.DISABLED:
-            return format_html('<span style="color:red;">Отправка запрещена</span>')
-        return format_html('<span style="color:black;">Неизвестный статус</span>')
+        undefined = '<span style="color:black;">Неизвестный статус</span>'
+        status: str = StatusMessage.STATUS.get(self.state, undefined)
+        return format_html(status)
 
     get_format_state.short_description = 'Статус'
+
+    def _delete_notify(self) -> None:
+        files = self.files.all()
+        if files.exists():
+            for file in files:
+                file_path = f'{settings.MEDIA_ROOT}/{file.file}'
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+            files.delete()
+        self.delete()
 
     class Meta:
         verbose_name = 'Уведомление'

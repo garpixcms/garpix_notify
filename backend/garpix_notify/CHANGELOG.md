@@ -1,3 +1,7 @@
+### 5.13.1 (05.10.2022)
+- In SystemNotify, the `event_id key` is corrected to `event`,
+- In the Admin panel in the notification templates, a button has been added to launch a test SystemNotify.
+
 ### 5.13.0 (03.10.2022)
 - Added `Delete after send` checkbox to notify template (deletes notify and it's files).
 

@@ -13,7 +13,7 @@ from django.utils.html import format_html
 from django.utils.module_loading import import_string
 
 from .system_log import SystemNotifyErrorLog
-from .choices import TYPE, STATE
+from .choices import TYPE, STATE, StatusMessage
 from ..utils import ReceivingUsers
 from .template import NotifyTemplate
 from ..exceptions import IsInstanceException, DataTypeException, ArgumentsEmptyException, UsersListIsNone
@@ -101,7 +101,7 @@ class SystemNotify(SystemNotifyMixin, models.Model):
         notify_json['type'] = notify_type
 
         if event:
-            notify_json['event_id'] = event
+            notify_json['event'] = event
 
         if user:
             system_notify_user_list.append(user)
@@ -158,15 +158,9 @@ class SystemNotify(SystemNotifyMixin, models.Model):
         log.save()
 
     def get_format_state(self):
-        if self.state == STATE.WAIT:
-            return format_html('<span style="color:orange;">В ожидании</span>')
-        elif self.state == STATE.DELIVERED:
-            return format_html('<span style="color:green;">Отправлено</span>')
-        elif self.state == STATE.REJECTED:
-            return format_html('<span style="color:red;">Отклонено</span>')
-        elif self.state == STATE.DISABLED:
-            return format_html('<span style="color:red;">Отправка запрещена</span>')
-        return format_html('<span style="color:black;">Неизвестный статус</span>')
+        undefined = '<span style="color:black;">Неизвестный статус</span>'
+        status: str = StatusMessage.STATUS.get(self.state, undefined)
+        return format_html(status)
 
     get_format_state.short_description = 'Статус'
 
