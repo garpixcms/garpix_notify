@@ -35,6 +35,7 @@ class NotifyTemplateAdmin(admin.ModelAdmin):
     list_filter = ('type', 'category', 'event', 'is_active')
     actions = ['create_mailing', ]
     filter_horizontal = ('user_lists',)
+    raw_id_fields = ('user',)
 
     def create_mailing(self, request, queryset):
         count = Notify.send(event=None, context={}, notify_templates=queryset)
