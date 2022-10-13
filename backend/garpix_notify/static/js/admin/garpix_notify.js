@@ -1,42 +1,45 @@
 function smsParser(value) {
     // Парсер СМС
-    if (value === 0){
-        document.querySelector('.field-sms_api_id').classList.remove('admin-none');
-        document.querySelector('.field-sms_from').classList.remove('admin-none');
-        document.querySelector('.field-sms_login').classList.add('admin-none');
-        document.querySelector('.field-sms_password').classList.add('admin-none');
-    }
-    else if (value === 3){
-        document.querySelector('.field-sms_api_id').classList.add('admin-none');
-        document.querySelector('.field-sms_from').classList.remove('admin-none');
-        document.querySelector('.field-sms_login').classList.remove('admin-none');
-        document.querySelector('.field-sms_password').classList.remove('admin-none');
-    }
-    else if (value === 6){
-        document.querySelector('.field-sms_api_id').classList.remove('admin-none');
-        document.querySelector('.field-sms_from').classList.remove('admin-none');
-        document.querySelector('.field-sms_login').classList.add('admin-none');
-        document.querySelector('.field-sms_password').classList.add('admin-none');
-    }
-    else {
-        document.querySelector('.field-sms_login').classList.remove('admin-none');
-        document.querySelector('.field-sms_password').classList.remove('admin-none');
-        document.querySelector('.field-sms_api_id').classList.add('admin-none');
-        document.querySelector('.field-sms_from').classList.add('admin-none');
+
+    switch (value) {
+        case 0:
+            document.querySelector('.field-sms_api_id').classList.remove('admin-none');
+            document.querySelector('.field-sms_from').classList.remove('admin-none');
+            document.querySelector('.field-sms_login').classList.add('admin-none');
+            document.querySelector('.field-sms_password').classList.add('admin-none');
+            break;
+        case 3:
+            document.querySelector('.field-sms_api_id').classList.add('admin-none');
+            document.querySelector('.field-sms_from').classList.remove('admin-none');
+            document.querySelector('.field-sms_login').classList.remove('admin-none');
+            document.querySelector('.field-sms_password').classList.remove('admin-none');
+            break;
+        case 6:
+            document.querySelector('.field-sms_api_id').classList.remove('admin-none');
+            document.querySelector('.field-sms_from').classList.remove('admin-none');
+            document.querySelector('.field-sms_login').classList.add('admin-none');
+            document.querySelector('.field-sms_password').classList.add('admin-none');
+            break;
+        default:
+            document.querySelector('.field-sms_login').classList.remove('admin-none');
+            document.querySelector('.field-sms_password').classList.remove('admin-none');
+            document.querySelector('.field-sms_api_id').classList.add('admin-none');
+            document.querySelector('.field-sms_from').classList.add('admin-none');
     }
 }
 
 function callParser(value) {
     // Парсер для Звонков
-    if (value === 0) {
-        document.querySelector('.field-call_api_id').classList.remove('admin-none');
-        document.querySelector('.field-call_login').classList.add('admin-none');
-        document.querySelector('.field-call_password').classList.add('admin-none');
-    }
-    else {
-        document.querySelector('.field-call_login').classList.remove('admin-none');
-        document.querySelector('.field-call_password').classList.remove('admin-none');
-        document.querySelector('.field-call_api_id').classList.add('admin-none');
+    switch (value) {
+        case 0:
+            document.querySelector('.field-call_api_id').classList.remove('admin-none');
+            document.querySelector('.field-call_login').classList.add('admin-none');
+            document.querySelector('.field-call_password').classList.add('admin-none');
+            break;
+        default:
+            document.querySelector('.field-call_login').classList.remove('admin-none');
+            document.querySelector('.field-call_password').classList.remove('admin-none');
+            document.querySelector('.field-call_api_id').classList.add('admin-none');
     }
 }
 
