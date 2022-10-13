@@ -203,6 +203,7 @@ CKEDITOR_CONFIGS = {
     'default': {
         'toolbar': 'full',
         'width': '100%',
+        'allowedContent': True
     },
 }
 
