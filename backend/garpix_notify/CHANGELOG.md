@@ -1,3 +1,6 @@
+### 5.13.3 (13.10.2022)
+- In the administrative panel, the work of selecting a telecom provider has been corrected.
+
 ### 5.13.2 (10.10.2022)
 - User is now `row_id_field` in `NotifyTemplateAdmin`
 
