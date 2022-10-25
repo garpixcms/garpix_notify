@@ -47,7 +47,6 @@ setup(
         'channels-redis == 3.4.0',
         'asgiref >= 3.2.10, <= 3.3.4',
         'twilio == 7.10.0',
-        'typing-extensions >= 4.3.0',
-        'pytest >=7.1.2',
+        'typing-extensions >= 4.3.0'
     ],
 )
