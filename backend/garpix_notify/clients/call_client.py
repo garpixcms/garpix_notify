@@ -5,7 +5,7 @@ from django.utils.timezone import now
 
 from garpix_notify.models.config import NotifyConfig
 from garpix_notify.models.choices import STATE, CALL_URL
-from garpix_notify.utils.send_data import url_dict_call, operator_call, response_check
+from garpix_notify.utils.send_data import SendDataService
 
 
 class CallClient:
@@ -53,13 +53,15 @@ class CallClient:
 
         phone = f'{self.notify.phone}'
 
+        send_data_service = SendDataService()
+
         try:
-            url = url_dict_call[self.CALL_URL_TYPE].format(**operator_call[self.CALL_URL_TYPE], to=phone)
+            url = send_data_service.url_dict_call[self.CALL_URL_TYPE].format(**send_data_service.operator_call[self.CALL_URL_TYPE], to=phone)
             response_url = requests.get(url)
             response_dict = response_url.json()
             value = self._value_checker(response_dict)
 
-            response = response_check(response=response_dict, operator_type=self.CALL_URL_TYPE, status=value)
+            response = send_data_service.response_check(response=response_dict, operator_type=self.CALL_URL_TYPE, status=value)
 
             self.__save_to_log(response=response, value=value)
         except Exception as e:

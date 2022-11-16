@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     'user',
     'garpix_notify',
     'app',
-    'garpix_qa',
+    'eqator',
     'channels',
 ]
 
@@ -235,6 +235,7 @@ CHANNEL_LAYERS = {
 }
 
 GARPIX_NOTIFY_MIXIN = 'garpix_notify.mixins.notify_mixin.NotifyMixin'
+GARPIX_SYSTEM_NOTIFY_MIXIN = 'garpix_notify.mixins.notify_mixin.NotifyMixin'
 
 DEBUG_TOOLBAR = os.getenv('DEBUG_TOOLBAR', False)
 
@@ -257,3 +258,5 @@ if DEBUG_TOOLBAR:
         'debug_toolbar.panels.redirects.RedirectsPanel',
         'debug_toolbar.panels.profiling.ProfilingPanel',
     ]
+
+TEST_COVERAGE_RATE = 50
