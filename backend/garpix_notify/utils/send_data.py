@@ -32,22 +32,22 @@ class SendData:
 
     def __get_call_url(self, key: int) -> Optional[str]:
         url_dict_call = {
-            0: (f'{CALL_URL.SMSRU_CALL_URL}?api_id={self.CALL_API_ID}' + '&phone={to}&json=1'),
-            1: (f'{CALL_URL.SMSRU_CALL_URL}?login={self.CALL_LOGIN}&password={self.CALL_PASSWORD}' + '&phone={to}&json=1'),
-            2: (f'{CALL_URL.SMSCENTRE_URL}?login={self.CALL_LOGIN}&psw={self.CALL_PASSWORD}' + '&phones={to}&mes=code&call=1&fmt=3'),
-            3: (f'{CALL_URL.UCALLER_URL}?key={self.CALL_PASSWORD}&service_id={self.CALL_LOGIN}' + '&phone={to}'),
+            CALL_URL.SMSRU_CALL_API_ID: (f'{CALL_URL.SMSRU_CALL_URL}?api_id={self.CALL_API_ID}' + '&phone={to}&json=1'),
+            CALL_URL.SMSRU_CALL_ID: (f'{CALL_URL.SMSRU_CALL_URL}?login={self.CALL_LOGIN}&password={self.CALL_PASSWORD}' + '&phone={to}&json=1'),
+            CALL_URL.SMSCENTRE_ID: (f'{CALL_URL.SMSCENTRE_URL}?login={self.CALL_LOGIN}&psw={self.CALL_PASSWORD}' + '&phones={to}&mes=code&call=1&fmt=3'),
+            CALL_URL.UCALLER_ID: (f'{CALL_URL.UCALLER_URL}?key={self.CALL_PASSWORD}&service_id={self.CALL_LOGIN}' + '&phone={to}'),
         }
         return url_dict_call.get(key)
 
     def __get_sms_url(self, key: int) -> Optional[str]:
         url_dict_sms = {
-            0: (f'{SMS_URL.SMSRU_URL}?api_id={self.SMS_API_ID}' + '&to={to}&msg={text}&json=1'),
-            1: (f'{SMS_URL.INFOSMS_URL}?login={self.SMS_LOGIN}&pwd={self.SMS_PASSWORD}&sender={self.SMS_FROM}' + '&phones={to}&message={text}'),
-            2: (f'{SMS_URL.IQSMS_URL}?login={self.SMS_LOGIN}&password={self.SMS_PASSWORD}' + '&phone={to}&text={text}'),
-            3: (f'{SMS_URL.SMSCENTRE_URL}?login={self.SMS_LOGIN}&psw={self.SMS_PASSWORD}' + '&phones={to}&mes={text}'),
-            4: (f'{SMS_URL.SMS_SENDING_URL}?login={self.SMS_LOGIN}&password={self.SMS_PASSWORD}' + '&txt={text}&to={to}'),
-            5: (f'{SMS_URL.SMS_PROSTO_URL}?login={self.SMS_LOGIN}&password={self.SMS_PASSWORD}&method=push_msg&format=json&sender_name={self.SMS_FROM}' + 'text={text}&phone={to}&key={api_id}'),
-            6: (f'{SMS_URL.WEBSZK_URL}?user={self.SMS_LOGIN}&pwd={self.SMS_PASSWORD}&sadr={self.SMS_FROM}' + '&text={text}&dadr={to}'),
+            SMS_URL.SMSRU_ID: (f'{SMS_URL.SMSRU_URL}?api_id={self.SMS_API_ID}' + '&to={to}&msg={text}&json=1'),
+            SMS_URL.WEBSZK_ID: (f'{SMS_URL.WEBSZK_URL}?user={self.SMS_LOGIN}&pwd={self.SMS_PASSWORD}&sadr={self.SMS_FROM}' + '&text={text}&dadr={to}'),
+            SMS_URL.IQSMS_ID: (f'{SMS_URL.IQSMS_URL}?login={self.SMS_LOGIN}&password={self.SMS_PASSWORD}' + '&phone={to}&text={text}'),
+            SMS_URL.INFOSMS_ID: (f'{SMS_URL.INFOSMS_URL}?login={self.SMS_LOGIN}&pwd={self.SMS_PASSWORD}&sender={self.SMS_FROM}' + '&phones={to}&message={text}'),
+            SMS_URL.SMSCENTRE_ID: (f'{SMS_URL.SMSCENTRE_URL}?login={self.SMS_LOGIN}&psw={self.SMS_PASSWORD}' + '&phones={to}&mes={text}'),
+            SMS_URL.SMS_SENDING_ID: (f'{SMS_URL.SMS_SENDING_URL}?login={self.SMS_LOGIN}&password={self.SMS_PASSWORD}' + '&txt={text}&to={to}'),
+            SMS_URL.SMS_PROSTO_ID: (f'{SMS_URL.SMS_PROSTO_URL}?login={self.SMS_LOGIN}&password={self.SMS_PASSWORD}&method=push_msg&format=json&sender_name={self.SMS_FROM}' + 'text={text}&phone={to}&key={api_id}'),
         }
         return url_dict_sms.get(key)
 
