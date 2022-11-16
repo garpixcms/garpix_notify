@@ -1,3 +1,6 @@
+### 5.13.4 (16.11.2022)
+- Fixed the error of incorrect URL.
+
 ### 5.13.3 (13.10.2022)
 - In the administrative panel, the work of selecting a telecom provider has been corrected.
 
