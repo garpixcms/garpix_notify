@@ -34,7 +34,6 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Ситемное уведомление',
                 'verbose_name_plural': 'Системные уведомления',
             },
-            bases=(models.Model, garpix_notify.mixins.notify_method_mixin.NotifyMethodsMixin),
         ),
         migrations.CreateModel(
             name='SystemNotifyErrorLog',
@@ -48,5 +47,6 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Лог отправки системного уведомления',
                 'verbose_name_plural': 'Логи отправки системных уведомлений',
             },
+            bases=(models.Model, garpix_notify.mixins.notify_method_mixin.NotifyMethodsMixin),
         ),
     ]

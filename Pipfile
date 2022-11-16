@@ -28,6 +28,9 @@ twilio = "==7.10.0"
 django-debug-toolbar = "==3.5.0"
 pytest-django = "==4.5.2"
 pytest = "==7.1.2"
+eqator = ">=2.2.0"
+typing-extensions = "==4.3.0"
+
 
 [dev-packages]
 

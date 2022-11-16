@@ -105,3 +105,13 @@ class CALL_URL:
         (UCALLER_ID, 'ucaller.ru'),
 
     )
+
+
+class StatusMessage:
+    """ Статус сообщения """
+    STATUS = {
+        STATE.DISABLED: '<span style="color:red;">Отправка запрещена</span>',
+        STATE.REJECTED: '<span style="color:red;">Отклонено</span>',
+        STATE.WAIT: '<span style="color:orange;">В ожидании</span>',
+        STATE.DELIVERED: '<span style="color:green;">Отправлено</span>',
+    }

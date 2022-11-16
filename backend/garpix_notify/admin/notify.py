@@ -1,5 +1,6 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 
+from ..models import NotifyTemplate
 from ..models.notify import Notify
 from .log import NotifyErrorLogInline
 
@@ -26,3 +27,9 @@ class NotifyAdmin(admin.ModelAdmin):
     search_fields = ('subject', 'text')
     raw_id_fields = ('user',)
     filter_horizontal = ('users_list', )
+
+    def get_changelist(self, request, **kwargs):
+        events_message = NotifyTemplate.get_blank_events_message()
+        if events_message:
+            self.message_user(request, events_message, level=messages.WARNING)
+        return super().get_changelist(request, **kwargs)

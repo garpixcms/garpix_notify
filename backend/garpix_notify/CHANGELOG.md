@@ -1,3 +1,33 @@
+### 5.13.3 (13.10.2022)
+- In the administrative panel, the work of selecting a telecom provider has been corrected.
+
+### 5.13.2 (10.10.2022)
+- User is now `row_id_field` in `NotifyTemplateAdmin`
+
+### 5.13.1 (05.10.2022)
+- In SystemNotify, the `event_id key` is corrected to `event`,
+- In the Admin panel in the notification templates, a button has been added to launch a test SystemNotify.
+
+### 5.13.0 (03.10.2022)
+- Added `Delete after send` checkbox to notify template (deletes notify and it's files).
+
+### 5.12.5 (28.09.2022)
+- Added a warning in the admin panel that there are events without templates,
+- Removed the exception that no templates were found from the send method.
+
+### 5.12.4 (27.09.2022)
+- An email with html, text and attachments is now formed correctly.
+
+### 5.12.1-5.12.3 (26.09.2022)
+- Returned NotifyMethodsMixin.
+
+### 5.12.0 (24.09.2022)
+
+- Now you need to specify the parameter user_want_message_check in Notify.send() ,
+- Improved performance, as well as the structure of the application,
+- Minor bugs fixed,
+- Redesigned tests.
+
 ### 5.11.6 (22.09.2022)
 
 - Fixed bug with sms client config
@@ -9,6 +39,7 @@
 ### 5.11.4 (19.09.2022)
 
 - Fixed bugs with phone field and sms client config
+
 
 ### 5.11.3 (24.08.2022)
 

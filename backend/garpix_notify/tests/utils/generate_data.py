@@ -111,3 +111,26 @@ def generate_compiled_system(value: dict, event: int, user) -> list:
         "type": TYPE.SYSTEM,
         "event": event,
     }]
+
+
+def generate_templates_views(event: int) -> list:
+    return [{
+        'title': 'Тестовый темплейт',
+        'subject': 'Тестовый темплейт',
+        'text': '{{message}} - {{confirmation_code}}',
+        'html': '{{message}} - {{confirmation_code}}',
+        'type': TYPE.EMAIL,
+        'event': event,
+    }]
+
+
+def generate_compiled_email_views(event: int) -> list:
+    return [{
+        'title': 'Тестовый темплейт',
+        'subject': 'Тестовый темплейт',
+        'text': 'Привет, тут твое сообщение - abcdef12345',
+        'html': 'Привет, тут твое сообщение - abcdef12345',
+        'email': 'example@garpix.com',
+        'type': TYPE.EMAIL,
+        'event': event,
+    }]
