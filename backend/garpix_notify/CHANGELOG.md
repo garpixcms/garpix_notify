@@ -1,3 +1,6 @@
+### 5.13.5 (21.11.2022)
+- For the operator `web.szk-info.ru` fixed answers.
+
 ### 5.13.4 (16.11.2022)
 - Fixed the error of incorrect URL.
 
