@@ -1,7 +1,11 @@
 import requests
+
+from typing import Optional
+from requests import Response
+
 from django.conf import settings
-from django.db import DatabaseError, ProgrammingError
 from django.utils.timezone import now
+from django.db import DatabaseError, ProgrammingError
 
 from garpix_notify.models.config import NotifyConfig
 from garpix_notify.models.choices import STATE, SMS_URL
@@ -40,14 +44,18 @@ class SMSClient:
                 f"Описание ошибки: {response['status_text']}")
             self.notify.state = STATE.REJECTED
 
-    def __web_szk_client(self, response) -> None:
-        try:
-            int(response.text)
+    def __web_szk_client(self, response: dict) -> None:
+        """
+        Настройки/расшифровки ошибок по данному оператору можно посмотреть по адресу:
+        https://stream-telecom.ru/solutions/integrations/
+        """
+        if response.get('Code'):
+            self.notify.to_log(f"Статус операции: {response.get('Desc')}")
+            self.notify.state = STATE.REJECTED
+        else:
+            self.notify.to_log(f"Статус операции: {response.get('Desc')}")
             self.notify.state = STATE.DELIVERED
             self.notify.sent_at = now()
-        except Exception as e:
-            self.notify.to_log(str(e))
-            self.notify.state = STATE.REJECTED
 
     def __iq_sms_client(self, response: dict) -> None:
         if response['status'] == 'ok':
@@ -86,8 +94,7 @@ class SMSClient:
                 {response['response']['msg']['text']}")
             self.notify.state = STATE.REJECTED
 
-    def __send_sms(self):  # noqa
-
+    def __send_sms(self):
         if not self.IS_SMS_ENABLED:
             self.notify.state = STATE.DISABLED
             self.notify.to_log('Not sent (sending is prohibited by settings)')
@@ -102,18 +109,17 @@ class SMSClient:
                 phones = ','.join(phones_list)
             msg = str(self.notify.text.replace(' ', '+'))
 
-            url = SendData.sms_url(self.SMS_URL_TYPE).format(to=phones, text=msg)
-            response = requests.get(url)
-            response_dict = response.json()
+            url: Optional[str] = SendData.sms_url(self.SMS_URL_TYPE).format(to=phones, text=msg)
+            response: Response = requests.get(url)
 
             if self.SMS_URL_TYPE == SMS_URL.SMSRU_ID:
-                self.__sms_ru_client(response_dict)
+                self.__sms_ru_client(response.json())
 
             elif self.SMS_URL_TYPE == SMS_URL.WEBSZK_ID:
-                self.__web_szk_client(response)
+                self.__web_szk_client(response.json())
 
             elif self.SMS_URL_TYPE == SMS_URL.IQSMS_ID:
-                self.__iq_sms_client(response_dict)
+                self.__iq_sms_client(response.json())
 
             elif self.SMS_URL_TYPE == SMS_URL.INFOSMS_ID:
                 self.notify.state = STATE.DELIVERED
@@ -124,15 +130,16 @@ class SMSClient:
                 self.notify.sent_at = now()
 
             elif self.SMS_URL_TYPE == SMS_URL.SMS_SENDING_ID:
-                self.__sms_sending_client(response_dict)
+                self.__sms_sending_client(response.json())
 
             elif self.SMS_URL_TYPE == SMS_URL.SMS_PROSTO_ID:
-                self.__sms_prosto_client(response_dict)
+                self.__sms_prosto_client(response.json())
 
         except Exception as e:
             self.notify.state = STATE.REJECTED
             self.notify.to_log(str(e))
 
     @classmethod
-    def send_sms(cls, notify):
+    def send_sms(cls, notify) -> None:
+        """ Метод отправки SMS """
         cls(notify).__send_sms()
