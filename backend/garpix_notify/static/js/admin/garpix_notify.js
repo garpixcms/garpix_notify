@@ -8,6 +8,12 @@ function smsParser(value) {
             document.querySelector('.field-sms_login').classList.add('admin-none');
             document.querySelector('.field-sms_password').classList.add('admin-none');
             break;
+        case 1:
+            document.querySelector('.field-sms_api_id').classList.add('admin-none');
+            document.querySelector('.field-sms_from').classList.remove('admin-none');
+            document.querySelector('.field-sms_login').classList.remove('admin-none');
+            document.querySelector('.field-sms_password').classList.remove('admin-none');
+            break;
         case 3:
             document.querySelector('.field-sms_api_id').classList.add('admin-none');
             document.querySelector('.field-sms_from').classList.remove('admin-none');

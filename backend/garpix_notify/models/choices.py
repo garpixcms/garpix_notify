@@ -69,7 +69,7 @@ class SMS_URL:
     SMS_PROSTO_ID = 6
 
     SMSRU_URL = 'https://sms.ru/sms/send/'
-    WEBSZK_URL = 'http://gateway.api.sc/rest/Send/SendSms/'
+    WEBSZK_URL = 'https://gateway.api.sc/rest/Send/SendSms/'
     IQSMS_URL = 'https://api.iqsms.ru/messages/v2/send.json'
     INFOSMS_URL = 'http://api.infosmska.ru/interfaces/SendMessages.ashx'
     SMSCENTRE_URL = 'https://smsc.ru/sys/send.php'

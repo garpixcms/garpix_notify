@@ -1,3 +1,8 @@
+### 5.13.6 (30.11.2022)
+- For the operator `web.szk-info.ru` fixed OK answer, the request is now sent over https.
+- For the `web.szk-info.ru` operator, all the necessary fields are displayed in the admin panel.
+- Now you can send test notifications from the template for: SMS, CALL, EMAIL, PUSH.
+
 ### 5.13.5 (21.11.2022)
 - For the operator `web.szk-info.ru` fixed answers.
 
