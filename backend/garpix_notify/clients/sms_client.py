@@ -1,6 +1,6 @@
 import requests
 
-from typing import Optional
+from typing import Optional, Union
 from requests import Response
 
 from django.conf import settings
@@ -44,16 +44,16 @@ class SMSClient:
                 f"Описание ошибки: {response['status_text']}")
             self.notify.state = STATE.REJECTED
 
-    def __web_szk_client(self, response: dict) -> None:
+    def __web_szk_client(self, response: Union[list, dict]) -> None:
         """
         Настройки/расшифровки ошибок по данному оператору можно посмотреть по адресу:
         https://stream-telecom.ru/solutions/integrations/
         """
-        if response.get('Code'):
-            self.notify.to_log(f"Статус операции: {response.get('Desc')}")
+        if not isinstance(response, list) and response.get('Code'):
+            self.notify.to_log(f"Статус операции: {response}")
             self.notify.state = STATE.REJECTED
         else:
-            self.notify.to_log(f"Статус операции: {response.get('Desc')}")
+            self.notify.to_log(f"Статус операции: Успешно, ID отправленных сообщений: {response}")
             self.notify.state = STATE.DELIVERED
             self.notify.sent_at = now()
 

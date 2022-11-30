@@ -1,6 +1,7 @@
 from django.contrib import admin, messages
 
 from ..models import SystemNotify, Notify
+from ..models.choices import TYPE
 from ..models.template import NotifyTemplate
 from django.http import HttpResponseRedirect
 
@@ -44,19 +45,47 @@ class NotifyTemplateAdmin(admin.ModelAdmin):
     create_mailing.short_description = "Сделать рассылку"
 
     def response_change(self, request, obj):
-        context = obj.get_test_data()
         template = obj
+        context = obj.get_test_data()
         user = obj.user if obj.user else request.user
+
+        type_test_message = {
+            TYPE.SMS: {
+                'subject': obj.render_subject(template.subject),
+                'text': obj.render_text(context),
+                'user': user,
+                'phone': template.phone,
+                'type': TYPE.SMS,
+                'category': obj.category
+            },
+            TYPE.EMAIL: {
+                'subject': obj.render_subject(template.subject),
+                'text': obj.render_text(context),
+                'html': obj.render_html(context),
+                'user': user,
+                'email': template.email,
+                'type': TYPE.EMAIL,
+                'category': obj.category
+            },
+            TYPE.PUSH: {
+                'subject': obj.render_subject(template.subject),
+                'text': obj.render_text(context),
+                'user': user,
+                'type': TYPE.PUSH,
+                'category': obj.category
+            },
+            TYPE.CALL: {
+                'subject': obj.render_subject(template.subject),
+                'text': obj.render_text(context),
+                'user': user,
+                'phone': template.phone,
+                'type': TYPE.SMS,
+                'category': obj.category
+            },
+        }
+
         if obj.user_lists and "_send_now" in request.POST:
-            instance = Notify.objects.create(
-                subject=obj.render_subject(template.subject),
-                text=obj.render_text(context),
-                html=obj.render_html(context),
-                user=user,
-                email=obj.email,
-                type=obj.type,
-                category=obj.category,
-            )
+            instance = Notify.objects.create(**type_test_message.get(obj.type, TYPE.EMAIL))
             instance.start_send()
             self.message_user(request, 'Тестовое уведомление отправлено', level=messages.SUCCESS)
             return HttpResponseRedirect(".")
