@@ -1,3 +1,7 @@
+### 5.14.0 (16.03.2023)
+- System notifies view added (see `Readme.md`)
+- `is_read` field added to `SystemNotify`.
+
 ### 5.13.6 (30.11.2022)
 - For the operator `web.szk-info.ru` fixed OK answer, the request is now sent over https.
 - For the `web.szk-info.ru` operator, all the necessary fields are displayed in the admin panel.

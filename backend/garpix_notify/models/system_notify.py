@@ -41,6 +41,8 @@ class SystemNotify(SystemNotifyMixin, models.Model):
     created_at = models.DateTimeField('Дата создания', auto_now_add=True)
     sent_at = models.DateTimeField('Дата отправки', blank=True, null=True)
 
+    is_read = models.BooleanField(default=False, verbose_name='Прочитано')
+
     objects = Manager()
 
     def __str__(self):

@@ -346,6 +346,16 @@ Notify.send(settings.MY_NOTIFY, {
 
 For notifications of the SYSTEM type, a separate non-periodic task is used that works instantly, if room_name is missing system messages will be sent in `'room_{id}'` where `'id'` is user id
 
+You can add notifies rotes to your project:
+
+```python
+urlpatterns = [
+    # ...
+    path('', include(('garpix_notify.urls', 'garpix_notify'), namespace='garpix_notify')),
+]
+
+```
+
 # Changelog
 
 See [CHANGELOG.md](CHANGELOG.md).

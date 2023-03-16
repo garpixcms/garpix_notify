@@ -6,6 +6,13 @@ from viberbot.api.messages import TextMessage
 from .models.config import NotifyConfig
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from garpix_notify.models import SystemNotify
+from garpix_notify.models.choices import TYPE
+from rest_framework.mixins import ListModelMixin
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.viewsets import GenericViewSet
+
+from .serializers import SystemNotifySerializer
 
 User = get_user_model()
 
@@ -96,3 +103,13 @@ def subscribed_event(response):
     user_name = response['user']['name']
     viber.send_messages(to=id_user, messages=[
         TextMessage(text=f'{user_name},  {config.viber_text_for_new_sub}')])
+
+
+class SystemNotifyViewSet(ListModelMixin, GenericViewSet):
+
+    permission_classes = [IsAuthenticated]
+    filterset_fields = ('type', 'event', 'room_name', 'is_read')
+    serializer_class = SystemNotifySerializer
+
+    def get_queryset(self):
+        return SystemNotify.objects.filter(user=self.request.user, type=TYPE.SYSTEM).order_by('-pk')
