@@ -264,3 +264,5 @@ TEST_COVERAGE_RATE = 50
 SENTRY_CHECK_METHOD = 'warning'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
+API_URL = 'api'

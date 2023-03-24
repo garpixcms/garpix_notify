@@ -7,6 +7,7 @@ urlpatterns = [
     path('ckeditor/', include('ckeditor_uploader.urls')),
     path('admin/', admin.site.urls),
     path('', example_send_notify),
+    path('', include(('garpix_notify.urls', 'garpix_notify'), namespace='garpix_notify')),
 ]
 
 if settings.DEBUG_TOOLBAR:
