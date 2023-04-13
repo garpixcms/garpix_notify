@@ -21,16 +21,12 @@ except Exception:
 @celery_app.task
 def send_notifications():
     notifies = Notify.objects.filter(state__in=[STATE.WAIT]).exclude(type=TYPE.SYSTEM)
-    print(notifies)
     for notify in notifies.iterator():
         if notify.state == STATE.WAIT:
-            print(notify.send_at, timezone.now())
             if notify.send_at is None:
-                print("HERE")
                 notify.start_send()
             else:
                 if timezone.now() > notify.send_at:
-                    print("THERE")
                     notify.start_send()
     return
 
