@@ -34,6 +34,21 @@ function smsParser(value) {
     }
 }
 
+function callParser(value) {
+    // Парсер для Звонков
+    switch (value) {
+        case 0:
+            document.querySelector('.field-call_api_id').classList.remove('admin-none');
+            document.querySelector('.field-call_login').classList.add('admin-none');
+            document.querySelector('.field-call_password').classList.add('admin-none');
+            break;
+        default:
+            document.querySelector('.field-call_login').classList.remove('admin-none');
+            document.querySelector('.field-call_password').classList.remove('admin-none');
+            document.querySelector('.field-call_api_id').classList.add('admin-none');
+    }
+}
+
 function htmlFormParser(value) {
     // Парсер для способа формирования html
     switch (value) {
