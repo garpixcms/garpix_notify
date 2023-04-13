@@ -1,18 +1,20 @@
 import json
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from viberbot import Api, BotConfiguration
 from viberbot.api.messages import TextMessage
 from .models.config import NotifyConfig
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from garpix_notify.models import SystemNotify
-from garpix_notify.models.choices import TYPE
+from garpix_notify.models.choices import TYPE, STATE
 from rest_framework.mixins import ListModelMixin
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import GenericViewSet
 
-from .serializers import SystemNotifySerializer
+from .serializers import SystemNotifySerializer, ReadSystemNotifySerializer
 
 User = get_user_model()
 
@@ -106,10 +108,29 @@ def subscribed_event(response):
 
 
 class SystemNotifyViewSet(ListModelMixin, GenericViewSet):
-
     permission_classes = [IsAuthenticated]
     filterset_fields = ('type', 'event', 'room_name', 'is_read')
     serializer_class = SystemNotifySerializer
 
+    def get_serializer_class(self):
+        if self.action == 'read':
+            return ReadSystemNotifySerializer
+        if self.action == 'read_all':
+            return None
+        return SystemNotifySerializer
+
     def get_queryset(self):
-        return SystemNotify.objects.filter(user=self.request.user, type=TYPE.SYSTEM).order_by('-pk')
+        return SystemNotify.objects.filter(user=self.request.user, type=TYPE.SYSTEM, state=STATE.DELIVERED).order_by(
+            '-pk')
+
+    @action(methods=['post'], detail=False)
+    def read(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        SystemNotify.read_notifications(serializer.data['ids'])
+        return Response({"result": True})
+
+    @action(methods=['post'], detail=False)
+    def read_all(self, request, *args, **kwargs):
+        SystemNotify.read_notifications(self.get_queryset().values_list('id', flat=True))
+        return Response({"result": True})

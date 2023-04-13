@@ -8,7 +8,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='garpix_notify',
-    version='5.14.0',
+    version='5.15.0',
     description='',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -48,6 +48,7 @@ setup(
         'asgiref >= 3.2.10, <= 3.3.4',
         'twilio == 7.10.0',
         'typing-extensions >= 4.3.0',
-        'djangorestframework >= 3.12.4'
+        'djangorestframework >= 3.12.4',
+        'garpix_utils >= 1.8.0'
     ],
 )

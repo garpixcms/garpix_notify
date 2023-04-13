@@ -1,3 +1,7 @@
+### 5.15.0 (13.04.2023)
+- `read` and `read_all` endpoints added
+- Archive upload to template added (see template admin panel) 
+
 ### 5.14.0 (16.03.2023)
 - System notifies view added (see `Readme.md`)
 - `is_read` field added to `SystemNotify`.

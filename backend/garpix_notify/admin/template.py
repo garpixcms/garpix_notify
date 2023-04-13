@@ -16,7 +16,9 @@ class NotifyTemplateAdmin(admin.ModelAdmin):
         'is_delete_after',
         'get_context_description',
         'text',
+        'html_from_type',
         'html',
+        'zipfile',
         'user',
         'email',
         'phone',
@@ -108,3 +110,9 @@ class NotifyTemplateAdmin(admin.ModelAdmin):
         if events_message:
             self.message_user(request, events_message, level=messages.WARNING)
         return super().get_changelist(request, **kwargs)
+
+    class Media:
+        css = {
+            'all': ('css/admin/garpix_notify.css', )
+        }
+        js = ('js/admin/garpix_notify.js',)
