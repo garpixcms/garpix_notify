@@ -20,6 +20,7 @@ class SMTPAccountAdmin(admin.ModelAdmin):
     actions = [
         clear_limits
     ]
+
     def response_change(self, request, obj):
 
         if "_test_smtp" in request.POST:
