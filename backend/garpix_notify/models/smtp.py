@@ -1,3 +1,5 @@
+from smtplib import SMTP_SSL, SMTP
+
 from django.conf import settings
 from django.db import models
 from django.db.models import Manager
@@ -71,7 +73,6 @@ class SMTPAccount(models.Model):
                 account.save()
                 account_smtp = account
                 break
-
         return account_smtp
 
     def is_worked_now(self):
@@ -99,6 +100,11 @@ class SMTPAccount(models.Model):
         self.email_hour_used_date = now()
         self.email_day_used_date = now()
         self.save()
+
+    def test_account(self):
+        server = SMTP_SSL(self.host, self.port, timeout=self.timeout) if self.is_use_ssl else SMTP(
+            self.host, self.port, timeout=self.timeout)
+        server.ehlo()
 
     class Meta:
         verbose_name = 'SMTP аккаунт'

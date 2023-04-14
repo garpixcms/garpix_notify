@@ -166,6 +166,10 @@ class SystemNotify(SystemNotifyMixin, models.Model):
 
     get_format_state.short_description = 'Статус'
 
+    @classmethod
+    def read_notifications(cls, ids):
+        cls.objects.filter(id__in=ids).update(is_read=True)
+
     class Meta:
         verbose_name = 'Ситемное уведомление'
         verbose_name_plural = 'Системные уведомления'

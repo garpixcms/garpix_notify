@@ -79,7 +79,6 @@ class EmailClient:
             self.notify.state = STATE.DISABLED
             self.notify.to_log('Not sent (sending is prohibited by settings)')
             return
-
         account = SMTPAccount.get_free_smtp()
 
         if account is None:
@@ -100,7 +99,7 @@ class EmailClient:
 
         try:
             body = self.__render_body(mail_from=account.sender, layout=self.notify.category, emails=self.emails)
-            server = SMTP_SSL(account.host, account.port) if account.is_use_ssl else SMTP(account.host, account.port)
+            server = SMTP_SSL(account.host, account.port, timeout=account.timeout) if account.is_use_ssl else SMTP(account.host, account.port, timeout=account.timeout)
             server.ehlo()
             if account.is_use_tls:
                 server.starttls()

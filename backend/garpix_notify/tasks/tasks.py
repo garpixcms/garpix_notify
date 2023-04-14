@@ -21,7 +21,6 @@ except Exception:
 @celery_app.task
 def send_notifications():
     notifies = Notify.objects.filter(state__in=[STATE.WAIT]).exclude(type=TYPE.SYSTEM)
-
     for notify in notifies.iterator():
         if notify.state == STATE.WAIT:
             if notify.send_at is None:

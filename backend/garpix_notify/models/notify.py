@@ -84,7 +84,6 @@ class Notify(NotifyMixin, UserNotifyMixin):
 
         # Если передан пользователь, то перезаписываем данные (если они есть у пользователя)
         self._get_sender()
-
         if self.type == TYPE.EMAIL:
             EmailClient.send_email(self)
         elif self.type == TYPE.SMS:
@@ -99,7 +98,6 @@ class Notify(NotifyMixin, UserNotifyMixin):
             CallClient.send_call(self)
         elif self.type == TYPE.WHATSAPP:
             WhatsAppClient.send_whatsapp(self)
-
         if self.is_delete_after and self.state == STATE.DELIVERED:
             self._delete_notify()
         else:
