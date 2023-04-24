@@ -156,6 +156,7 @@ class NotifyTemplate(UserNotifyMixin):
             raise ValidationError(e)
 
     def clean(self):
+        super().clean()
         if self.html_from_type == self.HTMLFormType.CKEDITOR:
             if not self.html:
                 raise ValidationError({'html': 'Это поле не может быть пустым'})
