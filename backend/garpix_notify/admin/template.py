@@ -1,3 +1,6 @@
+import re
+
+from django.conf import settings
 from django.contrib import admin, messages
 
 from ..models import SystemNotify, Notify
@@ -110,6 +113,16 @@ class NotifyTemplateAdmin(admin.ModelAdmin):
         if events_message:
             self.message_user(request, events_message, level=messages.WARNING)
         return super().get_changelist(request, **kwargs)
+
+    def save_model(self, request, obj, form, change):
+        if hasattr(obj, '_html_file'):
+            with open(obj._html_file, 'r') as f:
+                _html = f.read()
+                for img in obj._images:
+                    _full_img_url = request.build_absolute_uri(f"{settings.MEDIA_URL}{obj._secret_path}/{img}")
+                    _html = re.sub(r"src *= *[\"'](\./)*({0})[\"']".format(img), f"src='{_full_img_url}'", _html)
+                obj.html = _html
+        super().save_model(request, obj, form, change)
 
     class Media:
         css = {

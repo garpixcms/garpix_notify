@@ -118,41 +118,44 @@ class NotifyTemplate(UserNotifyMixin):
         return message
 
     def _parse_and_validate_zipfile(self):
+
+        def _parse_dir(dir_path, imgs, html_path, current_folder):
+            for _name in os.listdir(dir_path):
+                file_path = os.path.join(dir_path, _name)
+                if _name not in ['__MACOSX', '.DS_Store']:
+                    if os.path.isdir(file_path):
+                        html_path = _parse_dir(file_path, imgs, html_path, os.path.join(current_folder, _name))
+                    else:
+                        with open(file_path, 'r') as f:
+                            validate_zip_files(f)
+                            if Path(f.name).suffix[1:].lower() == 'html':
+                                if html_path:
+                                    raise ValidationError({'zipfile': 'Архив должен содержать только один html файл'})
+                                html_path = file_path
+                            else:
+                                imgs.append(os.path.join(current_folder, file_path.split('/')[-1]))
+            return html_path
+
         archive = zipfile.ZipFile(self.zipfile, 'r')
         _secret_path = get_secret_path()
         secret_path = f'{settings.MEDIA_ROOT}/{_secret_path}'
         archive.extractall(secret_path)
 
-        html_file_path = None
         images = []
 
         try:
-            for file in os.listdir(secret_path):
-                file_path = os.path.join(secret_path, file)
-                if file not in ['__MACOSX', '.DS_Store']:
-                    if os.path.isdir(file_path):
-                        raise ValidationError({'zipfile': 'Архив не должен содержать папок'})
-                    with open(file_path, 'r') as f:
-                        validate_zip_files(f)
-                        if Path(f.name).suffix[1:].lower() == 'html':
-                            if html_file_path:
-                                raise ValidationError({'zipfile': 'Архив должен содержать только один html файл'})
-                            html_file_path = file_path
-                        else:
-                            images.append(file_path.split('/')[-1])
+            html_file_path = _parse_dir(secret_path, images, None, '')
+
             if html_file_path is None:
-                ValidationError({'zipfile': 'Архив должен содержать html файл'})
-            with open(html_file_path, 'r') as f:
-                _html = f.read()
-                for img in images:
-                    _html = _html.replace(img, f"{settings.MEDIA_URL}{_secret_path}/{img}")
-                self.html = _html
+                raise ValidationError({'zipfile': 'Архив должен содержать html файл'})
+            self._html_file = html_file_path
+            self._images = images
+            self._secret_path = _secret_path
         except ValidationError as e:
             shutil.rmtree('/'.join(secret_path.split('/')[:-2]), ignore_errors=True)
             raise ValidationError(e)
 
     def clean(self):
-        super().clean()
         if self.html_from_type == self.HTMLFormType.CKEDITOR:
             if not self.html:
                 raise ValidationError({'html': 'Это поле не может быть пустым'})

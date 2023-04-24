@@ -1,4 +1,4 @@
-### 5.15.0 (13.04.2023)
+### 5.15.0-5.15.1 (13.04.2023)
 - `read` and `read_all` endpoints added
 - Archive upload to template added (see template admin panel) 
 
