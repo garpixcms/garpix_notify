@@ -50,6 +50,7 @@ setup(
         'typing-extensions >= 4.3.0',
         'djangorestframework >= 3.12.4',
         'garpix_utils >= 1.8.0',
-        'rarfile >= 4.0'
+        'rarfile >= 4.0',
+        'unrar >= 0.4'
     ],
 )
