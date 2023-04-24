@@ -32,6 +32,8 @@ eqator = ">=2.2.0"
 typing-extensions = "==4.3.0"
 djangorestframework = "==3.12.4"
 garpix-utils = "*"
+rarfile = "*"
+unrar = "*"
 
 [dev-packages]
 

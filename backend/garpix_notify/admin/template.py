@@ -119,13 +119,17 @@ class NotifyTemplateAdmin(admin.ModelAdmin):
             with open(obj._html_file, 'r') as f:
                 _html = f.read()
                 for img in obj._images:
-                    _full_img_url = request.build_absolute_uri(f"{settings.MEDIA_URL}{obj._secret_path}/{img}")
-                    _html = re.sub(r"src *= *[\"'](\./)*({0})[\"']".format(img), f"src='{_full_img_url}'", _html)
+                    _full_img_url = request.build_absolute_uri(
+                        f"{settings.MEDIA_URL}{obj._secret_path}/{img['file_path']}")
+                    _html = re.sub(r"src *= *[\"'](\./)*({0})[\"']".format(img['html_path']), f"src='{_full_img_url}'",
+                                   _html)
+                    _html = re.sub(r"url *\( *[\"'](\./)*({0})[\"'] *\)".format(img['html_path']),
+                                   f"url('{_full_img_url}')", _html)
                 obj.html = _html
         super().save_model(request, obj, form, change)
 
     class Media:
         css = {
-            'all': ('css/admin/garpix_notify.css', )
+            'all': ('css/admin/garpix_notify.css',)
         }
         js = ('js/admin/garpix_notify.js',)

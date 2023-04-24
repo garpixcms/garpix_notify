@@ -18,6 +18,7 @@ from ..mixins import UserNotifyMixin
 from ..utils import get_file_path
 from ..utils.validators import validate_zip, validate_zip_files
 import zipfile
+import rarfile
 from garpix_utils.file import get_secret_path
 
 
@@ -119,24 +120,55 @@ class NotifyTemplate(UserNotifyMixin):
 
     def _parse_and_validate_zipfile(self):
 
-        def _parse_dir(dir_path, imgs, html_path, current_folder):
+        def _parse_dir(dir_path, imgs, current_folder, root_folders: list):
             for _name in os.listdir(dir_path):
                 file_path = os.path.join(dir_path, _name)
                 if _name not in ['__MACOSX', '.DS_Store']:
                     if os.path.isdir(file_path):
-                        html_path = _parse_dir(file_path, imgs, html_path, os.path.join(current_folder, _name))
+                        _parse_dir(file_path, imgs, os.path.join(current_folder, _name), root_folders)
                     else:
                         with open(file_path, 'r') as f:
                             validate_zip_files(f)
-                            if Path(f.name).suffix[1:].lower() == 'html':
-                                if html_path:
-                                    raise ValidationError({'zipfile': 'Архив должен содержать только один html файл'})
-                                html_path = file_path
-                            else:
-                                imgs.append(os.path.join(current_folder, file_path.split('/')[-1]))
-            return html_path
+                            if Path(f.name).suffix[1:].lower() not in ['html', 'htm']:
+                                html_path = current_folder
+                                if any(root_folders):
+                                    _current_folders = current_folder.split('/')
+                                    _ci = 0
+                                    for _item in root_folders:
+                                        if len(_current_folders) == _ci or _current_folders[_ci] != _item:
+                                            _current_folders.insert(_ci, '..')
+                                        else:
+                                            _current_folders[_ci] = None
+                                        _ci += 1
+                                    html_path = '/'.join([_item for _item in _current_folders if _item is not None])
 
-        archive = zipfile.ZipFile(self.zipfile, 'r')
+                                rel_file_path = file_path.split('/')[-1]
+                                imgs.append({
+                                    'html_path': os.path.join(html_path, rel_file_path),
+                                    'file_path': os.path.join(current_folder, rel_file_path)
+                                })
+
+        def _validate_and_find_html(dir_path, html_path, root_folder, current_folder) -> (str, str):
+            for _name in os.listdir(dir_path):
+                file_path = os.path.join(dir_path, _name)
+                if _name not in ['__MACOSX', '.DS_Store']:
+                    if os.path.isdir(file_path):
+                        html_path, root_folder = _validate_and_find_html(file_path, html_path, root_folder, os.path.join(current_folder, _name))
+                    else:
+                        with open(file_path, 'r') as f:
+                            validate_zip_files(f)
+                            if Path(f.name).suffix[1:].lower() in ['html', 'htm']:
+                                if html_path:
+                                    raise ValidationError(
+                                        {'zipfile': 'Архив должен содержать только один html файл'})
+                                html_path = file_path
+                                root_folder = current_folder
+            return html_path, root_folder
+
+        try:
+            archive = zipfile.ZipFile(self.zipfile, 'r')
+        except zipfile.BadZipFile:
+            archive = rarfile.RarFile(self.zipfile)
         _secret_path = get_secret_path()
         secret_path = f'{settings.MEDIA_ROOT}/{_secret_path}'
         archive.extractall(secret_path)
@@ -144,10 +176,13 @@ class NotifyTemplate(UserNotifyMixin):
         images = []
 
         try:
-            html_file_path = _parse_dir(secret_path, images, None, '')
+            html_file_path, _root_folder = _validate_and_find_html(secret_path, '', '', '')
 
             if html_file_path is None:
                 raise ValidationError({'zipfile': 'Архив должен содержать html файл'})
+
+            _parse_dir(secret_path, images, '', _root_folder.split('/'))
+
             self._html_file = html_file_path
             self._images = images
             self._secret_path = _secret_path
