@@ -1,6 +1,7 @@
 from django.contrib import admin, messages
 
 from ..models import NotifyTemplate
+from ..models.choices import STATE
 from ..models.notify import Notify
 from .log import NotifyErrorLogInline
 
@@ -33,3 +34,12 @@ class NotifyAdmin(admin.ModelAdmin):
         if events_message:
             self.message_user(request, events_message, level=messages.WARNING)
         return super().get_changelist(request, **kwargs)
+
+    def set_wait_state(self, request, queryset):
+        queryset.update(state=STATE.WAIT)
+
+    set_wait_state.short_description = 'Перевести в статус "В ожидании"'
+
+    actions = (
+        'set_wait_state',
+    )
