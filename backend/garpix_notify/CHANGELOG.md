@@ -1,3 +1,9 @@
+### 5.16.0 (10.05.2023)
+
+- `.svg` files deprecated from template archives
+- Help text added to zip template
+- Template archive uploading bugs fixed
+
 ### 5.15.1 (25.04.2023)
 
 - `.rar` archive uploading added

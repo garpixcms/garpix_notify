@@ -36,7 +36,8 @@ class NotifyTemplate(UserNotifyMixin):
                                       verbose_name='Способ формирования html')
     html = RichTextUploadingField(verbose_name='HTML', blank=True)
     zipfile = models.FileField(upload_to=get_file_path, blank=True, null=True, validators=[validate_zip],
-                               verbose_name='Файл архива')
+                               verbose_name='Файл архива',
+                               help_text="Поддерживаются архивы в форматах ZIP и RAR с единственным HTML-файлом и ассетами изображений по относительному или абсолютному пути")
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True,
                              verbose_name='Пользователь (получатель)')
@@ -153,7 +154,8 @@ class NotifyTemplate(UserNotifyMixin):
                 file_path = os.path.join(dir_path, _name)
                 if _name not in ['__MACOSX', '.DS_Store']:
                     if os.path.isdir(file_path):
-                        html_path, root_folder = _validate_and_find_html(file_path, html_path, root_folder, os.path.join(current_folder, _name))
+                        html_path, root_folder = _validate_and_find_html(file_path, html_path, root_folder,
+                                                                         os.path.join(current_folder, _name))
                     else:
                         with open(file_path, 'r') as f:
                             validate_zip_files(f)
@@ -168,7 +170,11 @@ class NotifyTemplate(UserNotifyMixin):
         try:
             archive = zipfile.ZipFile(self.zipfile, 'r')
         except zipfile.BadZipFile:
-            archive = rarfile.RarFile(self.zipfile)
+            try:
+                archive = rarfile.RarFile(self.zipfile)
+            except rarfile.BadRarFile as e:
+                raise ValidationError(
+                    {'zipfile': str(e)})
         _secret_path = get_secret_path()
         secret_path = f'{settings.MEDIA_ROOT}/{_secret_path}'
         archive.extractall(secret_path)
@@ -178,7 +184,7 @@ class NotifyTemplate(UserNotifyMixin):
         try:
             html_file_path, _root_folder = _validate_and_find_html(secret_path, '', '', '')
 
-            if html_file_path is None:
+            if not html_file_path:
                 raise ValidationError({'zipfile': 'Архив должен содержать html файл'})
 
             _parse_dir(secret_path, images, '', _root_folder.split('/'))

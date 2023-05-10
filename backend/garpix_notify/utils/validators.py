@@ -19,5 +19,5 @@ def validate_zip(value):
 
 
 def validate_zip_files(value):
-    allowed_extensions = ['png', 'jpg', 'svg', 'jpeg', 'html']
+    allowed_extensions = ['png', 'jpg', 'jpeg', 'html']
     validate_file_extension(value, allowed_extensions)
