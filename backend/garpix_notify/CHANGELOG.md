@@ -1,4 +1,4 @@
-### 5.16.0 (10.05.2023)
+### 5.16.0-5.16.1 (10.05.2023)
 
 - `.svg` files deprecated from template archives
 - Help text added to zip template

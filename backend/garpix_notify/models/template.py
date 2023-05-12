@@ -172,12 +172,15 @@ class NotifyTemplate(UserNotifyMixin):
         except zipfile.BadZipFile:
             try:
                 archive = rarfile.RarFile(self.zipfile)
-            except rarfile.BadRarFile as e:
+            except (rarfile.BadRarFile, rarfile.NotRarFile) as e:
                 raise ValidationError(
                     {'zipfile': str(e)})
         _secret_path = get_secret_path()
         secret_path = f'{settings.MEDIA_ROOT}/{_secret_path}'
-        archive.extractall(secret_path)
+        try:
+            archive.extractall(secret_path)
+        except (rarfile.BadRarFile, zipfile.BadZipFile) as e:
+            raise ValidationError({'zipfile': str(e)})
 
         images = []
 
