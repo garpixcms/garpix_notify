@@ -61,7 +61,8 @@ class NotifyTemplateAdmin(admin.ModelAdmin):
                 'user': user,
                 'phone': template.phone,
                 'type': TYPE.SMS,
-                'category': obj.category
+                'category': obj.category,
+                'is_delete_after': template.is_delete_after
             },
             TYPE.EMAIL: {
                 'subject': obj.render_subject(template.subject),
@@ -70,7 +71,8 @@ class NotifyTemplateAdmin(admin.ModelAdmin):
                 'user': user,
                 'email': template.email,
                 'type': TYPE.EMAIL,
-                'category': obj.category
+                'category': obj.category,
+                'is_delete_after': template.is_delete_after
             },
             TYPE.PUSH: {
                 'subject': obj.render_subject(template.subject),
