@@ -1,11 +1,6 @@
 import datetime
 import pytest
 from unittest.mock import Mock, MagicMock, patch
-from email.header import Header
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from django.template import Context, Template
-from django.utils.safestring import mark_safe
 from garpix_notify.models import Notify, NotifyConfig, NotifyErrorLog, SMTPAccount
 from garpix_notify.models.choices import STATE
 from garpix_notify.clients import EmailClient
@@ -115,8 +110,6 @@ class TestEmailClient(CommonTestClass):
         smtp_instance.close.assert_called_once()
         assert self.notify.state == STATE.DELIVERED
         assert self.notify.sent_at == now_time
-
-    # TODO: add tests for body generation
 
     @patch('garpix_notify.clients.email_client.now')
     @patch('garpix_notify.clients.email_client.SMTP')
