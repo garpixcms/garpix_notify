@@ -54,9 +54,9 @@ class TestEmailClient(CommonTestClass):
     @patch('garpix_notify.clients.email_client.SMTP_SSL')
     def test_send_successfull_ssl(self, smtp_ssl: Mock, now_mock: Mock, setup: None):
         now_time = datetime.datetime(2024, 7, 30, 12, 0, 0)
+        now_mock.return_value = now_time
         smtp_instance = MagicMock()
         smtp_ssl.return_value = smtp_instance
-        now_mock.return_value = now_time
 
         account = SMTPAccount.objects.create(
             category=self.category_1,
@@ -84,9 +84,9 @@ class TestEmailClient(CommonTestClass):
     @patch('garpix_notify.clients.email_client.SMTP')
     def test_send_successfull_tls(self, smtp: Mock, now_mock: Mock, setup: None):
         now_time = datetime.datetime(2024, 7, 30, 12, 0, 0)
+        now_mock.return_value = now_time
         smtp_instance = MagicMock()
         smtp.return_value = smtp_instance
-        now_mock.return_value = now_time
 
         account = SMTPAccount.objects.create(
             category=self.category_1,
@@ -115,9 +115,9 @@ class TestEmailClient(CommonTestClass):
     @patch('garpix_notify.clients.email_client.SMTP')
     def test_send_failed(self, smtp: Mock, now_mock: Mock, setup: None):
         now_time = datetime.datetime(2024, 7, 30, 12, 0, 0)
+        now_mock.return_value = now_time
         smtp_instance = MagicMock()
         smtp.return_value = smtp_instance
-        now_mock.return_value = now_time
 
         account = SMTPAccount.objects.create(
             category=self.category_1,
