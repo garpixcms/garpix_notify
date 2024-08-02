@@ -11,7 +11,7 @@ from ..utils.generate_data import (
 
 
 @pytest.mark.django_db
-class TestEmailClient(CommonTestClass):
+class TestCallClient(CommonTestClass):
     @pytest.fixture
     def setup(self):
         # Tests Events
