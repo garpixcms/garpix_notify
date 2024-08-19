@@ -49,7 +49,6 @@ class TestEmailClient(CommonTestClass):
         assert self.notify.state == STATE.DISABLED
         assert NotifyErrorLog.objects.filter(notify=self.notify, error='No SMTPAccount').exists()
 
-
     @patch('garpix_notify.clients.email_client.now')
     @patch('garpix_notify.clients.email_client.SMTP_SSL')
     def test_send_successfull_ssl(self, smtp_ssl: Mock, now_mock: Mock, setup: None):
