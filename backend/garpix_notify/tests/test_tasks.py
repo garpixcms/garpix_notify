@@ -26,4 +26,6 @@ class TestTasks(CommonTestClass):
     def test_send_notifications(self, notifications):
         send_notifications()
 
-        assert 2 == Notify.objects.filter(pk__in=[notify.pk for notify in notifications], state=STATE.DISABLED).count()
+        pks = (notifications[0].pk, notifications[2].pk)
+
+        assert 2 == Notify.objects.filter(pk__in=pks, state=STATE.DISABLED).count()
