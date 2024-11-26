@@ -42,8 +42,8 @@ class ReceivingUsers:
             users_qs = user_list.users.all()
 
             # Собираем данные из дополнительного списка получателей, если он есть.
-            if users_participants.exists():
-                self.receivers.extend([{
+            self.receivers.extend([
+                {
                     'user': participant.user,
                     'email': participant.user.email if participant.user else participant.email,
                     'phone': participant.user.phone if participant.user else participant.phone,
@@ -53,19 +53,19 @@ class ReceivingUsers:
                     'telegram_chat_id': (
                         participant.user.telegram_chat_id if participant.user else participant.telegram_chat_id
                     ),
-                } for participant in users_participants])
+                }
+                for participant in users_participants
+            ])
 
             # Собираем данные из групп, которые входят в список рассылки
-            if user_groups_qs.exists():
-                group_users = user_model.objects.prefetch_related('groups').filter(groups__in=user_groups_qs)
-                if group_users.exists():
-                    data_list: list = self.__forming_data_list(group_users)
-                    self.receivers.extend(data_list)
+            group_users = user_model.objects.filter(groups__in=user_groups_qs)
+            self.receivers.extend(
+                self.__forming_data_list(group_users)
+            )
 
             # Собираем данные по пользователям, если они были переданы
-            if users_qs.exists():
-                data_list: list = self.__forming_data_list(users_qs)
-                self.receivers.extend(data_list)
+            data_list: list = self.__forming_data_list(users_qs)
+            self.receivers.extend(data_list)
 
         if self.value:
             return self.__returning_specific_list(self.receivers)
