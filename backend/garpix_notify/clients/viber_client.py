@@ -38,7 +38,7 @@ class ViberClient:
             avatar='',
             auth_token=self.VIBER_API_KEY
         ))
-        print('actual instance: ', viber)
+
         try:
             result = False
             if users_list.exists():
