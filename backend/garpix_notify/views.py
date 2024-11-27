@@ -28,7 +28,6 @@ def send_webhook(request):
         auth_token=config.viber_api_key
     ))
     current_host = request.META['HTTP_HOST']
-    print(reverse("viber_check_webhook"), 'reverse(viber_check_webhook)')
     viber.set_webhook(url=f'https://{current_host}' + reverse('viber_check_webhook'),
                       webhook_events=['unsubscribed', 'conversation_started', 'message', 'seen', 'delivered'])
 
@@ -39,17 +38,12 @@ def viber_check_webhook(request):
     if request.method == "POST":
         response = json.loads(request.body.decode('utf-8'))  # получение колбэка
         if response['event'] == 'conversation_started':
-            print("Приветствую пользователя")
             conversation(response)
         if response['event'] == 'subscribed':
-            print("subscribed event")
             subscribed_event(response)
         if response['event'] == 'message':
-            print("message event")
             add_viber_user(response)
         if response['event'] == 'webhook':
-            print(response)
-            print("Webhook успешно установлен")
             return HttpResponse(status=200)
         return HttpResponse(status=200)  # всегда возвращает 200
 
@@ -64,11 +58,10 @@ def conversation(response):
     ))
     id_user = response['user']['id']
     user_name = response['user']['name']
-    print(id_user, ' id in conversation')
     if response['subscribed'] == 'false':
-        print(response, 'response in conversation')
         viber.send_messages(to=id_user, messages=[
-            TextMessage(text=f'Привет, {user_name}, {config.viber_welcome_text}')])
+            TextMessage(text=f'Привет, {user_name}, {config.viber_welcome_text}')
+        ])
 
 
 # доступ к получению сообщений от бота по viber_secret_key
@@ -104,7 +97,8 @@ def subscribed_event(response):
     id_user = response['user']['id']
     user_name = response['user']['name']
     viber.send_messages(to=id_user, messages=[
-        TextMessage(text=f'{user_name},  {config.viber_text_for_new_sub}')])
+        TextMessage(text=f'{user_name},  {config.viber_text_for_new_sub}')
+    ])
 
 
 class SystemNotifyViewSet(ListModelMixin, GenericViewSet):

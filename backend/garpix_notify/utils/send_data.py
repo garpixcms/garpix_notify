@@ -50,7 +50,7 @@ class SendData:
             SMS_URL.INFOSMS_ID: (f'{SMS_URL.INFOSMS_URL}?login={self.SMS_LOGIN}&pwd={self.SMS_PASSWORD}&sender={self.SMS_FROM}' + '&phones={to}&message={text}'),
             SMS_URL.SMSCENTRE_ID: (f'{SMS_URL.SMSCENTRE_URL}?login={self.SMS_LOGIN}&psw={self.SMS_PASSWORD}' + '&phones={to}&mes={text}'),
             SMS_URL.SMS_SENDING_ID: (f'{SMS_URL.SMS_SENDING_URL}?login={self.SMS_LOGIN}&password={self.SMS_PASSWORD}' + '&txt={text}&to={to}'),
-            SMS_URL.SMS_PROSTO_ID: (f'{SMS_URL.SMS_PROSTO_URL}?login={self.SMS_LOGIN}&password={self.SMS_PASSWORD}&method=push_msg&format=json&sender_name={self.SMS_FROM}' + 'text={text}&phone={to}&key={api_id}'),
+            SMS_URL.SMS_PROSTO_ID: (f'{SMS_URL.SMS_PROSTO_URL}?login={self.SMS_LOGIN}&password={self.SMS_PASSWORD}&method=push_msg&format=json&sender_name={self.SMS_FROM}' + '&text={text}&phone={to}' + f'&key={self.SMS_API_ID}'),
         }
         return url_dict_sms.get(key, str())
 

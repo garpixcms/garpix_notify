@@ -45,18 +45,17 @@ class EmailClient:
         msg['Subject'] = Header(self.notify.subject, 'utf-8')
         msg['From'] = mail_from
 
-        if self.notify.files.exists():
-            for fl in self.notify.files.all():
-                file_name = fl.file.name.split('/')[-1]
-                with fl.file.open(mode='rb') as f:
-                    part = MIMEApplication(
-                        f.read(),
-                        Name=file_name
-                    )
+        for fl in self.notify.files.all():
+            file_name = fl.file.name.split('/')[-1]
+            with fl.file.open(mode='rb') as f:
+                part = MIMEApplication(
+                    f.read(),
+                    Name=file_name
+                )
 
-                part['Content-Disposition'] = 'attachment; filename="%s"' % file_name
+            part['Content-Disposition'] = 'attachment; filename="%s"' % file_name
 
-                msg.attach(part)
+            msg.attach(part)
 
         # =============================== Часть письма с текстом ==========================================
         msg_text = MIMEMultipart('alternative')

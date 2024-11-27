@@ -17,6 +17,7 @@ class TestNotify(CommonTestClass):
         self.PASS_TEST_EVENT = 0
         self.PASS_TEST_EVENT_1 = 1
         self.PASS_TEST_EVENT_2 = 2
+
         # Тестовый пользователь
         self.data_user = generate_users(3)[2]
         self.data_viber_user = generate_viber_user(2)[1]

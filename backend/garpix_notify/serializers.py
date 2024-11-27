@@ -15,11 +15,19 @@ class ReadSystemNotifySerializer(serializers.Serializer):
     ids = serializers.ListField(child=serializers.IntegerField(), allow_empty=False)
 
     def validate_ids(self, value):
-        db_ids = SystemNotify.objects.filter(user=self.context['request'].user, type=TYPE.SYSTEM, state=STATE.DELIVERED,
-                                             is_read=False).values_list('id', flat=True)
+        db_ids = set(
+            SystemNotify.objects.filter(
+                user=self.context['request'].user,
+                type=TYPE.SYSTEM,
+                state=STATE.DELIVERED,
+                is_read=False
+            ).values_list('id', flat=True)
+        )
+        ids = set(value)
 
-        for id_val in value:
-            if id_val not in db_ids:
-                raise ValidationError(f"Уведомление с id {id_val} не муществует")
+        invalid_ids = ids.difference(db_ids)
+
+        if len(invalid_ids) > 0:
+            raise ValidationError(f"Уведомлений с id {', '.join(map(str, invalid_ids))} не существует")
 
         return value

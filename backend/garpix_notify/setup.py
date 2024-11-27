@@ -32,7 +32,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        'Django >= 1.11',
+        'Django >= 1.11, < 5',
         'django-solo >= 1.1.3',
         'fcm-django == 0.3.11',
         'requests >= 2.18.4',
@@ -48,8 +48,8 @@ setup(
         'asgiref >= 3.2.10, <= 3.3.4',
         'twilio == 7.10.0',
         'typing-extensions >= 4.3.0',
-        'djangorestframework >= 3.12.4',
-        'garpix_utils >= 1.8.0',
+        'djangorestframework >= 3.13.0',
+        'garpix_utils >= 1.9.1',
         'rarfile >= 4.0',
         'unrar >= 0.4'
     ],

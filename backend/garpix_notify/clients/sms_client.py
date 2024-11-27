@@ -28,20 +28,21 @@ class SMSClient:
     def __sms_ru_client(self, response: dict) -> None:
         if response['status'] == 'OK':
             self.notify.to_log(
-                f"Статус основного запроса: {response['status']}, Код статуса: \
-                {response['status_code']}, Баланс: {response['balance']}")
+                f"Статус основного запроса: {response['status']}, Код статуса: "
+                f"{response['status_code']}, Баланс: {response['balance']}"
+            )
             for key in response['sms']:
                 if response['sms'][key]['status'] == 'ERROR':
                     self.notify.to_log(
-                        f"Ошибка у абонента: Номер: {key}, Статус: {response['sms'][key]['status']}, \
-                        Код статуса: {response['sms'][key]['status_code']}, Описание: \
-                        {response['sms'][key]['status_text']}")
+                        f"Ошибка у абонента: Номер: {key}, Статус: {response['sms'][key]['status']}, "
+                        f"Код статуса: {response['sms'][key]['status_code']}, Описание: {response['sms'][key]['status_text']}"
+                    )
             self.notify.state = STATE.DELIVERED
             self.notify.sent_at = now()
         else:
             self.notify.to_log(
-                f"Статус: {response['status']}, Код статуса: {response['status_code']}, "
-                f"Описание ошибки: {response['status_text']}")
+                f"Статус: {response['status']}, Код статуса: {response['status_code']}, Описание ошибки: {response['status_text']}"
+            )
             self.notify.state = STATE.REJECTED
 
     def __web_szk_client(self, response: Union[list, dict]) -> None:
@@ -60,14 +61,15 @@ class SMSClient:
     def __iq_sms_client(self, response: dict) -> None:
         if response['status'] == 'ok':
             self.notify.to_log(
-                f"Статус: {response['status']}, Код статуса: {response['code']}, Описание: \
-                                   {response['description']}")
+                f"Статус: {response['status']}, Код статуса: {response['code']}, Описание: {response['description']}"
+            )
             self.notify.state = STATE.DELIVERED
             self.notify.sent_at = now()
         else:
             self.notify.to_log(
                 f"Статус: {response['status']}, Код статуса: {response['code']}, "
-                f"Описание ошибки: {response['description']}")
+                f"Описание ошибки: {response['description']}"
+            )
             self.notify.state = STATE.REJECTED
 
     def __sms_sending_client(self, response: dict) -> None:
@@ -84,14 +86,14 @@ class SMSClient:
     def __sms_prosto_client(self, response: dict) -> None:
         if response['response']['msg']['err_code'] == 0:
             self.notify.to_log(
-                f"Статус: {response['response']['msg']['err_code']}, Описание: \
-                {response['response']['msg']['text']}")
+                f"Статус: {response['response']['msg']['err_code']}, Описание: {response['response']['msg']['text']}"
+            )
             self.notify.state = STATE.DELIVERED
             self.notify.sent_at = now()
         else:
             self.notify.to_log(
-                f"Статус: {response['response']['msg']['err_code']}, Описание ошибки: \
-                {response['response']['msg']['text']}")
+                f"Статус: {response['response']['msg']['err_code']}, Описание ошибки: {response['response']['msg']['text']}"
+            )
             self.notify.state = STATE.REJECTED
 
     def __send_sms(self):
