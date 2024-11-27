@@ -279,10 +279,10 @@ class TestSMSClient(CommonTestClass):
 
     @patch('garpix_notify.clients.sms_client.now')
     @patch('garpix_notify.clients.sms_client.requests')
-    def test_sms_successfull_sms_prosto(self, requests: Mock, now_mock: Mock, setup: None):
+    def test_sms_successfull_sms_sending(self, requests: Mock, now_mock: Mock, setup: None):
         now_time = datetime.datetime(2024, 7, 30, 12, 0, 0)
         now_mock.return_value = now_time
-        self.notify_config.sms_url_type = SMS_URL.SMS_PROSTO_ID
+        self.notify_config.sms_url_type = SMS_URL.SMS_SENDING_ID
         self.notify_config.sms_from = '111'
         self.notify_config.sms_login = 'test-login'
         self.notify_config.sms_password = 'test-password'
@@ -298,7 +298,7 @@ class TestSMSClient(CommonTestClass):
 
         SMSClient.send_sms(self.notify)
 
-        requests.get.assert_called_once_with(f'{SMS_URL.SMS_PROSTO_URL}?login=test-login&password=test-password&txt=text+message&to=+79998887766')
+        requests.get.assert_called_once_with(f'{SMS_URL.SMS_SENDING_URL}?login=test-login&password=test-password&txt=text+message&to=+79998887766')
         response.json.assert_called_once()
 
         assert self.notify.state == STATE.DELIVERED
@@ -306,8 +306,8 @@ class TestSMSClient(CommonTestClass):
         assert NotifyErrorLog.objects.filter(notify=self.notify, error='Статус: 1, Описание: Done').exists()
 
     @patch('garpix_notify.clients.sms_client.requests')
-    def test_sms_failed_sms_prosto(self, requests: Mock, setup: None):
-        self.notify_config.sms_url_type = SMS_URL.SMS_PROSTO_ID
+    def test_sms_failed_sms_sending(self, requests: Mock, setup: None):
+        self.notify_config.sms_url_type = SMS_URL.SMS_SENDING_ID
         self.notify_config.sms_from = '111'
         self.notify_config.sms_login = 'test-login'
         self.notify_config.sms_password = 'test-password'
@@ -323,7 +323,7 @@ class TestSMSClient(CommonTestClass):
 
         SMSClient.send_sms(self.notify)
 
-        requests.get.assert_called_once_with(f'{SMS_URL.SMS_PROSTO_URL}?login=test-login&password=test-password&txt=text+message&to=+79998887766')
+        requests.get.assert_called_once_with(f'{SMS_URL.SMS_SENDING_URL}?login=test-login&password=test-password&txt=text+message&to=+79998887766')
         response.json.assert_called_once()
 
         assert self.notify.state == STATE.REJECTED

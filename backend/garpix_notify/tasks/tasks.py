@@ -23,8 +23,7 @@ def get_notifications_to_send():
     return (
         Notify.objects
         .filter(
-            Q(state__in=(STATE.WAIT,)) &
-            (
+            Q(state__in=(STATE.WAIT,)) & (
                 Q(send_at__isnull=True) | Q(send_at__lte=timezone.now())
             )
         )

@@ -1,10 +1,8 @@
 import datetime
 import pytest
-import telegram
-from unittest.mock import Mock, MagicMock, patch
-from ...models.fcm import NotifyDevice
+from unittest.mock import Mock, patch
 from garpix_notify.models import Notify, NotifyConfig, NotifyErrorLog
-from garpix_notify.models.choices import STATE, PARSE_MODE_TELEGRAM
+from garpix_notify.models.choices import STATE
 from garpix_notify.clients import PushClient
 from ..utils.common_class import CommonTestClass
 from ..utils.generate_data import (

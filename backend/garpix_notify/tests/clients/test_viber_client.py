@@ -1,7 +1,6 @@
 import datetime
 import pytest
 from unittest.mock import Mock, MagicMock, patch
-from viberbot.api.messages import TextMessage
 from garpix_notify.models import Notify, NotifyConfig, NotifyErrorLog
 from garpix_notify.models.choices import STATE
 from garpix_notify.clients import ViberClient

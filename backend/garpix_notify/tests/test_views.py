@@ -1,13 +1,10 @@
 import pytest
-from django.utils import timezone
 from django.test.client import Client
 
 from ..models.system_notify import SystemNotify
-from ..models import Notify
 from ..models.choices import STATE, TYPE
 from .utils.common_class import CommonTestClass
 from .utils.generate_data import generate_users
-from ..tasks import send_notifications
 
 
 @pytest.mark.django_db
