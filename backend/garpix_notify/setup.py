@@ -37,7 +37,7 @@ setup(
         'fcm-django == 0.3.11',
         'requests >= 2.18.4',
         'django-ckeditor >= 5.6.1',
-        'python-telegram-bot >= 12.6.1',
+        'python-telegram-bot >= 20.0',
         'viberbot >= 1.0.11',
         'django-uuslug >= 1.2.0',
         'Pillow >= 8.2.0',
