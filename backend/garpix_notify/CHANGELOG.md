@@ -1,3 +1,7 @@
+### 5.16.3 (10.01.2025)
+
+- Fix send_message for tg cleient
+
 ### 5.16.2 (19.09.2023)
 
 - Fixed bug with different templates on for the same event
