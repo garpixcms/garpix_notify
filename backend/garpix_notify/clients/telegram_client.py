@@ -52,7 +52,7 @@ class TelegramClient:
                                          parse_mode=parse_mode,
                                          disable_web_page_preview=self.TELEGRAM_DISABLE_PAGE_PREVIEW,
                                          disable_notification=self.TELEGRAM_DISABLE_NOTIFICATION,
-                                         timeout=self.TELEGRAM_TIMEOUT,
+                                         connect_timeout=self.TELEGRAM_TIMEOUT,
                                          allow_sending_without_reply=self.TELEGRAM_SENDING_WITHOUT_REPLY)
             if result:
                 self.notify.state = STATE.DELIVERED
