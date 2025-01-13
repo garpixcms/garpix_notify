@@ -1,3 +1,7 @@
+### 5.17.0-rc3 (11.01.2025)
+
+- Fix send_message for tg cleient
+
 ### 5.17.0-rc2 (10.01.2025)
 
 - Fix send_message for tg cleient
