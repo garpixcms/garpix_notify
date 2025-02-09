@@ -1,53 +1,51 @@
 from django.core.management.base import BaseCommand
-from telegram.ext import Updater, CommandHandler
-from ...models.config import NotifyConfig
+from telegram import Update
+from telegram import Update
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from garpix_notify.models.config import NotifyConfig
+from asgiref.sync import sync_to_async
 from django.contrib.auth import get_user_model
 
+User = get_user_model()
 
-def required_argument(fn):
-    def wrapper(update, context):
-        config = NotifyConfig.get_solo()
-        if int(len(context.args)) == 0:
-            update.message.reply_text(config.telegram_bad_command_text)
-            return False
-        return fn(update, context)
+@sync_to_async
+def get_notify_config():
+    return NotifyConfig.get_solo().__dict__
 
-    return wrapper
+@sync_to_async
+def update_user_telegram_chat_id(telegram_secret, telegram_chat_id):
+    count = User.objects.filter(telegram_secret=telegram_secret).update(telegram_chat_id=telegram_chat_id)
+    return count
 
+async def show_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    config = await get_notify_config()
+    await update.message.reply_text(config['telegram_help_text'])
 
-def start(update, context):
-    config = NotifyConfig.get_solo()
-    update.message.reply_text(config.telegram_welcome_text)
-    update.message.reply_text(config.telegram_help_text)
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    config = await get_notify_config()
+    await update.message.reply_text(config['telegram_welcome_text'])
+    await update.message.reply_text(config['telegram_help_text'])
 
-
-def show_help(update, context):
-    config = NotifyConfig.get_solo()
-    update.message.reply_text(config.telegram_help_text)
-
-
-@required_argument
-def command_set_key(update, context):
-    config = NotifyConfig.get_solo()
+async def command_set_key(update, context):
+    config = await get_notify_config()
     telegram_secret = context.args[0]
-    User = get_user_model()
-    user = User.objects.filter(telegram_secret=telegram_secret).first()
-    if user is not None:
-        user.telegram_chat_id = update.message.chat_id
-        user.save()
-        update.message.reply_text(config.telegram_success_added_text)
+    count = await update_user_telegram_chat_id(telegram_secret, update.message.chat_id)
+    if count == 1:
+        await update.message.reply_text(config['telegram_success_added_text'])
     else:
-        update.message.reply_text(config.telegram_failed_added_text)
-
+        await update.message.reply_text(config['telegram_failed_added_text'])
 
 class Command(BaseCommand):
-    help = 'Telegram garpix_notify daemon.'
+    help = 'Starts the Telegram bot'
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **kwargs):
         notify_config = NotifyConfig.get_solo()
-        updater = Updater(notify_config.telegram_api_key)
-        updater.dispatcher.add_handler(CommandHandler('start', start))
-        updater.dispatcher.add_handler(CommandHandler('set', command_set_key, pass_args=True))
-        updater.dispatcher.add_handler(CommandHandler('help', show_help))
-        updater.start_polling()
-        updater.idle()
+        token = notify_config.telegram_api_key
+
+        app = ApplicationBuilder().token(token).build()
+
+        app.add_handler(CommandHandler("start", start))
+        app.add_handler(CommandHandler('set', command_set_key))
+        app.add_handler(CommandHandler('help', show_help))
+
+        app.run_polling()

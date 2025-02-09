@@ -114,12 +114,6 @@ class Notify(NotifyMixin, UserNotifyMixin):
 
         instance_list: list = []
 
-        # Сначала забираем те данные, которые передали с методом
-        notify_user = user if user else None
-        notify_email = email if email else None
-        notify_phone = phone if phone else None
-        notify_viber_chat_id = viber_chat_id if viber_chat_id else None
-
         local_context = context.copy()
         data_json = json.dumps(data_json) if data_json else None
 
@@ -143,6 +137,12 @@ class Notify(NotifyMixin, UserNotifyMixin):
             file_instances = list(map(lambda file: NotifyFile.objects.create(file=file), files))
 
         for template in templates:
+
+            # Сначала забираем те данные, которые передали с методом
+            notify_user = user if user else None
+            notify_email = email if email else None
+            notify_phone = phone if phone else None
+            notify_viber_chat_id = viber_chat_id if viber_chat_id else None
 
             notify_users_lists = template.user_lists.all()
 
@@ -177,7 +177,6 @@ class Notify(NotifyMixin, UserNotifyMixin):
 
             if notify_viber_chat_id is None:
                 notify_viber_chat_id = template_viber_chat_id
-
             # Проверка, хочет ли пользователь получить сообщение
             if user_want_message_check and hasattr(
                     settings, 'NOTIFY_USER_WANT_MESSAGE_CHECK') and settings.NOTIFY_USER_WANT_MESSAGE_CHECK is not None:

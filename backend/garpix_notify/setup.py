@@ -8,7 +8,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='garpix_notify',
-    version='5.16.1',
+    version='5.17.0-rc3',
     description='',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -32,12 +32,12 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        'Django >= 1.11',
+        'Django >= 1.11, < 5',
         'django-solo >= 1.1.3',
         'fcm-django == 0.3.11',
         'requests >= 2.18.4',
         'django-ckeditor >= 5.6.1',
-        'python-telegram-bot >= 12.6.1',
+        'python-telegram-bot >= 20.0, < 22.0',
         'viberbot >= 1.0.11',
         'django-uuslug >= 1.2.0',
         'Pillow >= 8.2.0',
@@ -45,7 +45,7 @@ setup(
         'redis >= 3.5.3',
         'channels >= 3.0.3, <= 3.0.4',
         'channels-redis == 3.4.0',
-        'asgiref >= 3.2.10, <= 3.3.4',
+        'asgiref >= 3.2.10',
         'twilio == 7.10.0',
         'typing-extensions >= 4.3.0',
         'djangorestframework >= 3.12.4',

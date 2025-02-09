@@ -1,3 +1,4 @@
+import asyncio
 from django.conf import settings
 from django.utils.timezone import now
 from django.db import DatabaseError, ProgrammingError
@@ -33,7 +34,7 @@ class TelegramClient:
         for start in range(0, len(s), n):
             yield s[start:start + n]
 
-    def __send_telegram_client(self):
+    async def __send_telegram_client(self):
         import telegram
 
         if not self.IS_TELEGRAM_ENABLED:
@@ -47,12 +48,12 @@ class TelegramClient:
         try:
             result = False
             for chunk in self.__chunks(str(self.notify.text), 4096):
-                result = bot.sendMessage(chat_id=self.notify.telegram_chat_id,
+                result = await bot.sendMessage(chat_id=self.notify.telegram_chat_id,
                                          text=chunk,
                                          parse_mode=parse_mode,
                                          disable_web_page_preview=self.TELEGRAM_DISABLE_PAGE_PREVIEW,
                                          disable_notification=self.TELEGRAM_DISABLE_NOTIFICATION,
-                                         timeout=self.TELEGRAM_TIMEOUT,
+                                         connect_timeout=self.TELEGRAM_TIMEOUT,
                                          allow_sending_without_reply=self.TELEGRAM_SENDING_WITHOUT_REPLY)
             if result:
                 self.notify.state = STATE.DELIVERED
@@ -66,4 +67,4 @@ class TelegramClient:
 
     @classmethod
     def send_telegram(cls, notify):
-        cls(notify).__send_telegram_client()
+        asyncio.run(cls(notify).__send_telegram_client())
