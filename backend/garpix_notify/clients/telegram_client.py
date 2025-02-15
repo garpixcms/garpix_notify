@@ -39,7 +39,7 @@ class TelegramClient:
 
         if not self.IS_TELEGRAM_ENABLED:
             self.notify.state = STATE.DISABLED
-            self.notify.to_log('Not sent (sending is prohibited by settings)')
+            await self.notify.async_to_log('Not sent (sending is prohibited by settings)')
             return
 
         bot = telegram.Bot(token=self.TELEGRAM_API_KEY)

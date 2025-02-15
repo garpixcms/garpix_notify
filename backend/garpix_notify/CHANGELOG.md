@@ -1,3 +1,7 @@
+### 5.17.0-rc4 (15.02.2025)
+
+- Fix to_log in send_message for tg cleient
+
 ### 5.17.0-rc3 (11.01.2025)
 
 - Fix send_message for tg cleient
