@@ -60,10 +60,10 @@ class TelegramClient:
                 self.notify.sent_at = now()
             else:
                 self.notify.state = STATE.REJECTED
-                self.notify.to_log('REJECTED WITH DATA, please test it.')
+                await self.notify.async_to_log('REJECTED WITH DATA, please test it.')
         except Exception as e:  # noqa
             self.notify.state = STATE.REJECTED
-            self.notify.to_log(str(e))
+            await self.notify.async_to_log(str(e))
 
     @classmethod
     def send_telegram(cls, notify):
