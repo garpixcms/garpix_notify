@@ -3,6 +3,7 @@ import os
 import re
 from datetime import datetime
 from typing import Optional, List
+from asgiref.sync import sync_to_async
 
 import requests
 from django.conf import settings
@@ -268,6 +269,10 @@ class Notify(NotifyMixin, UserNotifyMixin):
     def to_log(self, error_text: str) -> None:
         log: NotifyErrorLog = NotifyErrorLog(notify=self, error=error_text)
         log.save()
+
+    async def async_to_log(self, error_text: str) -> None:
+        log = NotifyErrorLog(notify=self, error=error_text)
+        await sync_to_async(log.save)()
 
     def get_format_state(self):
         undefined = '<span style="color:black;">Неизвестный статус</span>'

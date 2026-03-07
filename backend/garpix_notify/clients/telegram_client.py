@@ -39,7 +39,7 @@ class TelegramClient:
 
         if not self.IS_TELEGRAM_ENABLED:
             self.notify.state = STATE.DISABLED
-            self.notify.to_log('Not sent (sending is prohibited by settings)')
+            await self.notify.async_to_log('Not sent (sending is prohibited by settings)')
             return
 
         bot = telegram.Bot(token=self.TELEGRAM_API_KEY)
@@ -60,10 +60,10 @@ class TelegramClient:
                 self.notify.sent_at = now()
             else:
                 self.notify.state = STATE.REJECTED
-                self.notify.to_log('REJECTED WITH DATA, please test it.')
+                await self.notify.async_to_log('REJECTED WITH DATA, please test it.')
         except Exception as e:  # noqa
             self.notify.state = STATE.REJECTED
-            self.notify.to_log(str(e))
+            await self.notify.async_to_log(str(e))
 
     @classmethod
     def send_telegram(cls, notify):
