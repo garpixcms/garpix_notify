@@ -238,7 +238,7 @@ CHANNEL_LAYERS = {
 GARPIX_NOTIFY_MIXIN = 'garpix_notify.mixins.notify_mixin.NotifyMixin'
 GARPIX_SYSTEM_NOTIFY_MIXIN = 'garpix_notify.mixins.notify_mixin.NotifyMixin'
 
-DEBUG_TOOLBAR = os.getenv('DEBUG_TOOLBAR', False)
+DEBUG_TOOLBAR = env.bool('DEBUG_TOOLBAR', False)
 
 if DEBUG_TOOLBAR:
     MIDDLEWARE += ["debug_toolbar.middleware.DebugToolbarMiddleware"]
