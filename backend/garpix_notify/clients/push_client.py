@@ -8,6 +8,13 @@ from garpix_notify.models.config import NotifyConfig
 from garpix_notify.models.fcm import NotifyDevice
 from garpix_notify.models.choices import STATE
 
+# fcm-django 2.x использует firebase-admin, 0.3.x — pyfcm
+try:
+    from firebase_admin.messaging import Message, Notification
+    FCM_DJANGO_V2 = True
+except ImportError:
+    FCM_DJANGO_V2 = False
+
 
 class PushClient:
 
@@ -43,7 +50,24 @@ class PushClient:
             if self.notify.data_json is not None:
                 data_json.update(json.loads(self.notify.data_json))
 
-            devices.send_message(title=self.notify.subject, body=self.notify.text, data=data_json)
+            if FCM_DJANGO_V2:
+                # fcm-django 2.x: firebase-admin API
+                data_json = {k: str(v) for k, v in data_json.items()}
+                message = Message(
+                    notification=Notification(
+                        title=self.notify.subject or '',
+                        body=self.notify.text or '',
+                    ),
+                    data=data_json,
+                )
+                devices.send_message(message)
+            else:
+                # fcm-django 0.3.x: pyfcm API
+                devices.send_message(
+                    title=self.notify.subject or '',
+                    body=self.notify.text or '',
+                    data=data_json,
+                )
             self.notify.state = STATE.DELIVERED
             self.notify.sent_at = now()
         except Exception as e:

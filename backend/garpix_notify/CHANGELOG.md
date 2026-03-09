@@ -1,3 +1,11 @@
+### 5.18.0 (07.03.2025)
+
+- Добавлена поддержка Django 5.0, 5.1 (в дополнение к 2.2, 3.2, 4.2)
+- Поддержка Django 2.2 — 5.x (channels требует Django >= 2.2)
+- Совместимость с fcm-django 0.3.x и 2.x (автоопределение API)
+- Для Django 5: pip установит fcm-django 2.x (требует `GOOGLE_APPLICATION_CREDENTIALS` и `firebase_admin.initialize_app()`)
+- Для Django 2.2–4.x: pip установит fcm-django 0.3.x (FCM_SERVER_KEY)
+
 ### 5.17.0-rc5 (16.02.2025)
 
 - Fix to_log in send_message for tg cleient
@@ -5,6 +13,7 @@
 ### 5.17.0-rc4 (15.02.2025)
 
 - Fix to_log in send_message for tg cleient
+
 
 ### 5.17.0-rc3 (11.01.2025)
 
