@@ -9,6 +9,7 @@ from django.conf import settings
 
 
 def example_send_notify(request):
+    print('example_send_notify')
     Notify.send(
         settings.REGISTRATION_EVENT,
         {
@@ -16,6 +17,6 @@ def example_send_notify(request):
             'message': 'Привет, тут твое сообщение'
         },
         email='example@garpix.com',
-        send_at=(datetime.datetime.now() + datetime.timedelta(days=1))
+        send_now=True
     )
     return render(request, 'example.html', status=201)
