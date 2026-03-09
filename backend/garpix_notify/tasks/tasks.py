@@ -19,6 +19,14 @@ except Exception:
 
 
 @celery_app.task
+def send_notify_now(notify_pk):
+    """Отправка одного уведомления немедленно через Celery"""
+    instance = Notify.objects.filter(state__in=[STATE.WAIT], pk=notify_pk).first()
+    if instance:
+        instance.start_send()
+
+
+@celery_app.task
 def send_notifications():
     notifies = Notify.objects.filter(state__in=[STATE.WAIT]).exclude(type=TYPE.SYSTEM)
     for notify in notifies.iterator():

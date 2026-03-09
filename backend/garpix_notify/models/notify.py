@@ -24,6 +24,7 @@ from .template import NotifyTemplate
 from ..exceptions import IsInstanceException
 from ..mixins import UserNotifyMixin
 from ..utils.send_data import SendData
+from ..utils.send import send_notify_now_async
 
 from ..clients import SMSClient, EmailClient, CallClient, TelegramClient, ViberClient, PushClient, WhatsAppClient
 
@@ -237,7 +238,8 @@ class Notify(NotifyMixin, UserNotifyMixin):
             instance.save()
 
             if send_now:
-                transaction.on_commit(lambda: instance.start_send())
+                notify_pk = instance.pk
+                transaction.on_commit(lambda pk=notify_pk: send_notify_now_async(pk))
 
             instance_list.append(instance)
         return instance_list
